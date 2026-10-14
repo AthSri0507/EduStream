@@ -4,15 +4,17 @@
 # 1. checks the configuration
 # 2. starts the single Kafka broker (formats its storage on first use)
 # 3. creates/verifies the topics
-# 4. starts the interim legacy Streams app (until M4), N transcription workers and the
-#    interim note generator, each in its own titled window, restarted on error exits.
+# 4. builds the Kafka Streams jar if needed (Maven Wrapper; -Rebuild forces it), then starts
+#    the Streams app, N transcription workers and the interim note generator (until M6),
+#    each in its own titled window, restarted on error exits.
 # The lecture source is NOT started here: run it when you want lectures to play:
 #   .venv\Scripts\python -m producer.lecture_source --demo
 # PIDs go to run\pids\ so stop_all.ps1 / kill.ps1 can stop whole process trees.
 
 param(
     [int]$Workers = 3,
-    [switch]$Minimized
+    [switch]$Minimized,
+    [switch]$Rebuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -63,15 +65,20 @@ if (Test-Port 9092) {
 if ($LASTEXITCODE -ne 0) { throw "topic setup failed" }
 
 # 4. Components -----------------------------------------------------------------
-$legacyClasses = Join-Path $Root "run\java-classes\legacy"
-New-Item -ItemType Directory -Force $legacyClasses | Out-Null
-& javac --release 17 -cp "$KafkaHome\libs\*" -d "$legacyClasses" `
-    (Join-Path $Root "stream_processor\src\main\java\com\educationalstream\StreamProcessor.java")
-if ($LASTEXITCODE -ne 0) { throw "javac failed for the legacy Streams app" }
+$streamsDir = Join-Path $Root "stream_processor"
+$jar = Join-Path $streamsDir "target\edustream-streams.jar"
+if ($Rebuild -or -not (Test-Path $jar)) {
+    Write-Host "Building the Kafka Streams app (Maven Wrapper) ..."
+    Push-Location $streamsDir
+    & .\mvnw.cmd -B -q package -DskipTests
+    $built = $LASTEXITCODE -eq 0
+    Pop-Location
+    if (-not $built) { throw "Streams build failed (run stream_processor\mvnw.cmd package to see why)" }
+}
 
-$stateDir = Join-Path $Root "run\state\streams-legacy"
+$stateDir = Join-Path $Root "run\state\streams"
 Write-Host "Starting components:"
-Start-Window "streams-legacy" "-JavaClass com.educationalstream.StreamProcessor -ClassPath `"$legacyClasses`" -EnvVars `"STATE_DIR=$stateDir`" -Restart"
+Start-Window "streams" "-Jar `"$jar`" -EnvVars `"STATE_DIR=$stateDir`" -Restart"
 for ($i = 1; $i -le $Workers; $i++) {
     Start-Window "w$i" "-Module summarizer.transcription.transcription_worker -EnvVars `"WORKER_ID=w$i`" -Restart"
 }

@@ -10,6 +10,7 @@
     "window_start": {"type": "integer", "minimum": 0, "description": "epoch ms"},
     "window_end": {"type": "integer", "minimum": 0},
     "revision": {"type": "integer", "minimum": 1},
+    "session_start": {"type": "integer", "minimum": 0, "description": "lecture session start (epoch ms); window_index = (window_start - session_start) / WINDOW_MS"},
     "media_start": {"type": "number", "minimum": 0},
     "media_end": {"type": "number", "minimum": 0},
     "chunk_ids": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 1},

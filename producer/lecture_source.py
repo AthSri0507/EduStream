@@ -61,14 +61,30 @@ def chunk_send_at(session_start: int, chunk_id: int, chunk_wall_ms: int) -> int:
     return chunk_event_ts(session_start, chunk_id, chunk_wall_ms) + chunk_wall_ms
 
 
-def flush_event_ts(session_start: int, last_chunk_id: int, chunk_wall_ms: int, window_s: int, grace_s: int) -> int:
-    """A5: session_start + (last_chunk_id + 1) * chunk_wall + WINDOW + GRACE."""
-    return session_start + (last_chunk_id + 1) * chunk_wall_ms + (window_s + grace_s) * 1000
+def flush_event_ts(session_start: int, last_chunk_id: int, chunk_wall_ms: int, window_s: int, grace_s: int,
+                   formula: str = "tight") -> int:
+    """A5 flush timestamp. Both formulas close the lecture's last window and never decrease (S3).
+
+    legacy: session_start + (last_chunk_id + 1) * chunk_wall + WINDOW + GRACE
+            (adds a whole extra WINDOW when the lecture ends exactly on a window boundary)
+    tight:  (default) end of the window that holds the last chunk + GRACE, using Kafka's epoch-aligned
+            windows (start = ts - ts % WINDOW). The earliest timestamp that closes that window.
+            Verified in M4: unit + TopologyTestDriver edge cases and a live run with two Streams
+            crashes and a full replay (PLAN M4).
+    """
+    if formula == "legacy":
+        return session_start + (last_chunk_id + 1) * chunk_wall_ms + (window_s + grace_s) * 1000
+    if formula != "tight":
+        raise ValueError(f"unknown flush formula {formula!r}")
+    window_ms = window_s * 1000
+    last_ts = chunk_event_ts(session_start, last_chunk_id, chunk_wall_ms)
+    return (last_ts // window_ms + 1) * window_ms + grace_s * 1000
 
 
-def flush_send_at(session_start: int, last_chunk_id: int, chunk_wall_ms: int, window_s: int, grace_s: int) -> int:
+def flush_send_at(session_start: int, last_chunk_id: int, chunk_wall_ms: int, window_s: int, grace_s: int,
+                  formula: str = "tight") -> int:
     """The flush is published no earlier than its own event_ts + chunk_wall (keeps S4 and §6.2's bound)."""
-    return flush_event_ts(session_start, last_chunk_id, chunk_wall_ms, window_s, grace_s) + chunk_wall_ms
+    return flush_event_ts(session_start, last_chunk_id, chunk_wall_ms, window_s, grace_s, formula) + chunk_wall_ms
 
 
 # --------------------------------------------------
@@ -162,7 +178,8 @@ def run_lecture(lecture: Lecture, settings: Settings, session_start: int, clock:
              chunks=n_chunks, media_s=round(duration_s, 1), session_start=session_start, chunk_wall_ms=chunk_wall)
     write_state(lecture.video_id, item_id=lecture.item_id, partition=lecture.partition, status="active",
                 session_start=session_start, chunk_wall_ms=chunk_wall, last_chunk_sent=-1, chunks=n_chunks,
-                window_s=settings.window_seconds, grace_s=settings.grace_seconds)
+                window_s=settings.window_seconds, grace_s=settings.grace_seconds,
+                flush_formula=settings.flush_formula)
 
     producer = None if args.dry_run else make_producer(settings, client_id=f"source-{lecture.video_id}")
     try:
@@ -197,8 +214,10 @@ def run_lecture(lecture: Lecture, settings: Settings, session_start: int, clock:
                   f"({len(value) / 1000:.0f} KB)", flush=True)
 
         last = n_chunks - 1
-        flush_ts = flush_event_ts(session_start, last, chunk_wall, settings.window_seconds, settings.grace_seconds)
-        wait_until(flush_send_at(session_start, last, chunk_wall, settings.window_seconds, settings.grace_seconds),
+        flush_ts = flush_event_ts(session_start, last, chunk_wall, settings.window_seconds, settings.grace_seconds,
+                                  settings.flush_formula)
+        wait_until(flush_send_at(session_start, last, chunk_wall, settings.window_seconds, settings.grace_seconds,
+                                settings.flush_formula),
                    wall0_ms, mono0, stop)
         if stop.is_set():
             write_state(lecture.video_id, status="aborted")

@@ -9,8 +9,8 @@ One member of consumer group `transcription-workers`; run several for parallelis
 A produce failure exits with code 3; scripts/run_component.ps1 restarts the worker
 with a fresh producer, and it re-reads from the last commit (<= 1 duplicate).
 
-Flush records are forwarded only when FORWARD_FLUSH=true (the M4 Streams app);
-the interim legacy Streams app would crash on them.
+Flush records are forwarded to the same partition (default since M4: the Streams app
+uses them to close a lecture's last window, A5). FORWARD_FLUSH=false turns that off.
 
     set WORKER_ID=w1 && .venv\\Scripts\\python -m summarizer.transcription.transcription_worker
 """
@@ -55,7 +55,7 @@ def handle(record, model, producer, settings, log) -> None:
                           key=event["video_id"], partition=record.partition)
             log.info("flush_forwarded", video_id=event["video_id"], partition=record.partition)
         else:
-            log.info("flush_not_forwarded", video_id=event["video_id"], reason="FORWARD_FLUSH=false until M4")
+            log.info("flush_not_forwarded", video_id=event["video_id"], reason="FORWARD_FLUSH=false")
         return
 
     try:

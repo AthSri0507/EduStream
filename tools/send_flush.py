@@ -35,8 +35,10 @@ def main(argv=None) -> int:
     if last < 0:
         print(f"{args.video} never sent a chunk; nothing to close")
         return 1
-    ts = flush_event_ts(state["session_start"], last, state["chunk_wall_ms"], state["window_s"], state["grace_s"])
-    send_at = flush_send_at(state["session_start"], last, state["chunk_wall_ms"], state["window_s"], state["grace_s"])
+    formula = state.get("flush_formula", "legacy")
+    ts = flush_event_ts(state["session_start"], last, state["chunk_wall_ms"], state["window_s"], state["grace_s"], formula)
+    send_at = flush_send_at(state["session_start"], last, state["chunk_wall_ms"], state["window_s"], state["grace_s"],
+                            formula)
     wait_s = (send_at - time.time() * 1000) / 1000
     if wait_s > 0:
         print(f"waiting {wait_s:.0f} s until the flush's scheduled send time")

@@ -3,11 +3,12 @@
 # re-reading from the last committed offset; ARCHITECTURE §6.3).
 #
 #   powershell -ExecutionPolicy Bypass -File scripts\run_component.ps1 -Name w1 -Module summarizer.transcription.transcription_worker -EnvVars "WORKER_ID=w1" -Restart
-#   powershell -ExecutionPolicy Bypass -File scripts\run_component.ps1 -Name streams-legacy -JavaClass com.educationalstream.StreamProcessor -ClassPath "<dir>"
+#   powershell -ExecutionPolicy Bypass -File scripts\run_component.ps1 -Name streams -Jar stream_processor\target\edustream-streams.jar -EnvVars "STATE_DIR=run\state\streams" -Restart
 
 param(
     [Parameter(Mandatory = $true)][string]$Name,
     [string]$Module,
+    [string]$Jar,
     [string]$JavaClass,
     [string]$ClassPath,
     [string]$EnvVars = "",
@@ -26,6 +27,8 @@ while ($true) {
     $started = Get-Date
     if ($Module) {
         & $VenvPy -u -m $Module
+    } elseif ($Jar) {
+        & java -Xmx512m -jar $Jar
     } else {
         & java -Xmx512m -cp "$ClassPath;$KafkaHome\libs\*" $JavaClass
     }

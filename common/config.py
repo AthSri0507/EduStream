@@ -68,6 +68,7 @@ class Settings:
     min_covered_s: float
     lag_alert_s: float
     forward_flush: bool
+    flush_formula: str
     linger_ms: int
     worker_id: str
 
@@ -93,6 +94,8 @@ class Settings:
             found.append("WINDOW_SECONDS and GRACE_SECONDS must be > 0")
         if not 0 < self.min_covered_s <= self.window_seconds:
             found.append(f"MIN_COVERED_S={self.min_covered_s} must be in (0, WINDOW_SECONDS]")
+        if self.flush_formula not in ("legacy", "tight"):
+            found.append(f"FLUSH_FORMULA={self.flush_formula!r} must be 'legacy' or 'tight'")
         if self.lag_alert_s <= 0:
             found.append("LAG_ALERT_S must be > 0")
         if not 0 < self.t_score < 1:
@@ -121,8 +124,11 @@ def load() -> Settings:
         t_score=float(_get("T_SCORE", "0.63")),
         min_covered_s=float(_get("MIN_COVERED_S", str(window / 2))),
         lag_alert_s=float(_get("LAG_ALERT_S", "30")),
-        # Off until the M4 Streams app understands flush records (the legacy app would crash on them).
-        forward_flush=_bool("FORWARD_FLUSH", False),
+        # On since M4: the Streams app uses the flush to close a lecture's last window (A5).
+        forward_flush=_bool("FORWARD_FLUSH", True),
+        # A5 flush timestamp. "tight" (default since M4, verified: PLAN M4) = end of the last chunk's
+        # window + GRACE; "legacy" = (last+1)*chunk + WINDOW + GRACE, kept for comparison runs.
+        flush_formula=_get("FLUSH_FORMULA", "tight").lower(),
         linger_ms=int(_get("LINGER_MS", "5")),
         worker_id=_get("WORKER_ID", f"w{os.getpid()}"),
     )

@@ -26,7 +26,8 @@ def test_flush_closes_the_last_window_and_never_runs_backwards():
         assert ts >= last_window_end + 10_000                     # end + grace -> window closes
         assert ts > chunk_event_ts(S, last, WALL)                 # S3: never decreases
         assert flush_send_at(S, last, WALL, 30, 10) == ts + WALL  # published at/after its event_ts
-    assert flush_event_ts(S, 258, WALL, 30, 10) == S + 259 * WALL + 40_000   # matches the fixture
+    assert flush_event_ts(S, 258, WALL, 30, 10) == S + 262 * WALL            # tight (default): matches the fixture
+    assert flush_event_ts(S, 258, WALL, 30, 10, "legacy") == S + 259 * WALL + 40_000
 
 
 def test_s4_next_lecture_starts_after_previous_flush():
