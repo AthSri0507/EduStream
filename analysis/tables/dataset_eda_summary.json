@@ -1,0 +1,13 @@
+{
+  "lectures": 4,
+  "captioned_lectures": 4,
+  "total_hours": 3.04,
+  "captioned_hours": 3.04,
+  "words_total": 25461,
+  "median_wpm_all": 142.0,
+  "silence_dbfs": -45.0,
+  "boundary_cut_pct_by_chunk": {
+    "5": 7.78,
+    "10": 3.87
+  }
+}

@@ -1,0 +1,5 @@
+﻿item_id,lecture,title,speaker,split,container,audio_codec,sample_rate_hz,channels,audio_bitrate_kbps,decoded_duration_s,container_duration_s,media_mb,transcript_format
+ocw6001_l01,Python · Lecture 1 (Bell),Lecture 1: What is Computation?,Dr. Ana Bell,demo;eval;dev,mp4,aac,48000,2,80.6,2585.92,2585.96,101.1,srt
+ocw6001_l02,Python · Lecture 2 (Bell),Lecture 2: Branching and Iteration,Dr. Ana Bell,eval,mp4,aac,48000,2,80.8,2610.13,2610.13,103.1,srt
+ocw6006_l01,Algorithms · Lecture 1 (Ku),Lecture 1: Algorithms and Computation,Dr. Jason Ku,demo;eval,mp4,aac,48000,2,81.1,2738.32,2738.32,107.4,srt
+ocw6006_l02,Algorithms · Lecture 2 (Demaine),Lecture 2: Data Structures and Dynamic Arrays,Prof. Erik Demaine,demo;eval,mp4,aac,48000,2,80.6,3017.47,3017.47,118.0,srt

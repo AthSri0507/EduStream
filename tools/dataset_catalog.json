@@ -1,0 +1,54 @@
+{
+  "description": "EduStream lecture dataset: MIT OpenCourseWare lectures mirrored on archive.org. Media is NOT stored in the repo; run tools/fetch_dataset.py to download it into data/raw/.",
+  "licence_note": "OCW course pages state CC BY-NC-SA 4.0; the archive.org metadata for MIT6.0001F16 still lists CC BY-NC-SA 3.0. Attribution: MIT OpenCourseWare, https://ocw.mit.edu.",
+  "items": [
+    {
+      "item_id": "ocw6001_l01",
+      "display_name": "Python · Lecture 1 (Bell)",
+      "archive_item": "MIT6.0001F16",
+      "media_file": "MIT6_0001F16_Lecture_01_300k.mp4",
+      "transcript_file": "MIT6_0001F16_Lecture_01_300k.srt",
+      "course": "6.0001 Introduction to Computer Science and Programming in Python (Fall 2016)",
+      "title": "Lecture 1: What is Computation?",
+      "speaker": "Dr. Ana Bell",
+      "course_url": "https://ocw.mit.edu/courses/6-0001-introduction-to-computer-science-and-programming-in-python-fall-2016/",
+      "split": "demo;eval;dev"
+    },
+    {
+      "item_id": "ocw6001_l02",
+      "display_name": "Python · Lecture 2 (Bell)",
+      "archive_item": "MIT6.0001F16",
+      "media_file": "MIT6_0001F16_Lecture_02_300k.mp4",
+      "transcript_file": "MIT6_0001F16_Lecture_02_300k.srt",
+      "course": "6.0001 Introduction to Computer Science and Programming in Python (Fall 2016)",
+      "title": "Lecture 2: Branching and Iteration",
+      "speaker": "Dr. Ana Bell",
+      "course_url": "https://ocw.mit.edu/courses/6-0001-introduction-to-computer-science-and-programming-in-python-fall-2016/",
+      "split": "eval"
+    },
+    {
+      "item_id": "ocw6006_l01",
+      "display_name": "Algorithms · Lecture 1 (Ku)",
+      "archive_item": "MIT6.006S20",
+      "media_file": "MIT6_006S20_02_04_Lecture_1_300k.mp4",
+      "transcript_file": "MIT6_006S20_02_04_Lecture_1_300k.srt",
+      "course": "6.006 Introduction to Algorithms (Spring 2020)",
+      "title": "Lecture 1: Algorithms and Computation",
+      "speaker": "Dr. Jason Ku",
+      "course_url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/",
+      "split": "demo;eval"
+    },
+    {
+      "item_id": "ocw6006_l02",
+      "display_name": "Algorithms · Lecture 2 (Demaine)",
+      "archive_item": "MIT6.006S20",
+      "media_file": "MIT6_006S20_02_06_Lecture_2_300k.mp4",
+      "transcript_file": "MIT6_006S20_02_06_Lecture_2_300k.srt",
+      "course": "6.006 Introduction to Algorithms (Spring 2020)",
+      "title": "Lecture 2: Data Structures and Dynamic Arrays",
+      "speaker": "Prof. Erik Demaine",
+      "course_url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/",
+      "split": "demo;eval"
+    }
+  ]
+}

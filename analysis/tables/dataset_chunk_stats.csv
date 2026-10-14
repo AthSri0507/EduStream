@@ -1,0 +1,9 @@
+﻿item_id,lecture,chunk_s,chunks,words_per_chunk_median,zero_word_chunk_pct,boundary_cut_word_pct
+ocw6001_l01,Python · Lecture 1 (Bell),5,518,12.0,2.51,7.54
+ocw6001_l01,Python · Lecture 1 (Bell),10,259,25.0,1.54,3.74
+ocw6001_l02,Python · Lecture 2 (Bell),5,523,13.0,2.49,7.21
+ocw6001_l02,Python · Lecture 2 (Bell),10,262,25.5,1.53,3.58
+ocw6006_l01,Algorithms · Lecture 1 (Ku),5,548,11.0,2.74,8.58
+ocw6006_l01,Algorithms · Lecture 1 (Ku),10,274,22.0,1.09,4.3
+ocw6006_l02,Algorithms · Lecture 2 (Demaine),5,604,12.0,2.48,7.77
+ocw6006_l02,Algorithms · Lecture 2 (Demaine),10,302,24.0,0.33,3.86

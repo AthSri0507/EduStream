@@ -1,0 +1,5 @@
+﻿item_id,lecture,chunk_dbfs_median,chunk_dbfs_p10,chunk_dbfs_p90,silent_chunk_pct,low_activity_chunk_pct,noise_floor_dbfs,snr_proxy_db,active_frame_pct,clipped_sample_pct
+ocw6001_l01,Python · Lecture 1 (Bell),-21.2,-23.9,-19.9,0.58,0.77,-41.4,25.0,60.3,0.0
+ocw6001_l02,Python · Lecture 2 (Bell),-24.0,-27.7,-22.1,1.53,1.91,-54.5,35.6,64.7,0.0
+ocw6006_l01,Algorithms · Lecture 1 (Ku),-30.5,-36.5,-27.6,2.01,0.73,-70.3,44.9,72.0,0.0
+ocw6006_l02,Algorithms · Lecture 2 (Demaine),-31.4,-37.0,-28.8,1.99,0.5,-61.9,35.7,68.5,0.0

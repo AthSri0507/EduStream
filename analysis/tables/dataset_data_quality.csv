@@ -1,0 +1,5 @@
+﻿item_id,lecture,cues,empty_cues,boilerplate_s,annotations,annotation_examples,speaker_labels,overlapping_cues,speech_start_s,speech_end_s,tail_after_last_caption_s,caption_coverage_pct,duration_mismatch_s
+ocw6001_l01,Python · Lecture 1 (Bell),928,40,18.85,0,,1,0,29.96,2577.16,8.76,92.6,-0.04
+ocw6001_l02,Python · Lecture 2 (Bell),898,54,18.84,4,[INAUDIBLE],9,0,31.14,2602.42,7.71,90.7,0.0
+ocw6006_l01,Algorithms · Lecture 1 (Ku),853,63,0.0,14,[CLICKING]; [INAUDIBLE]; [RUSTLING]; [SQUEAKING],35,0,12.61,2732.98,5.34,90.3,0.0
+ocw6006_l02,Algorithms · Lecture 2 (Demaine),1023,71,0.0,10,[APPLAUSE]; [CLICKING]; [INAUDIBLE]; [RUSTLING]; [SQUEAKING],25,0,14.43,3011.82,5.65,89.1,0.0
