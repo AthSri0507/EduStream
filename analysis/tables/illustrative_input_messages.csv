@@ -1,0 +1,11 @@
+video_id,chunk_id,timestamp_seconds,text,text_word_count
+lecture_01,0,0,This is lecture audio chunk 0,6
+lecture_01,1,5,This is lecture audio chunk 1,6
+lecture_01,2,10,This is lecture audio chunk 2,6
+lecture_01,3,15,This is lecture audio chunk 3,6
+lecture_01,4,20,This is lecture audio chunk 4,6
+lecture_01,5,25,This is lecture audio chunk 5,6
+lecture_01,6,30,This is lecture audio chunk 6,6
+lecture_01,7,35,This is lecture audio chunk 7,6
+lecture_01,8,40,This is lecture audio chunk 8,6
+lecture_01,9,45,This is lecture audio chunk 9,6

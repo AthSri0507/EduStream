@@ -1,0 +1,53 @@
+/data/
+
+# Planning documents (kept local, not published)
+/docs/
+
+# Secrets and local configuration (.env.example IS committed)
+.env
+
+# Python environment
+.venv/
+
+# Downloaded Whisper models
+/models/
+
+# Runtime output: logs, PIDs, fault logs
+/run/
+
+# Local databases and Kafka Streams state
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+/state/
+
+# Stray empty file from an earlier shell redirect
+/ffprobe
+
+# Media files
+*.avi
+*.bmp
+*.flv
+*.gif
+*.jpeg
+*.jpg
+*.m4v
+*.mkv
+*.mov
+*.mp3
+*.mp4
+*.mpeg
+*.mpg
+*.png
+*.tif
+*.tiff
+*.wav
+*.webm
+*.webp
+*.wmv
+
+# Generated files
+target/
+__pycache__/
+*.py[cod]

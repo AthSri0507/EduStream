@@ -1,0 +1,11 @@
+stage,field,data_type,required,description,source
+producer sample,video_id,string,yes,Logical video identifier,producer/producer.py:20
+producer sample,chunk_id,integer,yes,Zero-based audio chunk identifier,producer/producer.py:21
+producer sample,timestamp,integer,yes,Chunk start time in seconds,producer/producer.py:22
+producer sample,text,string,yes,Text payload in the sample producer,producer/producer.py:23
+audio event,start_time,integer,yes,Chunk start time in seconds,producer/video_producer.py:58
+audio event,end_time,integer,yes,Chunk end time in seconds,producer/video_producer.py:59
+audio event,audio_path,string,yes,Local WAV path used by transcription,producer/video_producer.py:60
+transcript event,text,string,yes,Whisper transcript for an audio chunk,summarizer/transcription/transcription_worker.py:110
+notes event,window_start/window_end,integer,yes,30-second aggregation window,stream_processor/StreamProcessor.java:133-140
+notes event,notes,array[string],yes,Up to five sentences of at least five words,summarizer/notes/note_generator.py:65-81
