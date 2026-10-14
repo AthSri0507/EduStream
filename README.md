@@ -1,23 +1,18 @@
 # EduStream
 
 Real-time lecture transcription and note generation on Apache Kafka.
-Course project for AI372IA *Stream Processing and Analytics* (Dept. of AIML).
+
 
 ```
 lecture video -> audio chunks -> Kafka -> Whisper workers -> Kafka Streams (30 s windows)
               -> Note Agent (free LLM API, extractive fallback) -> SQLite -> Streamlit dashboard
 ```
 
-**Status:** milestone M0 (repo setup). The pipeline code still being reworked
-is listed in [docs/UNDERSTANDING.md](docs/UNDERSTANDING.md).
+**Status:**  The pipeline code still being worked
 
-## Documents
 
-| Document | What it covers |
-|---|---|
-| [docs/UNDERSTANDING.md](docs/UNDERSTANDING.md) | Audit of the original code, verified defects |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Target design (rev 5): topics, schemas, windows, guarantees, tests |
-| [docs/PLAN.md](docs/PLAN.md) | Milestones, requirement traceability, demo script, risks |
+
+
 
 ## Requirements
 
