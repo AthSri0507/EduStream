@@ -1,0 +1,11 @@
+{
+  "schema": "dlq.v1",
+  "stage": "worker",
+  "source_topic": "video_audio",
+  "src_partition": 0,
+  "src_offset": 17,
+  "key": "python_l1",
+  "raw_value": "{\"schema\": \"audio_chunk.v1\", \"type\": \"chunk\"",
+  "attempts": 1,
+  "failed_ts": 1792051230000
+}

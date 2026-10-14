@@ -1,0 +1,7 @@
+{
+  "schema": "audio_chunk.v1",
+  "type": "flush",
+  "video_id": "python_l1",
+  "session_start": 1792051200000,
+  "event_ts": 1792053830000
+}

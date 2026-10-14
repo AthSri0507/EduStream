@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "audio_chunk.v1",
+  "title": "Audio chunk or end-of-lecture flush (topic video_audio)",
+  "type": "object",
+  "required": ["schema", "type", "video_id", "session_start", "event_ts"],
+  "properties": {
+    "schema": {"const": "audio_chunk.v1"},
+    "type": {"enum": ["chunk", "flush"]},
+    "video_id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,64}$"},
+    "session_start": {"type": "integer", "minimum": 0, "description": "epoch ms, aligned to a WINDOW_SECONDS boundary"},
+    "event_ts": {"type": "integer", "minimum": 0, "description": "epoch ms; scheduled capture start (chunk) or A5 flush time"},
+    "chunk_id": {"type": "integer", "minimum": 0},
+    "start_time": {"type": "number", "minimum": 0, "description": "media offset, seconds"},
+    "end_time": {"type": "number", "minimum": 0},
+    "sample_rate": {"const": 16000},
+    "encoding": {"const": "pcm_s16le"},
+    "channels": {"const": 1},
+    "audio_b64": {"type": "string", "minLength": 1},
+    "last_chunk_id": {"type": "integer", "minimum": -1},
+    "title": {"type": "string"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"type": {"const": "chunk"}}},
+      "then": {"required": ["chunk_id", "start_time", "end_time", "sample_rate", "encoding", "audio_b64"]}
+    },
+    {
+      "if": {"properties": {"type": {"const": "flush"}}},
+      "then": {"required": ["last_chunk_id"]}
+    }
+  ]
+}

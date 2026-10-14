@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dlq.v1",
+  "title": "Dead-letter record (topic dlq)",
+  "type": "object",
+  "required": ["schema", "stage", "source_topic", "src_partition", "src_offset", "error", "failed_ts"],
+  "properties": {
+    "schema": {"const": "dlq.v1"},
+    "stage": {"enum": ["worker", "streams", "note-agent", "verifier", "doctor"]},
+    "source_topic": {"type": "string"},
+    "src_partition": {"type": "integer", "minimum": 0},
+    "src_offset": {"type": "integer", "minimum": 0},
+    "key": {"type": ["string", "null"]},
+    "raw_value": {"type": "string", "maxLength": 6000, "description": "utf-8 text or 'b64:'-prefixed base64, truncated to 4 KB"},
+    "error": {"type": "string"},
+    "attempts": {"type": "integer", "minimum": 1},
+    "failed_ts": {"type": "integer", "minimum": 0}
+  }
+}

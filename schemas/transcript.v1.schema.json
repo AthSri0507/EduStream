@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "transcript.v1",
+  "title": "Transcribed chunk or forwarded flush (topic transcriptions)",
+  "type": "object",
+  "required": ["schema", "type", "video_id", "session_start", "event_ts"],
+  "properties": {
+    "schema": {"const": "transcript.v1"},
+    "type": {"enum": ["chunk", "flush"]},
+    "video_id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,64}$"},
+    "session_start": {"type": "integer", "minimum": 0},
+    "event_ts": {"type": "integer", "minimum": 0},
+    "chunk_id": {"type": "integer", "minimum": 0},
+    "start_time": {"type": "number", "minimum": 0},
+    "end_time": {"type": "number", "minimum": 0},
+    "text": {"type": "string"},
+    "asr_score": {"type": ["number", "null"], "minimum": 0, "maximum": 1,
+                  "description": "exp(duration-weighted mean avg_logprob); heuristic proxy, null if no speech"},
+    "avg_logprob": {"type": ["number", "null"]},
+    "no_speech_prob": {"type": ["number", "null"]},
+    "compression_ratio": {"type": ["number", "null"]},
+    "retried": {"type": "boolean", "description": "true if the A13 repetition-penalty retry was used"},
+    "model": {"type": "string"},
+    "worker_id": {"type": "string"},
+    "src_partition": {"type": "integer", "minimum": 0},
+    "src_offset": {"type": "integer", "minimum": 0},
+    "transcribed_ts": {"type": "integer", "minimum": 0},
+    "proc_ms": {"type": "number", "minimum": 0},
+    "last_chunk_id": {"type": "integer", "minimum": -1}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"type": {"const": "chunk"}}},
+      "then": {"required": ["chunk_id", "start_time", "end_time", "text", "asr_score", "model",
+                             "src_partition", "src_offset"]}
+    },
+    {
+      "if": {"properties": {"type": {"const": "flush"}}},
+      "then": {"required": ["last_chunk_id"]}
+    }
+  ]
+}

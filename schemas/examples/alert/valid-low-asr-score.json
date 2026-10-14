@@ -1,0 +1,21 @@
+{
+  "schema": "alert.v1",
+  "alert_id": "LOW_ASR_SCORE:python_l1:1792051260000:1",
+  "type": "LOW_ASR_SCORE",
+  "severity": "info",
+  "video_id": "python_l1",
+  "window_start": 1792051260000,
+  "revision": 1,
+  "value": 0.58,
+  "threshold": 0.63,
+  "details": {
+    "chunks": [
+      {
+        "chunk_id": 6,
+        "asr_score": 0.51
+      }
+    ]
+  },
+  "source": "streams",
+  "created_ts": 1792051300400
+}

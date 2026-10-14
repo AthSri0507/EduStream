@@ -1,0 +1,22 @@
+{
+  "schema": "transcript.v1",
+  "type": "chunk",
+  "video_id": "python_l1",
+  "session_start": 1792051200000,
+  "chunk_id": 7,
+  "start_time": 70.0,
+  "end_time": 80.0,
+  "event_ts": 1792051270000,
+  "text": "",
+  "asr_score": null,
+  "avg_logprob": null,
+  "no_speech_prob": null,
+  "compression_ratio": null,
+  "retried": false,
+  "model": "base.en",
+  "worker_id": "w1",
+  "src_partition": 0,
+  "src_offset": 7,
+  "transcribed_ts": 1792051271900,
+  "proc_ms": 1820.5
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "notes.v1",
+  "title": "Notes for one window (topic final_notes)",
+  "type": "object",
+  "required": ["schema", "video_id", "window_start", "window_end", "revision", "summary", "key_points", "generator"],
+  "properties": {
+    "schema": {"const": "notes.v1"},
+    "video_id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,64}$"},
+    "window_start": {"type": "integer", "minimum": 0, "description": "epoch ms"},
+    "window_end": {"type": "integer", "minimum": 0},
+    "revision": {"type": "integer", "minimum": 1},
+    "media_start": {"type": "number", "minimum": 0},
+    "media_end": {"type": "number", "minimum": 0},
+    "summary": {"type": "string"},
+    "key_points": {"type": "array", "items": {"type": "string"}},
+    "terms": {
+      "type": "array",
+      "items": {"type": "object", "required": ["term", "definition"],
+                "properties": {"term": {"type": "string"}, "definition": {"type": "string"}}}
+    },
+    "questions": {"type": "array", "items": {"type": "string"}},
+    "notes": {"type": "array", "items": {"type": "string"}, "description": "legacy field, equal to key_points"},
+    "generator": {"enum": ["llm", "extractive"]},
+    "quality_flag": {"type": ["string", "null"]},
+    "model": {"type": ["string", "null"]},
+    "agent_ms": {"type": "number", "minimum": 0},
+    "created_ts": {"type": "integer", "minimum": 0}
+  }
+}

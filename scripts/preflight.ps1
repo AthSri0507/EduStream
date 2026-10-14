@@ -3,8 +3,7 @@
 #
 # Exit code 0 = all required checks passed, 1 = at least one failed.
 # Checks still to be added in later milestones (docs/ARCHITECTURE.md §11):
-#   M2: LLM providers answer a 1-token call (when LLM_ENABLED=true)
-#   M3: config invariants (S5, CHUNK_SECONDS <= 15, partition counts)
+#   M6: LLM providers answer a 1-token call (when LLM_ENABLED=true)
 
 $Root = Split-Path -Parent $PSScriptRoot
 $Failures = 0
@@ -47,6 +46,13 @@ if (Test-Path $VenvPy) {
     Report "Python packages" ([string]::IsNullOrWhiteSpace($Out)) $(if ($Out) { "missing: $Out" } else { "all importable" })
     $KafkaPy = (& "$VenvPy" -c "import kafka; print(kafka.__version__)").Trim()
     Report "kafka-python" ($KafkaPy -eq "3.0.11") $KafkaPy
+
+    # Configuration invariants: CHUNK_SECONDS <= 15, guards in seconds, whole chunks per window (S5)
+    Push-Location $Root
+    $ConfigOut = (& "$VenvPy" -m common.config --check 2>&1 | Out-String).Trim()
+    $ConfigOk = $LASTEXITCODE -eq 0
+    Pop-Location
+    Report "Configuration" $ConfigOk ($ConfigOut -replace "`r?`n", "; ")
 } else {
     Report "Python (.venv)" $false "not found - run scripts\setup.ps1"
 }
@@ -87,6 +93,15 @@ if ($KafkaHome -and (Test-Path $KafkaHome)) {
 foreach ($Port in @(9092, 9093, 8501)) {
     $Busy = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
     Report "Port $Port" (-not $Busy) $(if ($Busy) { "in use by PID $($Busy[0].OwningProcess)" } else { "free" }) -WarnOnly
+}
+
+# Topics and partition counts (only if a broker is up; A4: video_audio == transcriptions)
+if ((Get-NetTCPConnection -LocalPort 9092 -State Listen -ErrorAction SilentlyContinue) -and (Test-Path $VenvPy)) {
+    Push-Location $Root
+    $TopicsOut = (& "$VenvPy" -m tools.create_topics --check 2>&1 | Out-String).Trim()
+    $TopicsOk = $LASTEXITCODE -eq 0
+    Pop-Location
+    Report "Kafka topics" $TopicsOk ($TopicsOut -replace "`r?`n", "; ") -WarnOnly
 }
 
 # --------------------------------------------------

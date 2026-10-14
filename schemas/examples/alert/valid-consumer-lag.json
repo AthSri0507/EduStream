@@ -1,0 +1,18 @@
+{
+  "schema": "alert.v1",
+  "alert_id": "CONSUMER_LAG:transcription-workers:1:29867520",
+  "type": "CONSUMER_LAG",
+  "severity": "warn",
+  "video_id": null,
+  "window_start": null,
+  "revision": null,
+  "value": 40.0,
+  "threshold": 30.0,
+  "details": {
+    "group": "transcription-workers",
+    "partition": 1,
+    "lag_records": 4
+  },
+  "source": "db-sink",
+  "created_ts": 1792051320000
+}

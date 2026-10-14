@@ -57,3 +57,16 @@
 target/
 __pycache__/
 *.py[cod]
+.pytest_cache/
+
+# Maven shade plugin output (stream_processor, M4)
+dependency-reduced-pom.xml
+
+# Streamlit local secrets (dashboard, M5)
+.streamlit/secrets.toml
+
+# Editor and OS clutter
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

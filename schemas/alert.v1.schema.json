@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "alert.v1",
+  "title": "Alert (topic alerts). LOW_ASR_SCORE is informational only (ARCHITECTURE §7)",
+  "type": "object",
+  "required": ["schema", "alert_id", "type", "severity", "created_ts"],
+  "properties": {
+    "schema": {"const": "alert.v1"},
+    "alert_id": {"type": "string", "minLength": 3},
+    "type": {"enum": ["LOW_ASR_SCORE", "SILENCE", "CONSUMER_LAG", "LATE_DROP"]},
+    "severity": {"enum": ["info", "warn", "crit"]},
+    "video_id": {"type": ["string", "null"]},
+    "window_start": {"type": ["integer", "null"]},
+    "revision": {"type": ["integer", "null"]},
+    "value": {"type": ["number", "null"]},
+    "threshold": {"type": ["number", "null"]},
+    "details": {"type": "object"},
+    "source": {"type": "string"},
+    "created_ts": {"type": "integer", "minimum": 0}
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "schema": "dlq.v1",
+  "stage": "sink",
+  "source_topic": "video_audio",
+  "src_partition": 0,
+  "src_offset": 17,
+  "key": "python_l1",
+  "raw_value": "{\"schema\": \"audio_chunk.v1\", \"type\": \"chunk\"",
+  "error": "ValidationError: 'audio_b64' is a required property",
+  "attempts": 1,
+  "failed_ts": 1792051230000
+}

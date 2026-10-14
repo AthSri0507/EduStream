@@ -15,10 +15,23 @@ import org.apache.kafka.streams.processor.TimestampExtractor;
 import java.time.Duration;
 import java.util.Properties;
 
+/**
+ * INTERIM (PLAN M3) legacy windowing app, kept running until the M4 rewrite.
+ * M3 changes only: event time from the new transcript.v1 field event_ts (wall clock),
+ * because start_time is now a media offset and start_time*1000 would be a 1970
+ * timestamp that the broker's timestamp guard rejects (bench/M2_RESULTS.md §3);
+ * bootstrap servers, output topic and state dir come from the environment.
+ * Known legacy defects still present until M4: D7 (partial updates), D8, D9.
+ */
 public class StreamProcessor {
 
     private static final String INPUT_TOPIC = "transcriptions";
-    private static final String OUTPUT_TOPIC = "generated_notes";
+    private static final String OUTPUT_TOPIC = env("LEGACY_OUTPUT_TOPIC", "window_summaries");
+
+    private static String env(String name, String fallback) {
+        String value = System.getenv(name);
+        return value == null || value.isBlank() ? fallback : value;
+    }
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -32,12 +45,17 @@ public class StreamProcessor {
 
         props.put(
                 StreamsConfig.APPLICATION_ID_CONFIG,
-                "educational-stream-processor"
+                "edustream-streams-legacy"
         );
 
         props.put(
                 StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
-                "127.0.0.1:9092"
+                env("KAFKA_BOOTSTRAP", "localhost:9092")
+        );
+
+        props.put(
+                StreamsConfig.STATE_DIR_CONFIG,
+                env("STATE_DIR", System.getProperty("java.io.tmpdir") + "/edustream-legacy-streams")
         );
 
         props.put(
@@ -282,11 +300,17 @@ props.put(
                 JsonNode node =
                         objectMapper.readTree(json);
 
+                // transcript.v1: scheduled wall-clock event time in ms (ARCHITECTURE A3)
+                JsonNode eventTs = node.get("event_ts");
+                if (eventTs != null && eventTs.canConvertToLong()) {
+                    return eventTs.asLong();
+                }
+
                 long startTime =
                         node.get("start_time")
                                 .asLong();
 
-                // Convert seconds → milliseconds
+                // Old schema: seconds → milliseconds
                 return startTime * 1000;
 
             } catch (Exception e) {

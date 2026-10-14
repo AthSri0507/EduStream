@@ -1,0 +1,21 @@
+{
+  "schema": "notes.v1",
+  "video_id": "python_l1",
+  "window_start": 1792051260000,
+  "window_end": 1792051290000,
+  "revision": 1,
+  "summary": "So today we'll talk about what computation is.",
+  "key_points": [
+    "So today we'll talk about what computation is."
+  ],
+  "terms": [],
+  "questions": [],
+  "notes": [
+    "So today we'll talk about what computation is."
+  ],
+  "generator": "extractive",
+  "quality_flag": "fallback",
+  "model": null,
+  "agent_ms": 2.0,
+  "created_ts": 1792051300900
+}

@@ -1,0 +1,32 @@
+{
+  "schema": "notes.v1",
+  "video_id": "python_l1",
+  "window_start": 1792051260000,
+  "window_end": 1792051290000,
+  "revision": 1,
+  "media_start": 60.0,
+  "media_end": 90.0,
+  "summary": "The lecture introduces computation and what computers do.",
+  "key_points": [
+    "Computers perform calculations",
+    "Computers remember results"
+  ],
+  "terms": [
+    {
+      "term": "computation",
+      "definition": "Performing calculations to produce results"
+    }
+  ],
+  "questions": [
+    "What two things does a computer do?"
+  ],
+  "notes": [
+    "Computers perform calculations",
+    "Computers remember results"
+  ],
+  "generator": "llm",
+  "quality_flag": null,
+  "model": "openai/gpt-oss-120b",
+  "agent_ms": 1063.0,
+  "created_ts": 1792051302000
+}

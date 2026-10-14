@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "window.v1",
+  "title": "Closed 30 s window summary (topic window_summaries)",
+  "type": "object",
+  "required": ["schema", "video_id", "window_start", "window_end", "revision", "chunk_ids", "transcript", "chunks", "stats"],
+  "properties": {
+    "schema": {"const": "window.v1"},
+    "video_id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,64}$"},
+    "window_start": {"type": "integer", "minimum": 0, "description": "epoch ms"},
+    "window_end": {"type": "integer", "minimum": 0},
+    "revision": {"type": "integer", "minimum": 1},
+    "media_start": {"type": "number", "minimum": 0},
+    "media_end": {"type": "number", "minimum": 0},
+    "chunk_ids": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 1},
+    "transcript": {"type": "string"},
+    "chunks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["chunk_id", "start_time", "end_time", "text"],
+        "properties": {
+          "chunk_id": {"type": "integer", "minimum": 0},
+          "start_time": {"type": "number"},
+          "end_time": {"type": "number"},
+          "text": {"type": "string"},
+          "asr_score": {"type": ["number", "null"]},
+          "compression_ratio": {"type": ["number", "null"]},
+          "src_partition": {"type": "integer"},
+          "src_offset": {"type": "integer"}
+        }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "required": ["chunk_count", "covered_s", "word_count", "words_per_min"],
+      "properties": {
+        "chunk_count": {"type": "integer", "minimum": 1},
+        "covered_s": {"type": "number", "minimum": 0},
+        "word_count": {"type": "integer", "minimum": 0},
+        "words_per_min": {"type": "number", "minimum": 0},
+        "score_avg": {"type": ["number", "null"]},
+        "score_min": {"type": ["number", "null"]},
+        "score_max": {"type": ["number", "null"]},
+        "no_speech_avg": {"type": ["number", "null"]},
+        "compression_ratio_max": {"type": ["number", "null"]},
+        "top_terms": {"type": "array", "items": {"type": "array", "prefixItems": [{"type": "string"}, {"type": "integer"}]}}
+      }
+    },
+    "emitted_ts": {"type": "integer", "minimum": 0},
+    "source": {"type": "string"}
+  }
+}

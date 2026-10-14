@@ -1,0 +1,14 @@
+{
+  "schema": "audio_chunk.v1",
+  "type": "chunk",
+  "video_id": "python_l1",
+  "session_start": 1792051200000,
+  "chunk_id": 6,
+  "start_time": 60.0,
+  "end_time": 70.0,
+  "event_ts": 1792051260000,
+  "sample_rate": 16000,
+  "encoding": "mp3",
+  "channels": 1,
+  "audio_b64": "AAAQAPD/AAAQAPD/AAAQAPD/AAAQAPD/"
+}

@@ -1,0 +1,49 @@
+{
+  "schema": "window.v1",
+  "video_id": "python_l1",
+  "window_start": 1792051260000,
+  "window_end": 1792051290000,
+  "revision": 1,
+  "media_start": 60.0,
+  "media_end": 90.0,
+  "chunk_ids": [
+    6,
+    7,
+    8
+  ],
+  "transcript": "So today we'll talk about what computation is. A computer does two things.",
+  "chunks": [
+    {
+      "chunk_id": 6,
+      "start_time": 60.0,
+      "end_time": 70.0,
+      "text": "So today we'll talk about what computation is.",
+      "asr_score": 0.71,
+      "compression_ratio": 1.4,
+      "src_partition": 0,
+      "src_offset": 6
+    },
+    {
+      "chunk_id": 7,
+      "start_time": 70.0,
+      "end_time": 80.0,
+      "text": "",
+      "asr_score": null,
+      "compression_ratio": null,
+      "src_partition": 0,
+      "src_offset": 7
+    },
+    {
+      "chunk_id": 8,
+      "start_time": 80.0,
+      "end_time": 90.0,
+      "text": "A computer does two things.",
+      "asr_score": 0.66,
+      "compression_ratio": 1.2,
+      "src_partition": 0,
+      "src_offset": 8
+    }
+  ],
+  "emitted_ts": 1792051300400,
+  "source": "streams"
+}

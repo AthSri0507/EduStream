@@ -1,0 +1,21 @@
+{
+  "schema": "transcript.v1",
+  "type": "chunk",
+  "video_id": "python_l1",
+  "session_start": 1792051200000,
+  "chunk_id": 6,
+  "start_time": 60.0,
+  "end_time": 70.0,
+  "event_ts": 1792051260000,
+  "text": "So today we'll talk about what computation is.",
+  "asr_score": 0.71,
+  "avg_logprob": -0.342,
+  "no_speech_prob": 0.02,
+  "compression_ratio": 1.4,
+  "retried": false,
+  "model": "base.en",
+  "worker_id": "w1",
+  "src_partition": 0,
+  "transcribed_ts": 1792051271900,
+  "proc_ms": 1820.5
+}
