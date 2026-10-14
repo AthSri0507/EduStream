@@ -1,0 +1,66 @@
+[
+  {
+    "item_id": "ocw6001_l01",
+    "chunk_s": 5,
+    "chunks": 518,
+    "audio_s": 2585.9,
+    "proc_s": 734.7,
+    "rtf": 0.2841
+  },
+  {
+    "item_id": "ocw6001_l02",
+    "chunk_s": 5,
+    "chunks": 523,
+    "audio_s": 2610.1,
+    "proc_s": 761.8,
+    "rtf": 0.2919
+  },
+  {
+    "item_id": "ocw6006_l01",
+    "chunk_s": 5,
+    "chunks": 548,
+    "audio_s": 2738.3,
+    "proc_s": 890.8,
+    "rtf": 0.3253
+  },
+  {
+    "item_id": "ocw6006_l02",
+    "chunk_s": 5,
+    "chunks": 604,
+    "audio_s": 3017.5,
+    "proc_s": 1003.5,
+    "rtf": 0.3326
+  },
+  {
+    "item_id": "ocw6001_l01",
+    "chunk_s": 10,
+    "chunks": 259,
+    "audio_s": 2585.9,
+    "proc_s": 465.9,
+    "rtf": 0.1802
+  },
+  {
+    "item_id": "ocw6001_l02",
+    "chunk_s": 10,
+    "chunks": 262,
+    "audio_s": 2610.1,
+    "proc_s": 497.1,
+    "rtf": 0.1904
+  },
+  {
+    "item_id": "ocw6006_l01",
+    "chunk_s": 10,
+    "chunks": 274,
+    "audio_s": 2738.3,
+    "proc_s": 548.0,
+    "rtf": 0.2001
+  },
+  {
+    "item_id": "ocw6006_l02",
+    "chunk_s": 10,
+    "chunks": 302,
+    "audio_s": 3017.5,
+    "proc_s": 531.4,
+    "rtf": 0.1761
+  }
+]

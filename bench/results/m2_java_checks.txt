@@ -1,0 +1,8 @@
+JAVA_PARTITIONS {"python_l1": 0, "python_l2": 0, "algorithms_l1": 1, "algorithms_l2": 1, "lecture_01": 1, "lecture_02": 0, "lecture_03": 0, "demo_a": 1, "demo_b": 1, "demo_c": 2, "video_00": 0, "video_01": 1, "video_02": 2, "video_03": 2, "video_04": 0, "video_05": 1, "video_06": 1, "video_07": 1, "video_08": 1, "video_09": 0}
+[PASS] J1 Java murmur2 partitions computed: 20 keys
+[PASS] J2 TopologyTestDriver uses one partition: partitions seen = [0] -> partition-isolation tests must run on a real broker
+[PASS] J3 KIP-1033 processing handler exists: org.apache.kafka.streams.errors.LogAndContinueProcessingExceptionHandler
+[PASS] J4 one ordered, deduplicated result per window after end+grace: before close: none; window 0 = c0,c1,c2,c3,c4,c5; window 1 still open = true
+[PASS] J5 flush closes last window; flush window not emitted: emitted keys = [lecA@0=c0,c1,c2,c3,c4,c5, lecA@30=c6,c7,c8,c9,c10,c11]
+[PASS] J6 late record dropped and counted: dropped-records-total = 1.0 (group stream-task-metrics)
+ALL JAVA CHECKS PASSED

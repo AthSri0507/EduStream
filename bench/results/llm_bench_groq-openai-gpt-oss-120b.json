@@ -1,0 +1,12 @@
+{
+  "groq": {
+    "model": "openai/gpt-oss-120b",
+    "calls": 20,
+    "succeeded": 20,
+    "valid_json": 20,
+    "errors": [],
+    "latency_median_s": 1.06,
+    "latency_max_s": 2.11,
+    "tokens_per_call_mean": 528
+  }
+}

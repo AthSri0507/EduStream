@@ -148,7 +148,7 @@ With `NOTE_EVERY_N_WINDOWS = 2`, a call's size is the window pair's words × 1.3
 
 **What it means:**
 - **A 20-minute demo run with three lectures costs about 72 k tokens.** At 3 calls a minute that's about 3,500 tokens a minute, below Groq's reported limit of 6,000 tokens a minute.
-- **Groq's reported 200 k tokens a day allows only about 2–3 full rehearsals.** Cerebras, at a reported 1 M a day, allows about 14. That confirms the provider order (Cerebras first) and the rule of keeping `LLM_ENABLED=false` during development.
+- **Groq's reported 200 k tokens a day allows only about 2–3 full rehearsals.** Groq is the only provider used (Cerebras turned out to require a card), so this backs the rule of keeping `LLM_ENABLED=false` during development and using the rehearsal cache. The measured tokens per call in M2 may change the estimate.
 - **Kafka disk:** one run over all four full lectures writes about 470 MB to `video_audio` at RF 1, or about 1.4 GB with three brokers at RF 3. With 7-day retention, `reset.ps1` between runs is needed, not optional.
 
 Source: `tables/dataset_pipeline_projection.csv`.
@@ -157,12 +157,12 @@ Source: `tables/dataset_pipeline_projection.csv`.
 
 | Parameter or assumption | Evidence | Recommendation / status |
 |---|---|---|
-| `CHUNK_SECONDS` (default 5) | 10 s halves the words cut at boundaries (7.8 → 3.9 %) at the same Kafka volume, but adds 5 s of latency | **Keep 5 s provisionally.** Let M2 decide by WER: 5 s vs 10 s chunks on all four lectures |
+| `CHUNK_SECONDS` (default 5) | 10 s halves the words cut at boundaries (7.8 → 3.9 %) at the same Kafka volume, but adds 5 s of latency | **Decided in M2: 10 s.** Measured WER was lower for every lecture (mean 10.1 % vs 12.0 % at 5 s, after the loop fix), confirming the prediction. See `bench/M2_RESULTS.md` §6 |
 | Alert guards counted in chunks (`chunk_count ≥ 3`, lag > 6 records) | Both silently assumed 5 s chunks. At 10 s a full window holds only 3 chunks, so one lost chunk would block the alert, and "6 records" would mean 60 s of lag instead of 30 s | **Fixed (14 Oct)** in ARCHITECTURE §7. Both guards are now in **seconds of audio**: `covered_s ≥ WINDOW_SECONDS / 2` (15 s), and lag × `CHUNK_SECONDS` > 30 s. Tests at both chunk sizes were added to S-1 |
 | `SILENCE` rule (`words_per_min < 40` or `no_speech_avg > 0.6`) | Fewer than 40 wpm occurs in 0–2.2 % of windows and matches stretches with little speech. Absolute dBFS levels differ by about 9 dB between courses | **Keep the rule as specified**, and **don't add a dBFS rule** |
 | `T_SCORE` (initially 0.55) | Can't be estimated without Whisper output | Calibrate in M2 and M9 against per-window WER. Python · Lecture 1, the noisiest, is the first to check |
 | Window size 30 s | About 60–75 words per window (142 wpm median) | Enough text for a meaningful note. **Keep it** |
-| LLM provider order | 3 lectures need about 72 k tokens per 20-minute run. Groq allows about 2–3 runs a day | **Cerebras first, Groq second** (as planned). Keep the LLM off for development runs |
+| LLM quota | 3 lectures need about 72 k tokens per 20-minute run. Groq allows about 2–3 runs a day | Groq only (Cerebras needs a card). **Keep the LLM off for development runs** and use the cache for rehearsals |
 | Kafka retention | About 470 MB per full run at RF 1 | **Run `reset.ps1` between runs** |
 | WER methodology | The captions have no fillers, include audience turns, and the Python lectures contain the notice | Strip the notice; apply one fixed normalisation; report the effect of the audience turns separately |
 | Demo partitions | 3 demo lectures (Bell, Ku, Demaine) | `tools/partition_of.py` picks `video_id`s that land on partitions 0, 1 and 2 |

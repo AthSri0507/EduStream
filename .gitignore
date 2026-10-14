@@ -6,6 +6,9 @@
 # Secrets and local configuration (.env.example IS committed)
 .env
 
+# Local Claude Code settings
+.claude/
+
 # Python environment
 .venv/
 
@@ -14,6 +17,9 @@
 
 # Runtime output: logs, PIDs, fault logs
 /run/
+
+# Bulk per-chunk Whisper transcripts (regenerable; summaries stay committed)
+/bench/results/chunks_*.jsonl
 
 # Local databases and Kafka Streams state
 *.db

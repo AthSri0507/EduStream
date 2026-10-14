@@ -1,0 +1,34 @@
+{
+  "S1 Streams consumer group forms": {
+    "ok": true,
+    "detail": "group educational-stream-processor: state=Stable, members=1"
+  },
+  "S2 internal topics created with RF 1": {
+    "ok": true,
+    "detail": {
+      "educational-stream-processor-KSTREAM-REDUCE-STATE-STORE-0000000003-changelog": 1,
+      "educational-stream-processor-KSTREAM-REDUCE-STATE-STORE-0000000003-repartition": 1
+    }
+  },
+  "S3 window output reaches generated_notes": {
+    "ok": true,
+    "detail": [
+      {
+        "video_id": "smoke_lecture",
+        "window_start": 1791990120,
+        "window_end": 1791990150,
+        "transcript": "sentence number 1 of the smoke test."
+      },
+      {
+        "video_id": "smoke_lecture",
+        "window_start": 1791990150,
+        "window_end": 1791990180,
+        "transcript": "sentence number 2 of the smoke test. sentence number 3 of the smoke test."
+      }
+    ]
+  },
+  "S4 broker still up after the run": {
+    "ok": true,
+    "detail": "list_topics ok"
+  }
+}

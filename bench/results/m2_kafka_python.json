@@ -1,0 +1,56 @@
+{
+  "run": "9f2404",
+  "kafka_python": "3.0.11",
+  "results": {
+    "K1 create 3-partition topic": {
+      "ok": true,
+      "detail": "m2_check_9f2404 has 3 partitions"
+    },
+    "K2 idempotent producer + callbacks": {
+      "ok": true,
+      "detail": "20/20 acknowledged via callback, 0 errors"
+    },
+    "K3 murmur2 == stored partition": {
+      "ok": true,
+      "detail": "all keys match"
+    },
+    "K4 max_poll_records=1 + explicit commit": {
+      "ok": true,
+      "detail": "processed offset 0 on p2, committed=1, raw bytes=True"
+    },
+    "K6 admin offsets / members / lag": {
+      "ok": true,
+      "detail": "members=1, state=Stable, committed partitions=[2], lag={2: 2}"
+    },
+    "K5 bare commit() over-commits": {
+      "ok": true,
+      "detail": "fetched 10, processed 1, bare commit skipped 9 unprocessed record(s) -> design must commit explicit offsets"
+    },
+    "K7 aborted txn hidden from read_committed": {
+      "ok": true,
+      "detail": "read_committed (committed, aborted)=(5, 0), read_uncommitted=(5, 10)"
+    },
+    "K8 audio chunk message sizes": {
+      "ok": true,
+      "detail": {
+        "5s": "accepted",
+        "10s": "accepted",
+        "15s": "accepted",
+        "1.2MB": "rejected (MessageSizeTooLargeError)"
+      }
+    },
+    "K9 stale/future timestamps rejected, broker stays up": {
+      "ok": true,
+      "detail": {
+        "1970": "rejected (InvalidTimestampError)",
+        "2h-future": "rejected (InvalidTimestampError)",
+        "now": "accepted",
+        "broker_alive": true
+      }
+    },
+    "K10 producer state after a rejected record": {
+      "ok": true,
+      "detail": "next valid send: {'idempotent': 'rejected (InvalidTimestampError)', 'non_idempotent': 'accepted'} -> on produce failure exit and restart with a fresh producer"
+    }
+  }
+}

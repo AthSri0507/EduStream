@@ -31,8 +31,8 @@ powershell -ExecutionPolicy Bypass -File scripts\setup.ps1 -SkipModels  # same, 
 powershell -ExecutionPolicy Bypass -File scripts\preflight.ps1        # read-only environment checks
 ```
 
-`setup.ps1` creates `.env` from `.env.example`. Put your free API keys
-(Cerebras, Groq) in `.env` only, and never share that file.
+`setup.ps1` creates `.env` from `.env.example`. Put your free Groq API key
+(https://console.groq.com, no card needed) in `.env` only, and never share that file.
 
 ## Layout
 

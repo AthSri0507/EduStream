@@ -1,0 +1,152 @@
+[
+  {
+    "model": "base.en",
+    "workers": 1,
+    "cpu_threads_each": 4,
+    "rtf_worst": 0.1712,
+    "rtf_mean": 0.1712,
+    "peak_rss_mb_each": 496.8,
+    "model_load_s": 0.6,
+    "max_lectures_at_70pct": 4,
+    "per_worker": [
+      {
+        "item_id": "ocw6001_l01",
+        "model_load_s": 0.6,
+        "peak_rss_mb": 496.8,
+        "chunks": 120,
+        "audio_s": 600.0,
+        "proc_s": 102.7,
+        "rtf": 0.1712
+      }
+    ]
+  },
+  {
+    "model": "base.en",
+    "workers": 2,
+    "cpu_threads_each": 4,
+    "rtf_worst": 0.3661,
+    "rtf_mean": 0.3629,
+    "peak_rss_mb_each": 506.9,
+    "model_load_s": 0.6,
+    "max_lectures_at_70pct": 3,
+    "per_worker": [
+      {
+        "item_id": "ocw6001_l01",
+        "model_load_s": 0.6,
+        "peak_rss_mb": 496.6,
+        "chunks": 120,
+        "audio_s": 600.0,
+        "proc_s": 215.8,
+        "rtf": 0.3597
+      },
+      {
+        "item_id": "ocw6006_l01",
+        "model_load_s": 0.6,
+        "peak_rss_mb": 506.9,
+        "chunks": 120,
+        "audio_s": 600.0,
+        "proc_s": 219.6,
+        "rtf": 0.3661
+      }
+    ]
+  },
+  {
+    "model": "base.en",
+    "workers": 3,
+    "cpu_threads_each": 4,
+    "rtf_worst": 0.3617,
+    "rtf_mean": 0.356,
+    "peak_rss_mb_each": 537.0,
+    "model_load_s": 0.6,
+    "max_lectures_at_70pct": 5,
+    "per_worker": [
+      {
+        "item_id": "ocw6001_l01",
+        "model_load_s": 0.6,
+        "peak_rss_mb": 496.5,
+        "chunks": 120,
+        "audio_s": 600.0,
+        "proc_s": 212.6,
+        "rtf": 0.3543
+      },
+      {
+        "item_id": "ocw6006_l01",
+        "model_load_s": 0.6,
+        "peak_rss_mb": 506.5,
+        "chunks": 120,
+        "audio_s": 600.0,
+        "proc_s": 217.0,
+        "rtf": 0.3617
+      },
+      {
+        "item_id": "ocw6006_l02",
+        "model_load_s": 0.5,
+        "peak_rss_mb": 537.0,
+        "chunks": 120,
+        "audio_s": 600.0,
+        "proc_s": 211.3,
+        "rtf": 0.3521
+      }
+    ]
+  },
+  {
+    "model": "tiny.en",
+    "workers": 3,
+    "cpu_threads_each": 4,
+    "rtf_worst": 0.1705,
+    "rtf_mean": 0.1658,
+    "peak_rss_mb_each": 537.0,
+    "model_load_s": 0.7,
+    "max_lectures_at_70pct": 12,
+    "per_worker": [
+      {
+        "item_id": "ocw6001_l01",
+        "model_load_s": 0.7,
+        "peak_rss_mb": 467.5,
+        "chunks": 120,
+        "audio_s": 600.0,
+        "proc_s": 102.3,
+        "rtf": 0.1705
+      },
+      {
+        "item_id": "ocw6006_l01",
+        "model_load_s": 0.5,
+        "peak_rss_mb": 492.1,
+        "chunks": 120,
+        "audio_s": 600.0,
+        "proc_s": 99.3,
+        "rtf": 0.1656
+      },
+      {
+        "item_id": "ocw6006_l02",
+        "model_load_s": 0.4,
+        "peak_rss_mb": 537.0,
+        "chunks": 120,
+        "audio_s": 600.0,
+        "proc_s": 96.8,
+        "rtf": 0.1614
+      }
+    ]
+  },
+  {
+    "model": "small.en",
+    "workers": 1,
+    "cpu_threads_each": 4,
+    "rtf_worst": 0.6309,
+    "rtf_mean": 0.6309,
+    "peak_rss_mb_each": 891.9,
+    "model_load_s": 2.1,
+    "max_lectures_at_70pct": 1,
+    "per_worker": [
+      {
+        "item_id": "ocw6001_l01",
+        "model_load_s": 2.1,
+        "peak_rss_mb": 891.9,
+        "chunks": 120,
+        "audio_s": 600.0,
+        "proc_s": 378.5,
+        "rtf": 0.6309
+      }
+    ]
+  }
+]

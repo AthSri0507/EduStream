@@ -1,0 +1,14 @@
+{
+  "groq": {
+    "model": "qwen/qwen3.8-27b",
+    "calls": 20,
+    "succeeded": 7,
+    "valid_json": 7,
+    "errors": [
+      "HTTP 429"
+    ],
+    "latency_median_s": 0.71,
+    "latency_max_s": 0.97,
+    "tokens_per_call_mean": 524
+  }
+}

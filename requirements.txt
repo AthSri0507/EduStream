@@ -2,7 +2,7 @@
 # Exact versions of everything installed are pinned in requirements.lock;
 # install with:  .venv\Scripts\python -m pip install -r requirements.lock
 
-# Kafka client (version confirmed by the team; see docs/ARCHITECTURE.md §6.3)
+# Kafka client (version confirmed by the team; see docs/ARCHITECTURE.md section 6.3)
 kafka-python==3.0.11
 
 # Speech-to-text (CPU, int8) and audio decoding (bundles PyAV)
@@ -19,6 +19,7 @@ streamlit
 pandas
 matplotlib
 
-# Evaluation and tests
+# Evaluation, benchmarks (psutil: memory per worker) and tests
+psutil
 jiwer
 pytest

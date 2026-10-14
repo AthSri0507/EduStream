@@ -1,0 +1,167 @@
+{
+  "model": "base.en",
+  "per_lecture": [
+    {
+      "item_id": "ocw6001_l01",
+      "lecture": "Python \u00b7 Lecture 1 (Bell)",
+      "chunk_s": 5,
+      "ref_words": 6362,
+      "hyp_words": 6928,
+      "wer": 0.1592,
+      "substitutions": 235,
+      "deletions": 106,
+      "insertions": 672,
+      "wer_without_hyp_fillers": 0.1592,
+      "filler_tokens_in_hyp": 0,
+      "mean_proc_ms": 1418.2
+    },
+    {
+      "item_id": "ocw6001_l01",
+      "lecture": "Python \u00b7 Lecture 1 (Bell)",
+      "chunk_s": 10,
+      "ref_words": 6362,
+      "hyp_words": 7004,
+      "wer": 0.1583,
+      "substitutions": 185,
+      "deletions": 90,
+      "insertions": 732,
+      "wer_without_hyp_fillers": 0.1583,
+      "filler_tokens_in_hyp": 0,
+      "mean_proc_ms": 1798.8
+    },
+    {
+      "item_id": "ocw6001_l02",
+      "lecture": "Python \u00b7 Lecture 2 (Bell)",
+      "chunk_s": 5,
+      "ref_words": 6449,
+      "hyp_words": 6897,
+      "wer": 0.1425,
+      "substitutions": 231,
+      "deletions": 120,
+      "insertions": 568,
+      "wer_without_hyp_fillers": 0.1425,
+      "filler_tokens_in_hyp": 0,
+      "mean_proc_ms": 1456.6
+    },
+    {
+      "item_id": "ocw6001_l02",
+      "lecture": "Python \u00b7 Lecture 2 (Bell)",
+      "chunk_s": 10,
+      "ref_words": 6449,
+      "hyp_words": 6676,
+      "wer": 0.0991,
+      "substitutions": 182,
+      "deletions": 115,
+      "insertions": 342,
+      "wer_without_hyp_fillers": 0.0991,
+      "filler_tokens_in_hyp": 0,
+      "mean_proc_ms": 1897.2
+    },
+    {
+      "item_id": "ocw6006_l01",
+      "lecture": "Algorithms \u00b7 Lecture 1 (Ku)",
+      "chunk_s": 5,
+      "ref_words": 5697,
+      "hyp_words": 7759,
+      "wer": 0.4218,
+      "substitutions": 197,
+      "deletions": 72,
+      "insertions": 2134,
+      "wer_without_hyp_fillers": 0.4213,
+      "filler_tokens_in_hyp": 3,
+      "mean_proc_ms": 1625.5
+    },
+    {
+      "item_id": "ocw6006_l01",
+      "lecture": "Algorithms \u00b7 Lecture 1 (Ku)",
+      "chunk_s": 10,
+      "ref_words": 5697,
+      "hyp_words": 6716,
+      "wer": 0.2284,
+      "substitutions": 136,
+      "deletions": 73,
+      "insertions": 1092,
+      "wer_without_hyp_fillers": 0.2278,
+      "filler_tokens_in_hyp": 3,
+      "mean_proc_ms": 2000.2
+    },
+    {
+      "item_id": "ocw6006_l02",
+      "lecture": "Algorithms \u00b7 Lecture 2 (Demaine)",
+      "chunk_s": 5,
+      "ref_words": 6906,
+      "hyp_words": 8265,
+      "wer": 0.2745,
+      "substitutions": 333,
+      "deletions": 102,
+      "insertions": 1461,
+      "wer_without_hyp_fillers": 0.2744,
+      "filler_tokens_in_hyp": 1,
+      "mean_proc_ms": 1661.4
+    },
+    {
+      "item_id": "ocw6006_l02",
+      "lecture": "Algorithms \u00b7 Lecture 2 (Demaine)",
+      "chunk_s": 10,
+      "ref_words": 6906,
+      "hyp_words": 8187,
+      "wer": 0.2522,
+      "substitutions": 239,
+      "deletions": 111,
+      "insertions": 1392,
+      "wer_without_hyp_fillers": 0.2522,
+      "filler_tokens_in_hyp": 0,
+      "mean_proc_ms": 1759.5
+    }
+  ],
+  "calibration": {
+    "5": {
+      "at_0.55": {
+        "t_score": 0.55,
+        "precision": 0.333,
+        "recall": 0.016,
+        "f1": 0.031,
+        "alerts": 3
+      },
+      "windows": 361,
+      "bad_windows": 61,
+      "window_wer_median": 0.1505,
+      "spearman_score_vs_wer": -0.206,
+      "score_avg_range": [
+        0.517,
+        0.772
+      ],
+      "best_f1": {
+        "t_score": 0.77,
+        "precision": 0.169,
+        "recall": 1.0,
+        "f1": 0.29,
+        "alerts": 360
+      }
+    },
+    "10": {
+      "at_0.55": {
+        "t_score": 0.55,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "alerts": 0
+      },
+      "windows": 361,
+      "bad_windows": 55,
+      "window_wer_median": 0.122,
+      "spearman_score_vs_wer": -0.184,
+      "score_avg_range": [
+        0.565,
+        0.812
+      ],
+      "best_f1": {
+        "t_score": 0.81,
+        "precision": 0.154,
+        "recall": 1.0,
+        "f1": 0.266,
+        "alerts": 358
+      }
+    }
+  }
+}

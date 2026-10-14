@@ -1,0 +1,90 @@
+{
+  "ocw6001_l01": {
+    "5s": {
+      "flagged": 4,
+      "still_looping_after": {
+        "fallback": 0,
+        "norepeat": 2,
+        "reppen": 0,
+        "drop": 0
+      },
+      "fallback_identical_on_rerun": 2
+    },
+    "10s": {
+      "flagged": 7,
+      "still_looping_after": {
+        "fallback": 0,
+        "norepeat": 4,
+        "reppen": 0,
+        "drop": 0
+      },
+      "fallback_identical_on_rerun": 4
+    }
+  },
+  "ocw6001_l02": {
+    "5s": {
+      "flagged": 9,
+      "still_looping_after": {
+        "fallback": 0,
+        "norepeat": 4,
+        "reppen": 0,
+        "drop": 0
+      },
+      "fallback_identical_on_rerun": 4
+    },
+    "10s": {
+      "flagged": 8,
+      "still_looping_after": {
+        "fallback": 0,
+        "norepeat": 7,
+        "reppen": 0,
+        "drop": 0
+      },
+      "fallback_identical_on_rerun": 3
+    }
+  },
+  "ocw6006_l01": {
+    "5s": {
+      "flagged": 35,
+      "still_looping_after": {
+        "fallback": 0,
+        "norepeat": 21,
+        "reppen": 1,
+        "drop": 0
+      },
+      "fallback_identical_on_rerun": 18
+    },
+    "10s": {
+      "flagged": 17,
+      "still_looping_after": {
+        "fallback": 0,
+        "norepeat": 15,
+        "reppen": 0,
+        "drop": 0
+      },
+      "fallback_identical_on_rerun": 7
+    }
+  },
+  "ocw6006_l02": {
+    "5s": {
+      "flagged": 33,
+      "still_looping_after": {
+        "fallback": 0,
+        "norepeat": 26,
+        "reppen": 0,
+        "drop": 0
+      },
+      "fallback_identical_on_rerun": 11
+    },
+    "10s": {
+      "flagged": 25,
+      "still_looping_after": {
+        "fallback": 0,
+        "norepeat": 21,
+        "reppen": 0,
+        "drop": 0
+      },
+      "fallback_identical_on_rerun": 8
+    }
+  }
+}
