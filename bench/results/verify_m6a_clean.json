@@ -1,0 +1,503 @@
+{
+  "checks": [
+    {
+      "name": "all records match the JSON Schemas",
+      "ok": true,
+      "detail": "137 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_demaine_l2: complete",
+      "ok": true,
+      "detail": "30/30 chunks across 10 windows"
+    },
+    {
+      "name": "algorithms_demaine_l2: each window emitted once",
+      "ok": true,
+      "detail": "10 distinct windows, 10 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_demaine_l2: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10052 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_demaine_l2: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "4/4 updates, 4 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: every window in exactly one update",
+      "ok": true,
+      "detail": "10 windows in updates, 10 windows emitted"
+    },
+    {
+      "name": "algorithms_ku_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_ku_l1: complete",
+      "ok": true,
+      "detail": "30/30 chunks across 10 windows"
+    },
+    {
+      "name": "algorithms_ku_l1: each window emitted once",
+      "ok": true,
+      "detail": "10 distinct windows, 10 records"
+    },
+    {
+      "name": "algorithms_ku_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_ku_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10047 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_ku_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "4/4 updates, 4 records"
+    },
+    {
+      "name": "algorithms_ku_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "10 windows in updates, 10 windows emitted"
+    },
+    {
+      "name": "python_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "python_l1: complete",
+      "ok": true,
+      "detail": "30/30 chunks across 10 windows"
+    },
+    {
+      "name": "python_l1: each window emitted once",
+      "ok": true,
+      "detail": "10 distinct windows, 10 records"
+    },
+    {
+      "name": "python_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "python_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10043 ms after the flush's event time"
+    },
+    {
+      "name": "python_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "4/4 updates, 4 records"
+    },
+    {
+      "name": "python_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "10 windows in updates, 10 windows emitted"
+    },
+    {
+      "name": "no LATE_DROP alerts",
+      "ok": true,
+      "detail": "0 LATE_DROP"
+    },
+    {
+      "name": "DLQ as expected",
+      "ok": true,
+      "detail": "0 DLQ record(s), expected 0"
+    },
+    {
+      "name": "db: chunks == distinct transcripts",
+      "ok": true,
+      "detail": "90 in SQLite, 90 in Kafka"
+    },
+    {
+      "name": "db: windows == topic windows (keys and content)",
+      "ok": true,
+      "detail": "30 in SQLite, 30 distinct in Kafka"
+    },
+    {
+      "name": "db: notebook updates == topic updates, with all their points",
+      "ok": true,
+      "detail": "12 updates and 36 points in SQLite, 12 distinct updates in Kafka"
+    },
+    {
+      "name": "db: alerts == distinct topic alerts",
+      "ok": true,
+      "detail": "2 in SQLite"
+    }
+  ],
+  "lectures": {
+    "algorithms_demaine_l2": {
+      "partition": 2,
+      "chunks_sent": 30,
+      "windows": 10,
+      "last_window_emitted_after_flush_ms": 10052,
+      "updates": {
+        "extractive": 4
+      }
+    },
+    "algorithms_ku_l1": {
+      "partition": 1,
+      "chunks_sent": 30,
+      "windows": 10,
+      "last_window_emitted_after_flush_ms": 10047,
+      "updates": {
+        "extractive": 4
+      }
+    },
+    "python_l1": {
+      "partition": 0,
+      "chunks_sent": 30,
+      "windows": 10,
+      "last_window_emitted_after_flush_ms": 10043,
+      "updates": {
+        "extractive": 4
+      }
+    }
+  },
+  "notebooks": {
+    "algorithms_demaine_l2": [
+      {
+        "update": 0,
+        "section": [
+          1,
+          "Part 1"
+        ],
+        "points": [
+          [
+            1,
+            30.0,
+            "There's lots of algorithms in each data structure."
+          ],
+          [
+            1,
+            60.0,
+            "if you're a programmer or an ADT, if you're an ancient algorithms person like me, versus a data structure."
+          ],
+          [
+            1,
+            80.0,
+            "And in the context of data structures, we're trying to store some data."
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      },
+      {
+        "update": 1,
+        "section": [
+          1,
+          "Part 1"
+        ],
+        "points": [
+          [
+            1,
+            90.0,
+            "OK, what data you can store, whereas the data structure will give you an actual representation and tell you."
+          ],
+          [
+            1,
+            110.0,
+            "What makes it interesting is having operations on that data."
+          ],
+          [
+            1,
+            140.0,
+            "And the data structure actually gives you algorithms."
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      },
+      {
+        "update": 2,
+        "section": [
+          1,
+          "Part 1"
+        ],
+        "points": [
+          [
+            1,
+            190.0,
+            "Algorithmic solutions to the problem, and this is the analogous notion for data structures, where we want to maintain a data, maintain some data according to various operations."
+          ],
+          [
+            1,
+            200.0,
+            "So the same problem can be solved by many different data structures and we're going to see that and different data structures are going to have different advantages They might support some operations faster than others"
+          ],
+          [
+            1,
+            210.0,
+            "and depending on what you actually use those data structures for, you choose the right data structure."
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      },
+      {
+        "update": 3,
+        "section": [
+          1,
+          "Part 1"
+        ],
+        "points": [
+          [
+            1,
+            270.0,
+            "And this is the first item, the second item, the last item."
+          ],
+          [
+            1,
+            280.0,
+            "On this sequence data structure, at the end, I'll mention the interface for sets, but we're going to be actually solving sequences today."
+          ],
+          [
+            1,
+            290.0,
+            "They're closely related, pretty abstract at the moment."
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      }
+    ],
+    "algorithms_ku_l1": [
+      {
+        "update": 0,
+        "section": [
+          1,
+          "Part 1"
+        ],
+        "points": [
+          [
+            1,
+            20.0,
+            "this class in Introduction to Algorithms with two other instructors here, faculty in the department, Eric Domen and Justin Solomon."
+          ],
+          [
+            1,
+            40.0,
+            "teaching the first lecture, and we'll have each of them teach one of the next two lectures, and then we'll go from there."
+          ],
+          [
+            1,
+            60.0,
+            "algorithms, really what the course is about is teaching you to solve computational problems."
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      },
+      {
+        "update": 1,
+        "section": [
+          1,
+          "Part 1"
+        ],
+        "points": [
+          [
+            1,
+            130.0,
+            "And you'll find that over the course of this class, you'll be doing a lot more writing than you do in a lot of your other courses."
+          ],
+          [
+            1,
+            150.0,
+            "problem is important, but really the thing that you're getting out of this class and other theory classes that you're not getting in other classes in this..."
+          ],
+          [
+            1,
+            160.0,
+            "department is that we really concentrate on being able to prove that the things you're doing are correct and better than other things and being able to communicate those ideas to others."
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      },
+      {
+        "update": 2,
+        "section": [
+          1,
+          "Part 1"
+        ],
+        "points": [
+          [
+            1,
+            240.0,
+            "And maybe, I don't know, maybe I have more of them than I do inputs."
+          ],
+          [
+            1,
+            250.0,
+            "But these are the possible outputs to my problem."
+          ],
+          [
+            1,
+            250.0,
+            "And what a problem is a binary relation between these inputs and outputs."
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      },
+      {
+        "update": 3,
+        "section": [
+          1,
+          "Part 1"
+        ],
+        "points": [
+          [
+            1,
+            270.0,
+            "give me the index in an array containing the value 5, there could be multiple 5s in that array."
+          ],
+          [
+            1,
+            280.0,
+            "So, uh, maybe this guy maps to that output, and maybe this guy maps to, I don't know, two or three outputs, right?"
+          ],
+          [
+            1,
+            290.0,
+            "I don't know here's a you're some kind of mapping Here these edges represent the binary relation It is kind of a graph"
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      }
+    ],
+    "python_l1": [
+      {
+        "update": 0,
+        "section": [
+          1,
+          "Part 1"
+        ],
+        "points": [
+          [
+            1,
+            40.0,
+            "We're finally in 26, 100, six triple one, made it."
+          ],
+          [
+            1,
+            50.0,
+            "So good afternoon and welcome to the very first class of 6.001 And also 600 this semester so my name is Anna Bell"
+          ],
+          [
+            1,
+            60.0,
+            "first name Anna, last name Belle."
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      },
+      {
+        "update": 1,
+        "section": [
+          1,
+          "Part 1"
+        ],
+        "points": [
+          [
+            1,
+            90.0,
+            "We're going to talk a little bit about mathematical operations."
+          ],
+          [
+            1,
+            140.0,
+            "When I was first starting the program, you know what helped me get through my first, very first programming course."
+          ],
+          [
+            1,
+            160.0,
+            "talking about something that, you know, suddenly I remembered, oh I saw that word in the p-set and I didn't know what it was, well hey now I know what it is, right."
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      },
+      {
+        "update": 2,
+        "section": [
+          1,
+          "Part 1"
+        ],
+        "points": [
+          [
+            1,
+            180.0,
+            "You're not going to absorb programming, but watching me write programs, because i already know how to program, right?"
+          ],
+          [
+            1,
+            190.0,
+            "And I think also one of the Big things is if you're new to programming, you're kind of Afraid that you're going to break your computer."
+          ],
+          [
+            1,
+            230.0,
+            "The class will teach you something through lectures, examples."
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      },
+      {
+        "update": 3,
+        "section": [
+          1,
+          "Part 1"
+        ],
+        "points": [
+          [
+            1,
+            270.0,
+            "So what are the things we're going to learn in this class?"
+          ],
+          [
+            1,
+            280.0,
+            "The things we're going to learn in this class can be divided into basically three different sections."
+          ],
+          [
+            1,
+            290.0,
+            "So learning how to program is, part of it is figuring out what objects to create."
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      }
+    ]
+  },
+  "alerts_by_type": {
+    "LOW_ASR_SCORE": 2
+  },
+  "counts": {
+    "transcriptions": 93,
+    "window_summaries": 30,
+    "final_notes": 12,
+    "alerts": 2,
+    "dlq": 0
+  }
+}

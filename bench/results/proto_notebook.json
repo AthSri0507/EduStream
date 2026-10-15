@@ -1,0 +1,188 @@
+{
+  "updates": 8,
+  "llm_ok": 8,
+  "models": {
+    "openai/gpt-oss-120b": 4,
+    "openai/gpt-oss-20b": 4
+  },
+  "points_proposed": 23,
+  "points_kept": 22,
+  "quotes_not_found": 0,
+  "low_overlap_drops": 1,
+  "timestamps_corrected": 0,
+  "premature_sections": 1,
+  "sections": [
+    "Introduction & Course Overview",
+    "Types of Calculations & Knowledge"
+  ],
+  "terms": {
+    "computation": "background",
+    "Python basics": "lecture",
+    "mathematical operations": "lecture",
+    "Types": "lecture",
+    "programming skills": "lecture",
+    "control flow": "lecture",
+    "modular": "lecture",
+    "computer memory": "lecture",
+    "Declarative knowledge": "lecture",
+    "imperative knowledge": "lecture"
+  },
+  "points_moved_to_previous_section": 0,
+  "latency_s_median": 0.96,
+  "tokens_per_call_mean": 1346,
+  "per_update": [
+    {
+      "update": 0,
+      "span": "00:00-01:30",
+      "ok": true,
+      "attempts": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 0.83,
+      "prompt_tokens": 871,
+      "completion_tokens": 125,
+      "flags": [
+        "premature_new_section_ignored:'Introduction & Course Overview'"
+      ],
+      "points_proposed": 0,
+      "points_kept": 0,
+      "section_action": "new",
+      "section_title": "Introduction & Course Overview"
+    },
+    {
+      "update": 1,
+      "span": "01:30-03:00",
+      "ok": true,
+      "attempts": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.28,
+      "prompt_tokens": 929,
+      "completion_tokens": 364,
+      "flags": [],
+      "points_proposed": 3,
+      "points_kept": 3,
+      "section_action": "continue",
+      "section_title": null
+    },
+    {
+      "update": 2,
+      "span": "03:00-04:30",
+      "ok": true,
+      "attempts": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.29,
+      "prompt_tokens": 1023,
+      "completion_tokens": 329,
+      "flags": [
+        "dropped_term_not_in_transcript:'problem solving'"
+      ],
+      "points_proposed": 3,
+      "points_kept": 3,
+      "section_action": "continue",
+      "section_title": null
+    },
+    {
+      "update": 3,
+      "span": "04:30-06:00",
+      "ok": true,
+      "attempts": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.87,
+      "prompt_tokens": 1085,
+      "completion_tokens": 506,
+      "flags": [],
+      "points_proposed": 3,
+      "points_kept": 3,
+      "section_action": "continue",
+      "section_title": null
+    },
+    {
+      "update": 4,
+      "span": "06:00-07:30",
+      "ok": true,
+      "attempts": [
+        {
+          "model": "openai/gpt-oss-120b",
+          "error": "HTTP 429",
+          "detail": "{\"error\":{\"message\":\"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m4xfgj71eh19f4s9aef09cr5` service tier `on_demand` on tokens per "
+        }
+      ],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.85,
+      "prompt_tokens": 1068,
+      "completion_tokens": 412,
+      "flags": [
+        "dropped_low_overlap(0.11):'Evaluation criteria: program quality measured by r'",
+        "dropped_term_not_in_transcript:'algorithmic performance'"
+      ],
+      "points_proposed": 4,
+      "points_kept": 3,
+      "section_action": "continue",
+      "section_title": "Introduction & Course Overview"
+    },
+    {
+      "update": 5,
+      "span": "07:30-09:00",
+      "ok": true,
+      "attempts": [
+        {
+          "model": "openai/gpt-oss-120b",
+          "error": "HTTP 429",
+          "detail": "{\"error\":{\"message\":\"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m4xfgj71eh19f4s9aef09cr5` service tier `on_demand` on tokens per "
+        }
+      ],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.96,
+      "prompt_tokens": 1043,
+      "completion_tokens": 348,
+      "flags": [],
+      "points_proposed": 4,
+      "points_kept": 4,
+      "section_action": "new",
+      "section_title": "Types of Calculations & Knowledge"
+    },
+    {
+      "update": 6,
+      "span": "09:00-10:30",
+      "ok": true,
+      "attempts": [
+        {
+          "model": "openai/gpt-oss-120b",
+          "error": "HTTP 429",
+          "detail": "{\"error\":{\"message\":\"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m4xfgj71eh19f4s9aef09cr5` service tier `on_demand` on tokens per "
+        }
+      ],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.8,
+      "prompt_tokens": 1042,
+      "completion_tokens": 260,
+      "flags": [],
+      "points_proposed": 3,
+      "points_kept": 3,
+      "section_action": "continue",
+      "section_title": null
+    },
+    {
+      "update": 7,
+      "span": "10:30-12:00",
+      "ok": true,
+      "attempts": [
+        {
+          "model": "openai/gpt-oss-120b",
+          "error": "HTTP 429",
+          "detail": "{\"error\":{\"message\":\"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m4xfgj71eh19f4s9aef09cr5` service tier `on_demand` on tokens per "
+        }
+      ],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.78,
+      "prompt_tokens": 1118,
+      "completion_tokens": 247,
+      "flags": [
+        "dropped_term_not_in_transcript:'random.randint'"
+      ],
+      "points_proposed": 3,
+      "points_kept": 3,
+      "section_action": "continue",
+      "section_title": null
+    }
+  ]
+}

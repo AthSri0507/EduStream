@@ -34,7 +34,7 @@ MUTED = {"light": "#898781", "dark": "#a3a29b"}
 SEVERITY = {"info": "ℹ️ info", "warn": "⚠️ warn", "crit": "⛔ crit"}
 MAX_NOTES_SHOWN = 12
 # Tab labels double as URL values (bind="query-params"): e.g. http://localhost:8501/?tab=Pipeline+health
-TABS = ["Live notes", "Window stats", "Alerts", "Pipeline health"]
+TABS = ["Notebook", "Window stats", "Alerts", "Pipeline health"]
 SETTINGS = load()
 
 
@@ -66,6 +66,36 @@ def lecture_colors(lectures: pd.DataFrame) -> tuple[list[str], list[str]]:
 # Tabs
 # --------------------------------------------------
 
+def notebook_view(conn: sqlite3.Connection, video_id: str) -> bool:
+    """Rev 6 notebook (minimal M6a view; M6c adds the player, exports and final titles). False if empty."""
+    nb = queries.notebook(conn, video_id)
+    if nb["updates"] == 0:
+        return False
+    points, terms = nb["points"], nb["terms"]
+    for _, sec in nb["sections"].iterrows():
+        st.markdown(f"#### {sec['section_id']}. {sec['title']}")
+        rows = points[points["section_id"] == sec["section_id"]]
+        if rows.empty:
+            st.caption("(no points yet)")
+        for _, p in rows.iterrows():
+            label = "*Example:* " if p["kind"] == "example" else ""
+            extractive = " <sub>`extractive`</sub>" if p["generator"] == "extractive" else ""
+            st.markdown(f"- `[{mmss(p['t'])}]` {label}{p['text']}{extractive}", unsafe_allow_html=True,
+                        help=f"Said: \"{p['quote']}\"")
+            if isinstance(p["background"], str) and p["background"]:
+                st.caption(f"Background (not from the lecture): {p['background']}")
+    if not terms.empty:
+        with st.expander(f"Glossary ({len(terms)})"):
+            for _, term in terms.iterrows():
+                note = " *(background)*" if term["source"] == "background" else ""
+                st.markdown(f"**{term['term']}**{note}: {term['definition']} `[{mmss(term['t'])}]`")
+    if not nb["tail"].empty:
+        with st.container(border=True):
+            st.caption(f"Live tail: said after {mmss(nb['covered_s'])}, not in the notebook yet")
+            st.write(" ".join(nb["tail"]["text"].tolist()[-12:]))
+    return True
+
+
 def notes_tab(conn: sqlite3.Connection, lectures: pd.DataFrame) -> None:
     if lectures.empty:
         st.info("No lecture yet. Start one with `.venv\\Scripts\\python -m producer.lecture_source --demo` "
@@ -76,10 +106,17 @@ def notes_tab(conn: sqlite3.Connection, lectures: pd.DataFrame) -> None:
     lecture = lectures[lectures["video_id"] == video_id].iloc[0]
     st.caption(f"{lecture['status']} · partition {lecture['partition']} · "
                f"{lecture['chunks_stored']}/{lecture['expected_chunks']} chunks · "
-               f"{lecture['windows']} windows · {lecture['notes']} notes")
-    df = queries.notes(conn, video_id)
+               f"{lecture['windows']} windows · {lecture['updates']} notebook updates")
+    if notebook_view(conn, video_id):
+        return
+    df = queries.notes(conn, video_id)          # notes.v1 from runs before M6a
     if df.empty:
-        st.info("No notes yet: a window's notes appear about 40 s after it starts (30 s window + 10 s grace).")
+        st.info("No notes yet: the first notebook update appears about 2 minutes into a lecture "
+                "(90 s of lecture, then about 25 s until its last window closes).")
+        tail = queries.notebook(conn, video_id)["tail"]
+        if not tail.empty:
+            st.caption("Live transcript so far")
+            st.write(" ".join(tail["text"].tolist()[-12:]))
         return
     if len(df) > MAX_NOTES_SHOWN:
         st.caption(f"Newest {MAX_NOTES_SHOWN} of {len(df)} windows")
@@ -220,7 +257,8 @@ def live() -> None:
         cols[0].metric("Lectures", kpi["lectures"], border=True)
         cols[1].metric("Chunks transcribed", kpi["chunks"], border=True)
         cols[2].metric("Windows closed", kpi["windows"], border=True)
-        cols[3].metric("Notes", kpi["notes"], border=True)
+        cols[3].metric("Notebook updates", kpi["updates"] or kpi["notes"], border=True,
+                       help="One per 90 s of lecture (rev 6)")
         cols[4].metric("Alerts", kpi["alerts"], border=True, help="LOW_ASR_SCORE, SILENCE, CONSUMER_LAG")
         cols[5].metric("LATE_DROP", kpi["late_drop"], border=True,
                        help="Records dropped as late. Must stay 0 (S1: one lecture per partition).")

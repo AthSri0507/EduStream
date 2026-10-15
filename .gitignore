@@ -70,3 +70,4 @@ dependency-reduced-pom.xml
 .idea/
 Thumbs.db
 desktop.ini
+bench/results/proto_llm_cache.json

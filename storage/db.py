@@ -28,6 +28,10 @@ def connect_writer(path: Path | str | None = None) -> sqlite3.Connection:
     conn.execute("PRAGMA busy_timeout = 5000")
     conn.executescript(SCHEMA.read_text(encoding="utf-8"))
     conn.execute("PRAGMA synchronous = NORMAL")                      # safe with WAL
+    # Columns added after a database was created (CREATE TABLE IF NOT EXISTS leaves old tables alone).
+    have = {row[1] for row in conn.execute("PRAGMA table_info(lectures)")}
+    if "speedup" not in have:
+        conn.execute("ALTER TABLE lectures ADD COLUMN speedup REAL")
     return conn
 
 

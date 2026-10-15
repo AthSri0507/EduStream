@@ -114,3 +114,49 @@ def test_a_failing_batch_is_rolled_back_completely(conn):
     with pytest.raises(KeyError):
         apply_batch(conn, [good, bad], now=1_000, window_ms=WINDOW_MS)
     assert conn.execute("SELECT COUNT(*) FROM chunks").fetchone()[0] == 0   # offsets would not be committed either
+
+
+# --------------------------------------------------------------------------------------------- D-2 (rev 6)
+NOTEBOOK_TABLES = ["notebook_updates", "sections", "points", "terms", "notebook_fts"]
+
+
+def notebook_dump(conn) -> dict:
+    return {t: conn.execute(f"SELECT * FROM {t} ORDER BY 1, 2, 3").fetchall() for t in NOTEBOOK_TABLES}
+
+
+def notebook_records():
+    llm_update = fixture("notes_v2/valid-llm.json")
+    first = {**fixture("notes_v2/valid-extractive.json")}
+    other_title = {**llm_update, "update_index": 5, "section": {**llm_update["section"], "title": "Renamed?"},
+                   "terms": [{**llm_update["terms"][0], "definition": "A second, different definition."}],
+                   "points": [{**llm_update["points"][1], "section_id": 2}]}
+    return [rec(TOPIC_NOTES, first, 10), rec(TOPIC_NOTES, llm_update, 11), rec(TOPIC_NOTES, other_title, 12),
+            rec(TOPIC_NOTES, fixture("notes/valid-llm.json"), 13)]          # an old notes.v1 record still works
+
+
+def test_notebook_updates_are_stored_once_and_replay_identically(conn):
+    first = apply_batch(conn, notebook_records(), now=1_000, window_ms=WINDOW_MS)
+    before = notebook_dump(conn)
+    second = apply_batch(conn, notebook_records(), now=2_000, window_ms=WINDOW_MS)
+    assert first == {"stored": 4} and second == {"duplicate": 4}
+    assert notebook_dump(conn) == before
+    assert conn.execute("SELECT COUNT(*) FROM notes").fetchone()[0] == 1        # the notes.v1 record
+
+
+def test_notebook_tables_hold_what_was_sent(conn):
+    apply_batch(conn, notebook_records(), now=1_000, window_ms=WINDOW_MS)
+    assert conn.execute("SELECT section_id, title FROM sections ORDER BY 1").fetchall() == [
+        (1, "Part 1"), (2, "What does a computer do?")]                          # first title wins
+    assert conn.execute("SELECT COUNT(*) FROM points").fetchone()[0] == 4
+    assert conn.execute("SELECT section_id FROM points WHERE update_index = 4 ORDER BY seq").fetchall() == [(1,), (2,)]
+    assert conn.execute("SELECT definition, source FROM terms").fetchall() == [
+        ("Where a computer stores the results of its calculations.", "lecture")]  # first definition wins
+    # index: 4 points + 1 term + 2 new sections
+    assert conn.execute("SELECT COUNT(*) FROM notebook_fts").fetchone()[0] == 7
+    assert conn.execute("SELECT COUNT(*) FROM notebook_fts WHERE notebook_fts MATCH 'calculations'").fetchone()[0] >= 2
+
+
+def test_a_notebook_update_with_a_broken_point_goes_to_the_sink_dlq(conn):
+    bad = fixture("notes_v2/invalid-point-without-quote.json")
+    assert apply_batch(conn, [rec(TOPIC_NOTES, bad, 20)], now=1, window_ms=WINDOW_MS) == {"invalid": 1}
+    assert conn.execute("SELECT COUNT(*) FROM notebook_updates").fetchone()[0] == 0

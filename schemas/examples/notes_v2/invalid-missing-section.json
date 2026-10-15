@@ -1,0 +1,46 @@
+{
+  "schema": "notes.v2",
+  "video_id": "python_l1",
+  "update_index": 4,
+  "media_start": 360.0,
+  "media_end": 450.0,
+  "window_starts": [
+    1792051560000,
+    1792051590000,
+    1792051620000
+  ],
+  "points": [
+    {
+      "section_id": 1,
+      "text": "Readable, well-organised code matters: others, and you next year, must be able to reread it.",
+      "t": 360.0,
+      "kind": "point",
+      "quote": "If it's a big mess, you might not be able to understand",
+      "background": null
+    },
+    {
+      "section_id": 2,
+      "text": "A computer does two things: it performs calculations and it remembers the results.",
+      "t": 420.0,
+      "kind": "point",
+      "quote": "it does two things. One, performs calculations",
+      "background": "Modern CPUs perform billions of simple operations per second."
+    }
+  ],
+  "terms": [
+    {
+      "term": "computer memory",
+      "definition": "Where a computer stores the results of its calculations.",
+      "t": 430.0,
+      "source": "lecture"
+    }
+  ],
+  "generator": "llm",
+  "model": "openai/gpt-oss-120b",
+  "agent_ms": 1063.0,
+  "quality_flags": [
+    "dropped_low_support(0.18)"
+  ],
+  "session_start": 1792051200000,
+  "created_ts": 1792051672000
+}

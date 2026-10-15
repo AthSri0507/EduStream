@@ -75,3 +75,21 @@ def test_threshold_is_exclusive_and_other_groups_never_alert():
     a = LagAlerter(30)
     for t in (0, 5_000, 10_000):
         assert a.check([row(30), row(90, group="edustream-streams")], ALERTING, t) == []
+
+
+def test_the_note_agents_held_windows_are_an_allowance_not_lag():
+    # rev 6: G = 3 windows per update at 1x, so up to 2 held windows are normal.
+    admin = FakeAdmin(committed={TopicPartition("video_audio", i): OffsetAndMetadata(4, None, -1) for i in range(3)},
+                      members=[])
+    admin.list_group_offsets = lambda spec: {"note-agent": admin.committed}     # answer for this group
+    held = sample(admin, [Watched("note-agent", "video_audio", 30, True, allowance_records=2)])
+    assert [(r.lag, r.lag_seconds) for r in held] == [(2, 0), (2, 0), (2, 0)]
+    stuck = sample(FakeAdmin(committed={}, members=[]), [Watched("note-agent", "video_audio", 30, True, 2)])
+    assert [r.lag_seconds for r in stuck] == [120, 120, 120]          # (6 - 2) windows x 30 s
+
+
+def test_watched_groups_give_the_note_agent_its_hold_allowance():
+    from common.config import load
+    from storage.lag_monitor import watched_groups
+    notes = [g for g in watched_groups(load()) if g.group == "note-agent"][0]
+    assert notes.allowance_records == 2 and notes.seconds_per_record == 30

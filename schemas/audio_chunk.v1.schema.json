@@ -18,7 +18,8 @@
     "channels": {"const": 1},
     "audio_b64": {"type": "string", "minLength": 1},
     "last_chunk_id": {"type": "integer", "minimum": -1},
-    "title": {"type": "string"}
+    "title": {"type": "string"},
+    "speedup": {"type": "number", "exclusiveMinimum": 0, "description": "rev 6: playback speed of this lecture (1 live, 3 uploads); default 1"}
   },
   "allOf": [
     {

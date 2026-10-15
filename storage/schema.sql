@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS lectures (
   first_event_ts INTEGER,
   last_seen_ts   INTEGER,            -- largest chunk event_ts seen (monotonic)
   last_chunk_id  INTEGER,            -- from the flush (NULL while the lecture is live)
-  flushed_ts     INTEGER             -- flush event_ts
+  flushed_ts     INTEGER,            -- flush event_ts
+  speedup        REAL                -- rev 6: playback speed (optional transcript field; NULL = 1)
 );
 
 CREATE TABLE IF NOT EXISTS chunks (
@@ -57,6 +58,39 @@ CREATE TABLE IF NOT EXISTS dlq (
   stage TEXT, source_topic TEXT, src_partition INTEGER, src_offset INTEGER,
   key TEXT, error TEXT, raw_value TEXT, failed_ts INTEGER, sink_ts INTEGER,
   PRIMARY KEY (source_topic, src_partition, src_offset, stage)
+);
+
+-- Rev 6 notebook (ARCHITECTURE §8.1, §9): one notes.v2 record per 90 s update. The update row, its points,
+-- a new section and new terms are written in ONE transaction, and only if the update row is new
+-- (first writer wins), so a duplicate record changes nothing.
+CREATE TABLE IF NOT EXISTS notebook_updates (
+  video_id TEXT, update_index INTEGER, media_start REAL, media_end REAL, section_id INTEGER,
+  window_starts TEXT, generator TEXT, model TEXT, quality_flags TEXT, agent_ms REAL, created_ts INTEGER,
+  sink_ts INTEGER,
+  PRIMARY KEY (video_id, update_index)
+);
+
+CREATE TABLE IF NOT EXISTS sections (
+  video_id TEXT, section_id INTEGER, title TEXT,
+  final_title TEXT,                   -- set by the end-of-lecture pass (M6b)
+  first_update INTEGER, media_start REAL,
+  PRIMARY KEY (video_id, section_id)
+);
+
+CREATE TABLE IF NOT EXISTS points (
+  video_id TEXT, update_index INTEGER, seq INTEGER, section_id INTEGER, kind TEXT, text TEXT, quote TEXT,
+  background TEXT, t REAL,
+  weak INTEGER DEFAULT 0,             -- flagged by the end-of-lecture pass (M6b)
+  PRIMARY KEY (video_id, update_index, seq)
+);
+
+CREATE TABLE IF NOT EXISTS terms (
+  video_id TEXT, term TEXT COLLATE NOCASE, definition TEXT, source TEXT, update_index INTEGER, t REAL,
+  PRIMARY KEY (video_id, term)
+);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS notebook_fts USING fts5(
+  video_id UNINDEXED, update_index UNINDEXED, t UNINDEXED, kind UNINDEXED, body
 );
 
 -- Consumer lag, refreshed every 5 s by the sink's lag thread (dashboard "Pipeline health").

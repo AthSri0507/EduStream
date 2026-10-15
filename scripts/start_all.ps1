@@ -5,7 +5,7 @@
 # 2. starts the single Kafka broker (formats its storage on first use)
 # 3. creates/verifies the topics
 # 4. builds the Kafka Streams jar if needed (Maven Wrapper; -Rebuild forces it), then starts
-#    the Streams app, N transcription workers, the interim note generator (until M6), the
+#    the Streams app, N transcription workers, the Note Agent (notebook), the
 #    db-sink (SQLite + lag monitor) and the dashboard (http://localhost:8501), each in its own
 #    titled window, restarted on error exits.
 # The lecture source is NOT started here: run it when you want lectures to play:
@@ -83,7 +83,7 @@ Start-Window "streams" "-Jar `"$jar`" -EnvVars `"STATE_DIR=$stateDir`" -Restart"
 for ($i = 1; $i -le $Workers; $i++) {
     Start-Window "w$i" "-Module summarizer.transcription.transcription_worker -EnvVars `"WORKER_ID=w$i`" -Restart"
 }
-Start-Window "note-generator" "-Module summarizer.notes.note_generator -Restart"
+Start-Window "note-agent" "-Module agents.note_agent -Restart"
 Start-Window "db-sink" "-Module storage.db_sink -Restart"
 Start-Window "dashboard" "-Module streamlit -ModuleArgs `"run dashboard/app.py --server.headless true --server.port 8501`" -Restart"
 

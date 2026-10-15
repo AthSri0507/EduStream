@@ -13,7 +13,8 @@ SELECT l.video_id, COALESCE(l.title, l.video_id) AS title, l.src_partition AS pa
        (SELECT COUNT(DISTINCT c.chunk_id) FROM chunks c WHERE c.video_id = l.video_id) AS chunks_stored,
        (SELECT MAX(c.chunk_id) FROM chunks c WHERE c.video_id = l.video_id) AS max_chunk_id,
        (SELECT COUNT(*) FROM window_latest w WHERE w.video_id = l.video_id) AS windows,
-       (SELECT COUNT(*) FROM notes_latest n WHERE n.video_id = l.video_id) AS notes
+       (SELECT COUNT(*) FROM notes_latest n WHERE n.video_id = l.video_id) AS notes,
+       (SELECT COUNT(*) FROM notebook_updates u WHERE u.video_id = l.video_id) AS updates
 FROM lectures l ORDER BY l.src_partition, l.video_id
 """
 
@@ -36,11 +37,13 @@ def kpis(conn: sqlite3.Connection) -> dict:
         "chunks": one("SELECT COUNT(*) FROM chunks"),
         "windows": one("SELECT COUNT(*) FROM window_latest"),
         "notes": one("SELECT COUNT(*) FROM notes_latest"),
+        "updates": one("SELECT COUNT(*) FROM notebook_updates"),
         "alerts": one("SELECT COUNT(*) FROM alerts WHERE type <> 'LATE_DROP'"),
         "late_drop": one("SELECT COUNT(*) FROM alerts WHERE type = 'LATE_DROP'"),
         "dlq": one("SELECT COUNT(*) FROM dlq"),
         "last_sink_ts": one("SELECT MAX(ts) FROM (SELECT MAX(sink_ts) ts FROM chunks UNION ALL "
-                            "SELECT MAX(sink_ts) FROM window_stats UNION ALL SELECT MAX(sink_ts) FROM notes)"),
+                            "SELECT MAX(sink_ts) FROM window_stats UNION ALL SELECT MAX(sink_ts) FROM notes UNION ALL "
+                            "SELECT MAX(sink_ts) FROM notebook_updates)"),
     }
 
 
@@ -54,6 +57,27 @@ def notes(conn: sqlite3.Connection, video_id: str) -> pd.DataFrame:
     for column in ("key_points", "terms", "questions"):
         df[column] = df[column].map(lambda v: json.loads(v) if v else [])
     return df
+
+
+def notebook(conn: sqlite3.Connection, video_id: str) -> dict:
+    """The rev 6 notebook of one lecture: sections, points (with the generator of their update), terms,
+    and the live tail (transcript not yet covered by an update)."""
+    sections = pd.read_sql_query(
+        "SELECT section_id, COALESCE(final_title, title) AS title, media_start FROM sections"
+        " WHERE video_id = ? ORDER BY section_id", conn, params=(video_id,))
+    points = pd.read_sql_query(
+        "SELECT p.update_index, p.seq, p.section_id, p.kind, p.text, p.quote, p.background, p.t, p.weak, u.generator"
+        " FROM points p JOIN notebook_updates u ON u.video_id = p.video_id AND u.update_index = p.update_index"
+        " WHERE p.video_id = ? ORDER BY p.t, p.update_index, p.seq", conn, params=(video_id,))
+    terms = pd.read_sql_query("SELECT term, definition, source, t FROM terms WHERE video_id = ? ORDER BY t, term",
+                              conn, params=(video_id,))
+    covered = conn.execute("SELECT MAX(media_end), COUNT(*) FROM notebook_updates WHERE video_id = ?",
+                           (video_id,)).fetchone()
+    tail = pd.read_sql_query(
+        "SELECT chunk_id, start_time, text FROM chunks WHERE video_id = ? AND start_time >= ?"
+        " ORDER BY chunk_id", conn, params=(video_id, covered[0] or 0.0))
+    return {"sections": sections, "points": points, "terms": terms, "tail": tail,
+            "covered_s": covered[0] or 0.0, "updates": covered[1]}
 
 
 def window_stats(conn: sqlite3.Connection) -> pd.DataFrame:

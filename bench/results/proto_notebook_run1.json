@@ -1,0 +1,165 @@
+{
+  "updates": 8,
+  "llm_ok": 8,
+  "models": {
+    "openai/gpt-oss-120b": 8
+  },
+  "points_proposed": 19,
+  "points_kept": 14,
+  "quotes_not_found": 2,
+  "low_overlap_drops": 3,
+  "timestamps_corrected": 0,
+  "premature_sections": 0,
+  "sections": [
+    "Introduction",
+    "Computer fundamentals"
+  ],
+  "terms": [
+    "Anaconda",
+    "data structures",
+    "control flow",
+    "modular",
+    "algorithm",
+    "computer memory",
+    "declarative knowledge",
+    "imperative knowledge",
+    "IDE",
+    "random number"
+  ],
+  "latency_s_median": 1.14,
+  "tokens_per_call_mean": 1222,
+  "per_update": [
+    {
+      "update": 0,
+      "span": "00:00-01:30",
+      "ok": true,
+      "attempts": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 0.68,
+      "prompt_tokens": 780,
+      "completion_tokens": 53,
+      "flags": [],
+      "points_proposed": 0,
+      "points_kept": 0,
+      "section_action": "new",
+      "section_title": "Introduction"
+    },
+    {
+      "update": 1,
+      "span": "01:30-03:00",
+      "ok": true,
+      "attempts": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.07,
+      "prompt_tokens": 833,
+      "completion_tokens": 277,
+      "flags": [],
+      "points_proposed": 3,
+      "points_kept": 3,
+      "section_action": "continue",
+      "section_title": null
+    },
+    {
+      "update": 2,
+      "span": "03:00-04:30",
+      "ok": true,
+      "attempts": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.21,
+      "prompt_tokens": 923,
+      "completion_tokens": 317,
+      "flags": [
+        "dropped_quote_not_found:'Course goals: (1) grasp programming concepts, (2) '",
+        "dropped_term_not_in_transcript:'p‑sets'"
+      ],
+      "points_proposed": 3,
+      "points_kept": 2,
+      "section_action": "continue",
+      "section_title": null
+    },
+    {
+      "update": 3,
+      "span": "04:30-06:00",
+      "ok": true,
+      "attempts": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.52,
+      "prompt_tokens": 972,
+      "completion_tokens": 395,
+      "flags": [
+        "dropped_low_overlap(0.38):'Good code style matters because future collaborato'"
+      ],
+      "points_proposed": 3,
+      "points_kept": 2,
+      "section_action": "continue",
+      "section_title": null
+    },
+    {
+      "update": 4,
+      "span": "06:00-07:30",
+      "ok": true,
+      "attempts": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 2.0,
+      "prompt_tokens": 1001,
+      "completion_tokens": 680,
+      "flags": [
+        "dropped_low_overlap(0.33):'After learning Python basics, the next step is to '",
+        "dropped_term_not_in_transcript:'efficiency'"
+      ],
+      "points_proposed": 4,
+      "points_kept": 3,
+      "section_action": "new",
+      "section_title": "Computer fundamentals"
+    },
+    {
+      "update": 5,
+      "span": "07:30-09:00",
+      "ok": true,
+      "attempts": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.11,
+      "prompt_tokens": 846,
+      "completion_tokens": 246,
+      "flags": [
+        "dropped_quote_not_found:'Computers execute only the calculations they are i'"
+      ],
+      "points_proposed": 3,
+      "points_kept": 2,
+      "section_action": "continue",
+      "section_title": null
+    },
+    {
+      "update": 6,
+      "span": "09:00-10:30",
+      "ok": true,
+      "attempts": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.11,
+      "prompt_tokens": 940,
+      "completion_tokens": 263,
+      "flags": [],
+      "points_proposed": 1,
+      "points_kept": 1,
+      "section_action": "continue",
+      "section_title": null
+    },
+    {
+      "update": 7,
+      "span": "10:30-12:00",
+      "ok": true,
+      "attempts": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.14,
+      "prompt_tokens": 1021,
+      "completion_tokens": 231,
+      "flags": [
+        "dropped_low_overlap(0.38):'Choosing a random number manually can be biased (e'"
+      ],
+      "points_proposed": 2,
+      "points_kept": 1,
+      "section_action": "continue",
+      "section_title": null
+    }
+  ]
+}

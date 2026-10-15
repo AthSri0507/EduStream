@@ -1,0 +1,42 @@
+{
+  "schema": "notes.v2",
+  "video_id": "python_l1",
+  "update_index": 4,
+  "media_start": 360.0,
+  "media_end": 450.0,
+  "window_starts": [
+    1792051560000,
+    1792051590000,
+    1792051620000
+  ],
+  "section": {
+    "id": 2,
+    "title": "What does a computer do?",
+    "is_new": true
+  },
+  "points": [
+    {
+      "section_id": 1,
+      "text": "Readable, well-organised code matters: others, and you next year, must be able to reread it.",
+      "t": 360.0,
+      "kind": "point",
+      "background": null
+    }
+  ],
+  "terms": [
+    {
+      "term": "computer memory",
+      "definition": "Where a computer stores the results of its calculations.",
+      "t": 430.0,
+      "source": "lecture"
+    }
+  ],
+  "generator": "llm",
+  "model": "openai/gpt-oss-120b",
+  "agent_ms": 1063.0,
+  "quality_flags": [
+    "dropped_low_support(0.18)"
+  ],
+  "session_start": 1792051200000,
+  "created_ts": 1792051672000
+}

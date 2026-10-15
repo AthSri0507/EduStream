@@ -29,13 +29,14 @@ TOPIC_AUDIO = "video_audio"
 TOPIC_TRANSCRIPTS = "transcriptions"
 TOPIC_WINDOWS = "window_summaries"
 TOPIC_NOTES = "final_notes"
+TOPIC_LECTURE_NOTES = "lecture_notes"     # rev 6, created from M6b (end-of-lecture pass)
 TOPIC_ALERTS = "alerts"
 TOPIC_DLQ = "dlq"
 
 GROUP_WORKERS = "transcription-workers"
-# Consumer group of the note stage. The interim note generator until M6, then the Note Agent
-# ("note-agent"); the lag monitor watches whichever is deployed (never a group that is not running yet).
-GROUP_NOTES = "note-generator-interim"
+# Consumer group of the note stage: the Note Agent (agents/note_agent.py) since M6a. Until then it was the
+# interim note generator ("note-generator-interim"); the lag monitor watches whichever is deployed.
+GROUP_NOTES = "note-agent"
 
 # Demo lectures and their Kafka video_ids, chosen in M2 so murmur2 places them
 # on partitions 0, 1 and 2 (bench/M2_RESULTS.md §2).
@@ -74,6 +75,8 @@ class Settings:
     flush_formula: str
     linger_ms: int
     worker_id: str
+    note_update_s: int = 90          # rev 6 A14: one notebook update per 90 s of lecture audio
+    note_max_hold_s: int = 300       # a held partial update is sent after this long (e.g. a crashed source)
 
     @property
     def chunk_wall_ms(self) -> int:
@@ -105,6 +108,12 @@ class Settings:
             found.append(f"T_SCORE={self.t_score} must be in (0, 1)")
         if self.partitions < 1 or self.rf < 1:
             found.append("EDU_PARTITIONS and EDU_RF must be >= 1")
+        span = self.window_seconds * self.speedup        # media seconds per window
+        if span <= 0 or (self.note_update_s % span and span % self.note_update_s):
+            found.append(f"WINDOW_SECONDS x SPEEDUP = {span:g} s must divide NOTE_UPDATE_S={self.note_update_s} "
+                         "or be a multiple of it (a window must not straddle two notebook updates, §6.2 S5)")
+        if self.note_update_s % self.chunk_seconds:
+            found.append(f"NOTE_UPDATE_S={self.note_update_s} must be a whole number of chunks")
         if (self.window_seconds * 1000) % self.chunk_wall_ms:
             found.append(f"WINDOW_SECONDS={self.window_seconds} is not a whole number of chunks "
                          f"({self.chunk_wall_ms} ms); windows would hold uneven chunk counts")
@@ -134,6 +143,8 @@ def load() -> Settings:
         flush_formula=_get("FLUSH_FORMULA", "tight").lower(),
         linger_ms=int(_get("LINGER_MS", "5")),
         worker_id=_get("WORKER_ID", f"w{os.getpid()}"),
+        note_update_s=int(_get("NOTE_UPDATE_S", "90")),
+        note_max_hold_s=int(_get("NOTE_MAX_HOLD_S", "300")),
     )
 
 

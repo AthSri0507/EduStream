@@ -27,7 +27,8 @@
     "transcribed_ts": {"type": "integer", "minimum": 0},
     "proc_ms": {"type": "number", "minimum": 0},
     "last_chunk_id": {"type": "integer", "minimum": -1},
-    "title": {"type": "string", "description": "lecture display name, on the first chunk only (forwarded from audio_chunk.v1)"}
+    "title": {"type": "string", "description": "lecture display name, on the first chunk only (forwarded from audio_chunk.v1)"},
+    "speedup": {"type": "number", "exclusiveMinimum": 0, "description": "rev 6: forwarded from audio_chunk.v1; default 1"}
   },
   "allOf": [
     {

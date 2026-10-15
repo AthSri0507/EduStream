@@ -1,0 +1,12 @@
+{
+  "A_threaded_with_click": {
+    "answer_arrived": true,
+    "partial_text_at_1.5s": "this is a streamed"
+  },
+  "B_inline_with_click": {
+    "answer_arrived": false
+  },
+  "C_inline_no_click": {
+    "answer_arrived": true
+  }
+}

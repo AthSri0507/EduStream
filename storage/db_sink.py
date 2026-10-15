@@ -1,6 +1,7 @@
 """db-sink: the only SQLite writer (docs/ARCHITECTURE.md §9, A10).
 
-Consumes transcriptions, window_summaries, final_notes, alerts and dlq (group db-sink,
+Consumes transcriptions, window_summaries, final_notes (notes.v2 notebook updates since M6a;
+notes.v1 still accepted for older records), alerts and dlq (group db-sink,
 read_committed, raw bytes). For each poll batch:
   1. BEGIN; apply every record (first writer wins; see storage/schema.sql); COMMIT
   2. commit Kafka offsets explicitly: offset + 1 of the last record per partition
@@ -56,11 +57,50 @@ def _notes_body(n: dict) -> str:
     return "\n".join([n["summary"], *n["key_points"], *terms, *n.get("questions", [])]).strip()
 
 
+def _schema_name(topic: str, value: bytes | None) -> str:
+    """final_notes carries notes.v2 (rev 6) and, from older runs, notes.v1: route by the payload's own name."""
+    if topic == TOPIC_NOTES and value is not None and b'"notes.v2"' in value[:200]:
+        return "notes.v2"
+    return SCHEMA_OF[topic]
+
+
+def _apply_notebook_update(conn: sqlite3.Connection, p: dict, now: int) -> str:
+    """notes.v2 (§9 rev 6): everything for one update in the caller's transaction, only if the update is new."""
+    cur = conn.execute(
+        "INSERT INTO notebook_updates VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING",
+        (p["video_id"], p["update_index"], p["media_start"], p["media_end"], p["section"]["id"],
+         json.dumps(p["window_starts"]), p["generator"], p.get("model"), json.dumps(p.get("quality_flags", [])),
+         p.get("agent_ms"), p["created_ts"], now))
+    if cur.rowcount != 1:
+        return "duplicate"
+    sec = p["section"]
+    if sec["is_new"]:
+        in_section = [pt["t"] for pt in p["points"] if pt["section_id"] == sec["id"]]
+        start = min(in_section) if in_section else p["media_start"]
+        if conn.execute("INSERT INTO sections VALUES (?,?,?,NULL,?,?) ON CONFLICT DO NOTHING",
+                        (p["video_id"], sec["id"], sec["title"], p["update_index"], start)).rowcount == 1:
+            conn.execute("INSERT INTO notebook_fts VALUES (?,?,?,?,?)",
+                         (p["video_id"], p["update_index"], start, "section", sec["title"]))
+    for seq, pt in enumerate(p["points"]):
+        conn.execute("INSERT INTO points VALUES (?,?,?,?,?,?,?,?,?,0) ON CONFLICT DO NOTHING",
+                     (p["video_id"], p["update_index"], seq, pt["section_id"], pt["kind"], pt["text"], pt["quote"],
+                      pt.get("background"), pt["t"]))
+        conn.execute("INSERT INTO notebook_fts VALUES (?,?,?,?,?)",
+                     (p["video_id"], p["update_index"], pt["t"], pt["kind"], pt["text"]))
+    for term in p["terms"]:
+        if conn.execute("INSERT INTO terms VALUES (?,?,?,?,?,?) ON CONFLICT DO NOTHING",
+                        (p["video_id"], term["term"], term["definition"], term["source"], p["update_index"],
+                         term["t"])).rowcount == 1:
+            conn.execute("INSERT INTO notebook_fts VALUES (?,?,?,?,?)",
+                         (p["video_id"], p["update_index"], term["t"], "term", f"{term['term']}: {term['definition']}"))
+    return "stored"
+
+
 def apply_record(conn: sqlite3.Connection, topic: str, value: bytes | None, partition: int, offset: int,
                  key: bytes | None, now: int, window_ms: int) -> str:
     """Store one record. Returns what happened: 'stored', 'duplicate' or 'invalid'."""
     try:
-        p = schemas.decode(value, SCHEMA_OF[topic])
+        p = schemas.decode(value, _schema_name(topic, value))
     except schemas.ContractError as exc:
         cur = conn.execute(
             "INSERT INTO dlq(stage, source_topic, src_partition, src_offset, key, error, raw_value, failed_ts, sink_ts)"
@@ -80,14 +120,16 @@ def apply_record(conn: sqlite3.Connection, topic: str, value: bytes | None, part
                 (p["video_id"], p["session_start"], p["last_chunk_id"], p["event_ts"]))
             return "stored"
         conn.execute(
-            "INSERT INTO lectures(video_id, title, src_partition, session_start, first_event_ts, last_seen_ts)"
-            " VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(video_id) DO UPDATE SET"
+            "INSERT INTO lectures(video_id, title, src_partition, session_start, first_event_ts, last_seen_ts, speedup)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(video_id) DO UPDATE SET"
             "  title = COALESCE(lectures.title, excluded.title),"
+            "  speedup = COALESCE(lectures.speedup, excluded.speedup),"
             "  src_partition = COALESCE(lectures.src_partition, excluded.src_partition),"
             "  session_start = COALESCE(lectures.session_start, excluded.session_start),"
             "  first_event_ts = MIN(COALESCE(lectures.first_event_ts, excluded.first_event_ts), excluded.first_event_ts),"
             "  last_seen_ts = MAX(COALESCE(lectures.last_seen_ts, excluded.last_seen_ts), excluded.last_seen_ts)",
-            (p["video_id"], p.get("title"), p["src_partition"], p["session_start"], p["event_ts"], p["event_ts"]))
+            (p["video_id"], p.get("title"), p["src_partition"], p["session_start"], p["event_ts"], p["event_ts"],
+             p.get("speedup")))
         cur = conn.execute(
             "INSERT INTO chunks VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING",
             (p["video_id"], p["chunk_id"], p["model"], p["start_time"], p["end_time"], p["text"], p["asr_score"],
@@ -107,6 +149,9 @@ def apply_record(conn: sqlite3.Connection, topic: str, value: bytes | None, part
              s.get("no_speech_avg"), s.get("compression_ratio_max"), json.dumps(s.get("top_terms", [])),
              json.dumps(p["chunk_ids"]), p["transcript"], p.get("emitted_ts"), now))
         return "stored" if cur.rowcount == 1 else "duplicate"
+
+    if topic == TOPIC_NOTES and p["schema"] == "notes.v2":
+        return _apply_notebook_update(conn, p, now)
 
     if topic == TOPIC_NOTES:
         cur = conn.execute(

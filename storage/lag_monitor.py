@@ -4,7 +4,9 @@ Every 5 s, for each watched consumer group: committed offsets, end offsets and p
 (kafka-python 3.x admin API: list_group_offsets, list_partition_offsets, describe_groups; M2 K6).
 Lag is converted to SECONDS OF AUDIO behind, using what one record represents for that group
 (one chunk for the workers and Streams, one window for the note stage), so the same threshold
-LAG_ALERT_S (30 s) means the same thing everywhere and at any chunk size.
+LAG_ALERT_S (30 s) means the same thing everywhere and at any chunk size. The Note Agent HOLDS up to
+G - 1 windows uncommitted by design (G = windows per 90 s update, rev 6 §8.1.1); those records are an
+allowance and do not count as lag, so a normal hold never alerts.
 
 CONSUMER_LAG is raised when a partition is over the threshold on 2 consecutive polls;
 alert_id = CONSUMER_LAG:<group>:<partition>:<epoch_minute>, so repeats within a minute collapse.
@@ -36,13 +38,15 @@ class Watched:
     topic: str
     seconds_per_record: float
     alert: bool
+    allowance_records: int = 0        # records held uncommitted by design (the Note Agent's open update)
 
 
 def watched_groups(settings: Settings) -> list[Watched]:
     return [
         Watched(GROUP_WORKERS, TOPIC_AUDIO, settings.chunk_seconds, True),
         Watched("edustream-streams", TOPIC_TRANSCRIPTS, settings.chunk_seconds, False),
-        Watched(GROUP_NOTES, TOPIC_WINDOWS, settings.window_seconds, True),
+        Watched(GROUP_NOTES, TOPIC_WINDOWS, settings.window_seconds * settings.speedup, True,
+                max(0, settings.note_update_s // max(1, int(settings.window_seconds * settings.speedup)) - 1)),
     ]
 
 
@@ -107,8 +111,9 @@ def sample(admin: KafkaAdminClient, groups: list[Watched]) -> list[LagRow]:
             position = meta.offset if meta is not None and meta.offset >= 0 else starts[tp].offset
             end = ends[tp].offset
             lag = max(0, end - position)
+            beyond = max(0, lag - g.allowance_records)
             rows.append(LagRow(g.group, tp.topic, tp.partition, meta.offset if meta is not None else None,
-                               position, end, lag, lag * g.seconds_per_record, owners.get((tp.topic, tp.partition))))
+                               position, end, lag, beyond * g.seconds_per_record, owners.get((tp.topic, tp.partition))))
     return rows
 
 

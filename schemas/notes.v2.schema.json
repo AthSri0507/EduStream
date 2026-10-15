@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "notes.v2",
+  "title": "One notebook update: 90 s of lecture (topic final_notes, rev 6, ARCHITECTURE §8.1)",
+  "type": "object",
+  "required": ["schema", "video_id", "update_index", "media_start", "media_end", "window_starts", "section",
+               "points", "terms", "generator", "created_ts"],
+  "properties": {
+    "schema": {"const": "notes.v2"},
+    "video_id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,64}$"},
+    "update_index": {"type": "integer", "minimum": 0,
+                     "description": "floor(media_start / NOTE_UPDATE_S), or the next free index for a late window"},
+    "media_start": {"type": "number", "minimum": 0, "description": "media seconds covered by this update"},
+    "media_end": {"type": "number", "minimum": 0},
+    "window_starts": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 0}},
+    "section": {
+      "type": "object",
+      "description": "the section this update ends in; IDs are assigned by code, never by the LLM",
+      "required": ["id", "title", "is_new"],
+      "properties": {
+        "id": {"type": "integer", "minimum": 1},
+        "title": {"type": "string", "minLength": 1, "maxLength": 80},
+        "is_new": {"type": "boolean"}
+      }
+    },
+    "points": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["section_id", "text", "t", "kind", "quote"],
+        "properties": {
+          "section_id": {"type": "integer", "minimum": 1},
+          "text": {"type": "string", "minLength": 1, "maxLength": 300},
+          "t": {"type": "number", "minimum": 0, "description": "media seconds of the chunk holding the quote"},
+          "kind": {"enum": ["point", "example"]},
+          "quote": {"type": "string", "minLength": 1, "description": "verbatim words from the transcript"},
+          "background": {"type": ["string", "null"], "maxLength": 300,
+                         "description": "explanation added from general knowledge, shown labelled as background"}
+        }
+      }
+    },
+    "terms": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["term", "definition", "t", "source"],
+        "properties": {
+          "term": {"type": "string", "minLength": 1, "maxLength": 80},
+          "definition": {"type": "string", "maxLength": 200},
+          "t": {"type": "number", "minimum": 0},
+          "source": {"enum": ["lecture", "background"]}
+        }
+      }
+    },
+    "generator": {"enum": ["llm", "extractive"]},
+    "model": {"type": ["string", "null"]},
+    "agent_ms": {"type": "number", "minimum": 0},
+    "quality_flags": {"type": "array", "items": {"type": "string"}},
+    "session_start": {"type": "integer", "minimum": 0},
+    "created_ts": {"type": "integer", "minimum": 0}
+  }
+}

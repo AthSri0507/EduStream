@@ -9,7 +9,7 @@ from common import schemas
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "schemas" / "examples"
 SCHEMA_OF_FOLDER = {"audio_chunk": "audio_chunk.v1", "transcript": "transcript.v1", "window": "window.v1",
-                    "notes": "notes.v1", "alert": "alert.v1", "dlq": "dlq.v1"}
+                    "notes": "notes.v1", "notes_v2": "notes.v2", "alert": "alert.v1", "dlq": "dlq.v1"}
 FIXTURES = sorted(EXAMPLES.glob("*/*.json"))
 
 

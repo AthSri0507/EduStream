@@ -6,7 +6,8 @@ against the shared JSON Schemas, and checks, per lecture played (run/lectures/*.
   * emit-once      - no (video_id, window_start, revision) appears twice in window_summaries
   * never early    - every window was emitted at or after window_end + GRACE (wall clock)
   * own flush      - the lecture's last window was emitted only after its own flush was due
-  * notes          - one final_notes record per window
+  * notebook       - rev 6: one notes.v2 update per 90 s block of the lecture, each exactly once, and
+                     every window in exactly one update (the notebook itself is saved for comparisons)
   * no late drops  - zero LATE_DROP alerts; DLQ empty unless --expect-dlq N
   * --db           - SQLite (written by db-sink) holds exactly the distinct chunks, windows, notes and
                      alerts found in the topics, with matching content (end-to-end to storage)
@@ -19,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from collections import Counter, defaultdict
 
@@ -28,7 +30,7 @@ from common import schemas
 from common.config import (ROOT, RUN_DIR, TOPIC_ALERTS, TOPIC_DLQ, TOPIC_NOTES, TOPIC_TRANSCRIPTS, TOPIC_WINDOWS,
                            load)
 
-SCHEMA_OF = {TOPIC_TRANSCRIPTS: "transcript.v1", TOPIC_WINDOWS: "window.v1", TOPIC_NOTES: "notes.v1",
+SCHEMA_OF = {TOPIC_TRANSCRIPTS: "transcript.v1", TOPIC_WINDOWS: "window.v1", TOPIC_NOTES: "notes.v2",
              TOPIC_ALERTS: "alert.v1", TOPIC_DLQ: "dlq.v1"}
 
 
@@ -71,7 +73,10 @@ def main(argv=None) -> int:
     windows_by_video = defaultdict(list)
     for w in payloads[TOPIC_WINDOWS]:
         windows_by_video[w["video_id"]].append(w)
-    notes_keys = Counter((n["video_id"], n["window_start"], n["revision"]) for n in payloads[TOPIC_NOTES])
+    updates_by_video = defaultdict(list)
+    for u in payloads[TOPIC_NOTES]:
+        updates_by_video[u["video_id"]].append(u)
+    notebooks = {}
     flushes = Counter(t["video_id"] for t in payloads[TOPIC_TRANSCRIPTS] if t["type"] == "flush")
 
     summary = {}
@@ -96,8 +101,21 @@ def main(argv=None) -> int:
         check(f"{vid}: last window closed by its own flush",
               bool(last_window and flush_ts and last_window["emitted_ts"] >= flush_ts),
               f"emitted {summary[vid]['last_window_emitted_after_flush_ms']} ms after the flush's event time")
-        check(f"{vid}: one note per window", all(notes_keys[k] >= 1 for k in keys) and len(keys) > 0,
-              f"{sum(1 for k in keys if notes_keys[k])}/{len(keys)} windows have notes")
+        ups = sorted(updates_by_video.get(vid, []), key=lambda u: u["update_index"])
+        expected = set(range(math.ceil((last + 1) * settings.chunk_seconds / settings.note_update_s)))
+        counts = Counter(u["update_index"] for u in ups)
+        check(f"{vid}: one notebook update per {settings.note_update_s} s block, each once",
+              set(counts) == expected and all(n == 1 for n in counts.values()),
+              f"{len(counts)}/{len(expected)} updates, {len(ups)} records")
+        in_updates = Counter(ws_ for u in ups for ws_ in u["window_starts"])
+        check(f"{vid}: every window in exactly one update",
+              set(in_updates) == {w["window_start"] for w in ws} and all(n == 1 for n in in_updates.values()),
+              f"{len(in_updates)} windows in updates, {len(ws)} windows emitted")
+        generators = Counter(u["generator"] for u in ups)
+        summary[vid]["updates"] = dict(generators)
+        notebooks[vid] = [{"update": u["update_index"], "section": [u["section"]["id"], u["section"]["title"]],
+                           "points": [[pt["section_id"], pt["t"], pt["text"]] for pt in u["points"]],
+                           "terms": [t["term"] for t in u["terms"]], "generator": u["generator"]} for u in ups]
 
     late = [a for a in payloads[TOPIC_ALERTS] if a["type"] == "LATE_DROP"]
     check("no LATE_DROP alerts", not late, f"{len(late)} LATE_DROP")
@@ -115,11 +133,14 @@ def main(argv=None) -> int:
                       db.execute("SELECT video_id, window_start, revision, chunk_ids, transcript FROM window_stats")}
         check("db: windows == topic windows (keys and content)", db_windows == topic_windows,
               f"{len(db_windows)} in SQLite, {len(topic_windows)} distinct in Kafka")
-        topic_notes = {(n["video_id"], n["window_start"], n["revision"]) for n in payloads[TOPIC_NOTES]}
-        db_notes = {tuple(r) for r in db.execute("SELECT video_id, window_start, revision FROM notes")}
-        fts = db.execute("SELECT COUNT(*) FROM notes_fts").fetchone()[0]
-        check("db: notes == topic notes, one index row each", db_notes == topic_notes and fts == len(db_notes),
-              f"{len(db_notes)} notes, {fts} index rows, {len(topic_notes)} distinct in Kafka")
+        first = {}
+        for u in payloads[TOPIC_NOTES]:
+            first.setdefault((u["video_id"], u["update_index"]), u)      # first writer wins, as in the sink
+        db_updates = {tuple(r) for r in db.execute("SELECT video_id, update_index FROM notebook_updates")}
+        n_points = db.execute("SELECT COUNT(*) FROM points").fetchone()[0]
+        check("db: notebook updates == topic updates, with all their points",
+              db_updates == set(first) and n_points == sum(len(u["points"]) for u in first.values()),
+              f"{len(db_updates)} updates and {n_points} points in SQLite, {len(first)} distinct updates in Kafka")
         topic_alerts = {a["alert_id"] for a in payloads[TOPIC_ALERTS]}
         db_alerts = {r[0] for r in db.execute("SELECT alert_id FROM alerts")}
         check("db: alerts == distinct topic alerts", db_alerts == topic_alerts, f"{len(db_alerts)} in SQLite")
@@ -130,7 +151,7 @@ def main(argv=None) -> int:
 
     out = ROOT / "bench" / "results" / f"verify_{args.label}.json"
     out.write_text(json.dumps({"checks": [{"name": n, "ok": ok, "detail": d} for n, ok, d in checks],
-                               "lectures": summary, "alerts_by_type": alert_types,
+                               "lectures": summary, "notebooks": notebooks, "alerts_by_type": alert_types,
                                "counts": {t: len(v) for t, v in payloads.items()}}, indent=2), encoding="utf-8")
     failed = sum(not ok for _, ok, _ in checks)
     print(f"{len(checks) - failed}/{len(checks)} checks passed -> {out.relative_to(ROOT)}")

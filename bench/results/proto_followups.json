@@ -1,0 +1,466 @@
+{
+  "cases": 12,
+  "raw_llm_correct": 7,
+  "with_guards_correct": 7,
+  "rows": [
+    {
+      "id": 1,
+      "ok": true,
+      "pass": true,
+      "raw_pass": true,
+      "misses": [],
+      "raw_misses": [],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.71,
+      "plan": {
+        "intent": "explain_recent",
+        "standalone_question": "What did she mean just now?",
+        "refers_to": {
+          "span": [
+            415,
+            445
+          ],
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "brief",
+        "style": "simpler",
+        "ambiguous": false
+      },
+      "guarded": {
+        "intent": "explain_recent",
+        "standalone_question": "What did she mean just now?",
+        "refers_to": {
+          "span": [
+            415,
+            445
+          ],
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "brief",
+        "style": "same",
+        "ambiguous": false
+      }
+    },
+    {
+      "id": 2,
+      "ok": true,
+      "pass": true,
+      "raw_pass": true,
+      "misses": [],
+      "raw_misses": [],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.69,
+      "plan": {
+        "intent": "explain_recent",
+        "standalone_question": "Explain that again but simpler",
+        "refers_to": {
+          "span": [
+            415,
+            445
+          ],
+          "term": null,
+          "previous_answer": true
+        },
+        "depth": "normal",
+        "style": "simpler",
+        "ambiguous": false
+      },
+      "guarded": {
+        "intent": "explain_recent",
+        "standalone_question": "Explain that again but simpler",
+        "refers_to": {
+          "span": [
+            415,
+            445
+          ],
+          "term": null,
+          "previous_answer": true
+        },
+        "depth": "normal",
+        "style": "simpler",
+        "ambiguous": false
+      }
+    },
+    {
+      "id": 3,
+      "ok": true,
+      "pass": true,
+      "raw_pass": true,
+      "misses": [],
+      "raw_misses": [],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.41,
+      "plan": {
+        "intent": "summarise",
+        "standalone_question": "summarise the last 5 minutes",
+        "refers_to": {
+          "span": [
+            145,
+            445
+          ],
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      },
+      "guarded": {
+        "intent": "summarise",
+        "standalone_question": "summarise the last 5 minutes",
+        "refers_to": {
+          "span": [
+            145,
+            445
+          ],
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      }
+    },
+    {
+      "id": 4,
+      "ok": true,
+      "pass": true,
+      "raw_pass": true,
+      "misses": [],
+      "raw_misses": [],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.56,
+      "plan": {
+        "intent": "define",
+        "standalone_question": "What does modular mean?",
+        "refers_to": {
+          "span": null,
+          "term": "modular",
+          "previous_answer": false
+        },
+        "depth": "brief",
+        "style": "simpler",
+        "ambiguous": false
+      },
+      "guarded": {
+        "intent": "define",
+        "standalone_question": "What does modular mean?",
+        "refers_to": {
+          "span": null,
+          "term": "modular",
+          "previous_answer": false
+        },
+        "depth": "brief",
+        "style": "same",
+        "ambiguous": false
+      }
+    },
+    {
+      "id": 5,
+      "ok": true,
+      "pass": false,
+      "raw_pass": false,
+      "misses": [
+        "standalone question lacks 'programming skill'"
+      ],
+      "raw_misses": [
+        "standalone question lacks 'programming skill'"
+      ],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.51,
+      "plan": {
+        "intent": "explain_recent",
+        "standalone_question": "tell me more about the second one",
+        "refers_to": {
+          "span": null,
+          "term": null,
+          "previous_answer": true
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      },
+      "guarded": {
+        "intent": "explain_recent",
+        "standalone_question": "tell me more about the second one",
+        "refers_to": {
+          "span": null,
+          "term": null,
+          "previous_answer": true
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      }
+    },
+    {
+      "id": 6,
+      "ok": true,
+      "pass": false,
+      "raw_pass": false,
+      "misses": [
+        "span None (want ~[185, 215])"
+      ],
+      "raw_misses": [
+        "span None (want ~[185, 215])"
+      ],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.73,
+      "plan": {
+        "intent": "ask",
+        "standalone_question": "Why did the lecturer say not to be afraid of breaking the computer?",
+        "refers_to": {
+          "span": null,
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "normal",
+        "style": "simpler",
+        "ambiguous": false
+      },
+      "guarded": {
+        "intent": "ask",
+        "standalone_question": "Why did the lecturer say not to be afraid of breaking the computer?",
+        "refers_to": {
+          "span": null,
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      }
+    },
+    {
+      "id": 7,
+      "ok": true,
+      "pass": false,
+      "raw_pass": false,
+      "misses": [
+        "span None (want ~[0, 445])"
+      ],
+      "raw_misses": [
+        "span None (want ~[0, 445])"
+      ],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.62,
+      "plan": {
+        "intent": "quiz",
+        "standalone_question": "quiz me on what we've covered so far",
+        "refers_to": {
+          "span": null,
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      },
+      "guarded": {
+        "intent": "quiz",
+        "standalone_question": "quiz me on what we've covered so far",
+        "refers_to": {
+          "span": null,
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      }
+    },
+    {
+      "id": 8,
+      "ok": true,
+      "pass": true,
+      "raw_pass": true,
+      "misses": [],
+      "raw_misses": [],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.61,
+      "plan": {
+        "intent": "data",
+        "standalone_question": "how fast was she speaking in the last minute?",
+        "refers_to": {
+          "span": [
+            385,
+            445
+          ],
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      },
+      "guarded": {
+        "intent": "data",
+        "standalone_question": "how fast was she speaking in the last minute?",
+        "refers_to": {
+          "span": [
+            385,
+            445
+          ],
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      }
+    },
+    {
+      "id": 9,
+      "ok": true,
+      "pass": false,
+      "raw_pass": false,
+      "misses": [
+        "ambiguous False (want True)"
+      ],
+      "raw_misses": [
+        "ambiguous False (want True)"
+      ],
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.72,
+      "plan": {
+        "intent": "ask",
+        "standalone_question": "Is it better than the other one?",
+        "refers_to": {
+          "span": [
+            390,
+            400
+          ],
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      },
+      "guarded": {
+        "intent": "ask",
+        "standalone_question": "Is it better than the other one?",
+        "refers_to": {
+          "span": [
+            390,
+            400
+          ],
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      }
+    },
+    {
+      "id": 10,
+      "ok": true,
+      "pass": true,
+      "raw_pass": true,
+      "misses": [],
+      "raw_misses": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 0.67,
+      "plan": {
+        "intent": "other",
+        "standalone_question": "who won the football world cup in 2022?",
+        "refers_to": {
+          "span": null,
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "brief",
+        "style": "same",
+        "ambiguous": false
+      },
+      "guarded": {
+        "intent": "other",
+        "standalone_question": "who won the football world cup in 2022?",
+        "refers_to": {
+          "span": null,
+          "term": null,
+          "previous_answer": false
+        },
+        "depth": "brief",
+        "style": "same",
+        "ambiguous": false
+      }
+    },
+    {
+      "id": 11,
+      "ok": true,
+      "pass": true,
+      "raw_pass": true,
+      "misses": [],
+      "raw_misses": [],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 0.72,
+      "plan": {
+        "intent": "define",
+        "standalone_question": "What is recursion?",
+        "refers_to": {
+          "span": null,
+          "term": "recursion",
+          "previous_answer": false
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      },
+      "guarded": {
+        "intent": "define",
+        "standalone_question": "What is recursion?",
+        "refers_to": {
+          "span": null,
+          "term": "recursion",
+          "previous_answer": false
+        },
+        "depth": "normal",
+        "style": "same",
+        "ambiguous": false
+      }
+    },
+    {
+      "id": 12,
+      "ok": true,
+      "pass": false,
+      "raw_pass": false,
+      "misses": [
+        "intent explain_recent (want define/ask)"
+      ],
+      "raw_misses": [
+        "intent explain_recent (want define/ask)",
+        "previous_answer False"
+      ],
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 0.89,
+      "plan": {
+        "intent": "explain_recent",
+        "standalone_question": "Please explain declarative knowledge in a lot more detail.",
+        "refers_to": {
+          "span": null,
+          "term": "declarative knowledge",
+          "previous_answer": false
+        },
+        "depth": "detailed",
+        "style": "more_technical",
+        "ambiguous": false
+      },
+      "guarded": {
+        "intent": "explain_recent",
+        "standalone_question": "Please explain declarative knowledge in a lot more detail.",
+        "refers_to": {
+          "span": null,
+          "term": "declarative knowledge",
+          "previous_answer": true
+        },
+        "depth": "detailed",
+        "style": "more_technical",
+        "ambiguous": false
+      }
+    }
+  ]
+}
