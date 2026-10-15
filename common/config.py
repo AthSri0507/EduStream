@@ -33,6 +33,9 @@ TOPIC_ALERTS = "alerts"
 TOPIC_DLQ = "dlq"
 
 GROUP_WORKERS = "transcription-workers"
+# Consumer group of the note stage. The interim note generator until M6, then the Note Agent
+# ("note-agent"); the lag monitor watches whichever is deployed (never a group that is not running yet).
+GROUP_NOTES = "note-generator-interim"
 
 # Demo lectures and their Kafka video_ids, chosen in M2 so murmur2 places them
 # on partitions 0, 1 and 2 (bench/M2_RESULTS.md §2).

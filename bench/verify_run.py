@@ -8,6 +8,8 @@ against the shared JSON Schemas, and checks, per lecture played (run/lectures/*.
   * own flush      - the lecture's last window was emitted only after its own flush was due
   * notes          - one final_notes record per window
   * no late drops  - zero LATE_DROP alerts; DLQ empty unless --expect-dlq N
+  * --db           - SQLite (written by db-sink) holds exactly the distinct chunks, windows, notes and
+                     alerts found in the topics, with matching content (end-to-end to storage)
 Exit code 0 only if every check passes. Results: bench/results/verify_<label>.json
 
     .venv\\Scripts\\python -m bench.verify_run --label m4_i1
@@ -45,6 +47,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--label", default="run")
     parser.add_argument("--expect-dlq", type=int, default=0)
+    parser.add_argument("--db", action="store_true", help="also check data/edustream.db against the topics")
     args = parser.parse_args(argv)
     settings = load()
     grace_ms = settings.grace_seconds * 1000
@@ -100,6 +103,28 @@ def main(argv=None) -> int:
     check("no LATE_DROP alerts", not late, f"{len(late)} LATE_DROP")
     check("DLQ as expected", len(payloads[TOPIC_DLQ]) == args.expect_dlq,
           f"{len(payloads[TOPIC_DLQ])} DLQ record(s), expected {args.expect_dlq}")
+    if args.db:
+        from storage.db import connect_readonly
+        db = connect_readonly()
+        chunk_keys = {(t["video_id"], t["chunk_id"], t["model"]) for t in payloads[TOPIC_TRANSCRIPTS] if t["type"] == "chunk"}
+        db_chunks = {tuple(r) for r in db.execute("SELECT video_id, chunk_id, model FROM chunks")}
+        check("db: chunks == distinct transcripts", db_chunks == chunk_keys, f"{len(db_chunks)} in SQLite, {len(chunk_keys)} in Kafka")
+        topic_windows = {(w["video_id"], w["window_start"], w["revision"]): (json.dumps(w["chunk_ids"]), w["transcript"])
+                         for w in payloads[TOPIC_WINDOWS]}
+        db_windows = {(r[0], r[1], r[2]): (r[3], r[4]) for r in
+                      db.execute("SELECT video_id, window_start, revision, chunk_ids, transcript FROM window_stats")}
+        check("db: windows == topic windows (keys and content)", db_windows == topic_windows,
+              f"{len(db_windows)} in SQLite, {len(topic_windows)} distinct in Kafka")
+        topic_notes = {(n["video_id"], n["window_start"], n["revision"]) for n in payloads[TOPIC_NOTES]}
+        db_notes = {tuple(r) for r in db.execute("SELECT video_id, window_start, revision FROM notes")}
+        fts = db.execute("SELECT COUNT(*) FROM notes_fts").fetchone()[0]
+        check("db: notes == topic notes, one index row each", db_notes == topic_notes and fts == len(db_notes),
+              f"{len(db_notes)} notes, {fts} index rows, {len(topic_notes)} distinct in Kafka")
+        topic_alerts = {a["alert_id"] for a in payloads[TOPIC_ALERTS]}
+        db_alerts = {r[0] for r in db.execute("SELECT alert_id FROM alerts")}
+        check("db: alerts == distinct topic alerts", db_alerts == topic_alerts, f"{len(db_alerts)} in SQLite")
+        db.close()
+
     alert_types = Counter(a["type"] for a in payloads[TOPIC_ALERTS])
     print(f"alerts by type: {dict(alert_types)}")
 

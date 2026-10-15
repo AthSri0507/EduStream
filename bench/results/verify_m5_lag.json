@@ -1,0 +1,196 @@
+{
+  "checks": [
+    {
+      "name": "all records match the JSON Schemas",
+      "ok": true,
+      "detail": "98 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_demaine_l2: complete",
+      "ok": true,
+      "detail": "15/15 chunks across 5 windows"
+    },
+    {
+      "name": "algorithms_demaine_l2: each window emitted once",
+      "ok": true,
+      "detail": "5 distinct windows, 5 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_demaine_l2: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10065 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_demaine_l2: one note per window",
+      "ok": true,
+      "detail": "5/5 windows have notes"
+    },
+    {
+      "name": "algorithms_ku_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_ku_l1: complete",
+      "ok": true,
+      "detail": "15/15 chunks across 5 windows"
+    },
+    {
+      "name": "algorithms_ku_l1: each window emitted once",
+      "ok": true,
+      "detail": "5 distinct windows, 5 records"
+    },
+    {
+      "name": "algorithms_ku_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_ku_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10060 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_ku_l1: one note per window",
+      "ok": true,
+      "detail": "5/5 windows have notes"
+    },
+    {
+      "name": "python_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "python_l1: complete",
+      "ok": true,
+      "detail": "15/15 chunks across 5 windows"
+    },
+    {
+      "name": "python_l1: each window emitted once",
+      "ok": true,
+      "detail": "5 distinct windows, 5 records"
+    },
+    {
+      "name": "python_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "python_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10049 ms after the flush's event time"
+    },
+    {
+      "name": "python_l1: one note per window",
+      "ok": true,
+      "detail": "5/5 windows have notes"
+    },
+    {
+      "name": "python_lag: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "python_lag: complete",
+      "ok": true,
+      "detail": "8/8 chunks across 3 windows"
+    },
+    {
+      "name": "python_lag: each window emitted once",
+      "ok": true,
+      "detail": "3 distinct windows, 3 records"
+    },
+    {
+      "name": "python_lag: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "python_lag: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 371388 ms after the flush's event time"
+    },
+    {
+      "name": "python_lag: one note per window",
+      "ok": true,
+      "detail": "3/3 windows have notes"
+    },
+    {
+      "name": "no LATE_DROP alerts",
+      "ok": true,
+      "detail": "0 LATE_DROP"
+    },
+    {
+      "name": "DLQ as expected",
+      "ok": true,
+      "detail": "0 DLQ record(s), expected 0"
+    },
+    {
+      "name": "db: chunks == distinct transcripts",
+      "ok": true,
+      "detail": "53 in SQLite, 53 in Kafka"
+    },
+    {
+      "name": "db: windows == topic windows (keys and content)",
+      "ok": true,
+      "detail": "18 in SQLite, 18 distinct in Kafka"
+    },
+    {
+      "name": "db: notes == topic notes, one index row each",
+      "ok": true,
+      "detail": "18 notes, 18 index rows, 18 distinct in Kafka"
+    },
+    {
+      "name": "db: alerts == distinct topic alerts",
+      "ok": true,
+      "detail": "4 in SQLite"
+    }
+  ],
+  "lectures": {
+    "algorithms_demaine_l2": {
+      "partition": 2,
+      "chunks_sent": 15,
+      "windows": 5,
+      "last_window_emitted_after_flush_ms": 10065
+    },
+    "algorithms_ku_l1": {
+      "partition": 1,
+      "chunks_sent": 15,
+      "windows": 5,
+      "last_window_emitted_after_flush_ms": 10060
+    },
+    "python_l1": {
+      "partition": 0,
+      "chunks_sent": 15,
+      "windows": 5,
+      "last_window_emitted_after_flush_ms": 10049
+    },
+    "python_lag": {
+      "partition": 1,
+      "chunks_sent": 8,
+      "windows": 3,
+      "last_window_emitted_after_flush_ms": 371388
+    }
+  },
+  "alerts_by_type": {
+    "LOW_ASR_SCORE": 1,
+    "CONSUMER_LAG": 4
+  },
+  "counts": {
+    "transcriptions": 57,
+    "window_summaries": 18,
+    "final_notes": 18,
+    "alerts": 5,
+    "dlq": 0
+  }
+}

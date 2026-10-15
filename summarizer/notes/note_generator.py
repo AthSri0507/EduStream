@@ -18,12 +18,12 @@ import sys
 import time
 
 from common import schemas
-from common.config import TOPIC_NOTES, TOPIC_WINDOWS, load
+from common.config import GROUP_NOTES, TOPIC_NOTES, TOPIC_WINDOWS, load
 from common.kafka_utils import (EXIT_PRODUCE_FAILED, ProduceFailed, commit_record, make_consumer, make_producer,
                                 poll_one, send_and_wait, send_to_dlq)
 from common.log import JsonLog
 
-GROUP = "note-generator-interim"
+GROUP = GROUP_NOTES
 
 
 # --------------------------------------------------

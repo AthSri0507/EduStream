@@ -5,8 +5,9 @@
 # 2. starts the single Kafka broker (formats its storage on first use)
 # 3. creates/verifies the topics
 # 4. builds the Kafka Streams jar if needed (Maven Wrapper; -Rebuild forces it), then starts
-#    the Streams app, N transcription workers and the interim note generator (until M6),
-#    each in its own titled window, restarted on error exits.
+#    the Streams app, N transcription workers, the interim note generator (until M6), the
+#    db-sink (SQLite + lag monitor) and the dashboard (http://localhost:8501), each in its own
+#    titled window, restarted on error exits.
 # The lecture source is NOT started here: run it when you want lectures to play:
 #   .venv\Scripts\python -m producer.lecture_source --demo
 # PIDs go to run\pids\ so stop_all.ps1 / kill.ps1 can stop whole process trees.
@@ -83,8 +84,11 @@ for ($i = 1; $i -le $Workers; $i++) {
     Start-Window "w$i" "-Module summarizer.transcription.transcription_worker -EnvVars `"WORKER_ID=w$i`" -Restart"
 }
 Start-Window "note-generator" "-Module summarizer.notes.note_generator -Restart"
+Start-Window "db-sink" "-Module storage.db_sink -Restart"
+Start-Window "dashboard" "-Module streamlit -ModuleArgs `"run dashboard/app.py --server.headless true --server.port 8501`" -Restart"
 
 Write-Host ""
 Write-Host "Foundation running. Play the demo lectures with:"
 Write-Host "  .venv\Scripts\python -m producer.lecture_source --demo"
-Write-Host "Watch notes with:  .venv\Scripts\python -m tools.tap final_notes"
+Write-Host "  (or, without audio/Whisper:  .venv\Scripts\python -m tools.replay_fixtures --demo)"
+Write-Host "Dashboard: http://localhost:8501"

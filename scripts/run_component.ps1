@@ -8,6 +8,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$Name,
     [string]$Module,
+    [string]$ModuleArgs = "",
     [string]$Jar,
     [string]$JavaClass,
     [string]$ClassPath,
@@ -26,7 +27,8 @@ foreach ($pair in ($EnvVars -split ";" | Where-Object { $_ })) {
 while ($true) {
     $started = Get-Date
     if ($Module) {
-        & $VenvPy -u -m $Module
+        $extra = @($ModuleArgs -split " " | Where-Object { $_ })
+        & $VenvPy -u -m $Module @extra
     } elseif ($Jar) {
         & java -Xmx512m -jar $Jar
     } else {

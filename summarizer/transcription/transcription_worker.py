@@ -88,6 +88,8 @@ def handle(record, model, producer, settings, log) -> None:
         "src_partition": record.partition, "src_offset": record.offset,
         "transcribed_ts": int(time.time() * 1000), "proc_ms": round(proc_ms, 1),
     }
+    if "title" in event:                      # display name, carried on a lecture's first chunk
+        transcript["title"] = event["title"]
     send_and_wait(producer, TOPIC_TRANSCRIPTS, schemas.encode("transcript.v1", transcript),
                   key=event["video_id"], partition=record.partition)       # A4: same partition number
     log.info("transcribed", video_id=event["video_id"], chunk_id=event["chunk_id"], partition=record.partition,

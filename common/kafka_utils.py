@@ -46,7 +46,9 @@ def make_producer(settings: Settings, client_id: str) -> KafkaProducer:
     )
 
 
-def make_consumer(settings: Settings, group_id: str | None, topics: list[str] | None, client_id: str) -> KafkaConsumer:
+def make_consumer(settings: Settings, group_id: str | None, topics: list[str] | None, client_id: str,
+                  max_poll_records: int = 1) -> KafkaConsumer:
+    """max_poll_records=1 for record-at-a-time stages (§6.3); the sink uses batches + explicit batch commits."""
     consumer = KafkaConsumer(
         bootstrap_servers=settings.kafka_bootstrap,
         client_id=client_id,
@@ -54,7 +56,7 @@ def make_consumer(settings: Settings, group_id: str | None, topics: list[str] | 
         enable_auto_commit=False,
         auto_offset_reset="earliest",
         isolation_level="read_committed",
-        max_poll_records=1,
+        max_poll_records=max_poll_records,
         session_timeout_ms=10_000,
         heartbeat_interval_ms=3_000,
         max_poll_interval_ms=300_000,
