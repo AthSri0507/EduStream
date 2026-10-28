@@ -34,16 +34,30 @@ def transcript(conn: sqlite3.Connection, video_id: str, start: float, end: float
     return [{"t": r[0], "end": r[1], "text": r[2]} for r in rows if (r[2] or "").strip()]
 
 
+def consolidated_to(conn: sqlite3.Connection, video_id: str) -> float:
+    """Everything before this media time is in finished topics; later notes are live drafts (NOTEBOOK_DESIGN §4.4)."""
+    return conn.execute("SELECT COALESCE(MAX(media_end), 0) FROM passes WHERE video_id = ?", (video_id,)).fetchone()[0]
+
+
 def outline(conn: sqlite3.Connection, video_id: str) -> list[dict]:
-    return [{"id": r[0], "title": r[1], "t": r[2]} for r in conn.execute(
-        "SELECT section_id, COALESCE(final_title, title), media_start FROM sections WHERE video_id = ?"
-        " ORDER BY section_id", (video_id,))]
+    """The finished topics, then (while there are drafts after them) the live notes as the next entry."""
+    topics = [{"id": r[0], "title": r[1], "t": r[2]} for r in conn.execute(
+        "SELECT topic_n, title, media_start FROM topics WHERE video_id = ? ORDER BY topic_n", (video_id,))]
+    since = consolidated_to(conn, video_id)
+    if conn.execute("SELECT 1 FROM drafts WHERE video_id = ? AND root_t >= ? LIMIT 1", (video_id, since)).fetchone():
+        topics.append({"id": len(topics) + 1, "title": "Live notes (not organised into a topic yet)", "t": since})
+    return topics
 
 
 def notebook_points(conn: sqlite3.Connection, video_id: str, start: float = 0.0, end: float = 1e9) -> list[dict]:
-    return [{"t": r[0], "text": r[1], "kind": r[2], "section_id": r[3]} for r in conn.execute(
-        "SELECT t, text, kind, section_id FROM points WHERE video_id = ? AND t >= ? AND t <= ? ORDER BY t",
-        (video_id, start, end))]
+    """The notes as lines: finished elements, plus the live drafts after the last consolidation (section None)."""
+    since = consolidated_to(conn, video_id)
+    rows = conn.execute(
+        "SELECT t, text, kind, topic_n, pass_index, seq FROM elements WHERE video_id = ? AND t >= ? AND t <= ?"
+        " UNION ALL SELECT t, text, kind, NULL, 1e9 + update_index, seq FROM drafts"
+        "   WHERE video_id = ? AND root_t >= ? AND t >= ? AND t <= ?"
+        " ORDER BY 5, 6", (video_id, start, end, video_id, since, start, end)).fetchall()
+    return [{"t": r[0], "text": r[1], "kind": r[2], "section_id": r[3]} for r in rows]
 
 
 MAX_NOTEBOOK_LINES = 120          # about 3,000 words: long ranges are trimmed evenly across their sections
@@ -61,8 +75,9 @@ def notebook_digest(conn: sqlite3.Connection, video_id: str, start: float, end: 
     per_section = max(1, (limit - len(by_section)) // max(1, len(by_section)))
     lines = []
     for sid, pts in by_section.items():
-        sec = titles.get(sid, {"title": f"Section {sid}"})
-        lines.append({"t": pts[0]["t"], "end": pts[0]["t"], "text": f"Section {sid}: {sec['title']}"})
+        sec = titles.get(sid, {"title": "Live notes" if sid is None else f"Section {sid}"})
+        lines.append({"t": pts[0]["t"], "end": pts[0]["t"],
+                      "text": sec["title"] if sid is None else f"Section {sid}: {sec['title']}"})
         step = max(1, len(pts) / per_section)
         lines += [{"t": p["t"], "end": p["t"] + 10, "text": p["text"]}
                   for p in (pts[int(i * step)] for i in range(min(per_section, len(pts))))]
@@ -71,10 +86,10 @@ def notebook_digest(conn: sqlite3.Connection, video_id: str, start: float, end: 
 
 def glossary(conn: sqlite3.Connection, video_id: str, term: str) -> list[dict]:
     """Exact (case-insensitive) match first, then terms containing the word."""
-    rows = conn.execute("SELECT term, definition, source, t FROM terms WHERE video_id = ? AND term = ?",
+    rows = conn.execute("SELECT term, definition, 'lecture', t FROM glossary WHERE video_id = ? AND term = ?",
                         (video_id, term)).fetchall()
     if not rows:
-        rows = conn.execute("SELECT term, definition, source, t FROM terms WHERE video_id = ? AND term LIKE ?",
+        rows = conn.execute("SELECT term, definition, 'lecture', t FROM glossary WHERE video_id = ? AND term LIKE ?",
                             (video_id, f"%{term}%")).fetchall()
     return [{"term": r[0], "definition": r[1], "source": r[2], "t": r[3]} for r in rows]
 

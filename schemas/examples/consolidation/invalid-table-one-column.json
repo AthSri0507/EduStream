@@ -1,0 +1,109 @@
+{
+  "schema": "consolidation.v1",
+  "video_id": "python_l1",
+  "pass_index": 1,
+  "media_start": 400.0,
+  "media_end": 750.0,
+  "final": true,
+  "topics": [
+    {
+      "n": 2,
+      "title": "Declarative and imperative knowledge",
+      "media_start": 280.0,
+      "media_end": 520.0,
+      "question": null,
+      "new": false
+    },
+    {
+      "n": 3,
+      "title": "Being a machine: following a recipe",
+      "media_start": 520.0,
+      "media_end": 750.0,
+      "question": {
+        "q": "Why is following the student's steps 'being a machine'?",
+        "answer": "The steps were followed exactly, without judgement, as a computer follows instructions."
+      },
+      "new": true
+    }
+  ],
+  "elements": [
+    {
+      "topic": 2,
+      "kind": "para",
+      "t": 410.0,
+      "said": "Imperative knowledge is a recipe, how to do something.",
+      "lead": "Imperative knowledge",
+      "sentences": [
+        "Imperative knowledge is a recipe: a sequence of steps that tells you how to do something."
+      ],
+      "terms": [
+        {
+          "term": "Imperative knowledge",
+          "definition": "Imperative knowledge is a recipe: a sequence of steps that tells you how to do something."
+        }
+      ],
+      "background": null
+    },
+    {
+      "topic": 2,
+      "kind": "table",
+      "t": 470.0,
+      "said": "declarative is a statement of fact, imperative is a recipe",
+      "caption": "Two kinds of knowledge",
+      "columns": [
+        "Kind"
+      ],
+      "rows": [
+        [
+          "Declarative",
+          "A statement of fact"
+        ],
+        [
+          "Imperative",
+          "A recipe, how to do something"
+        ]
+      ]
+    },
+    {
+      "topic": 3,
+      "kind": "steps",
+      "t": 530.0,
+      "said": "first pick a random number, then find the student",
+      "lead": "The recipe the students gave",
+      "items": [
+        "Pick a random number",
+        "Find the student with that number"
+      ]
+    },
+    {
+      "topic": 3,
+      "kind": "code",
+      "t": 630.0,
+      "said": "So I'm going to import this random module and I'm going to use the rand int function.",
+      "caption": "Picking the number",
+      "code": "import random\nrandom.randint(16, 272)"
+    },
+    {
+      "topic": 3,
+      "kind": "remember",
+      "t": 700.0,
+      "said": "the important thing is the computer only does what you tell it",
+      "text": "A computer only does what you tell it to do."
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Imperative knowledge",
+      "definition": "Imperative knowledge is a recipe: a sequence of steps that tells you how to do something.",
+      "t": 410.0,
+      "topic": 2
+    }
+  ],
+  "generator": "llm",
+  "model": "openai/gpt-oss-120b",
+  "agent_ms": 8120.0,
+  "quality_flags": [
+    "continues:'Imperative knowledge' -> 'Declarative and imperative knowledge' (1 kept, 0 repeated)"
+  ],
+  "created_ts": 1792052000000
+}

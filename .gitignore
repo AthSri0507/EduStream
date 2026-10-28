@@ -21,6 +21,11 @@
 # Bulk per-chunk Whisper transcripts (regenerable; summaries stay committed)
 /bench/results/chunks_*.jsonl
 
+# Offline notebook replays (bench/replay_notebook.py rewrites the whole folder on every run)
+/bench/results/replay_*/
+/bench/results/proto_v*/view_*.html
+
+
 # Local databases and Kafka Streams state
 *.db
 *.db-wal

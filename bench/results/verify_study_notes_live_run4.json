@@ -1,0 +1,297 @@
+{
+  "checks": [
+    {
+      "name": "all records match the JSON Schemas",
+      "ok": true,
+      "detail": "112 records"
+    },
+    {
+      "name": "python_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "python_l1: complete",
+      "ok": true,
+      "detail": "75/75 chunks across 25 windows"
+    },
+    {
+      "name": "python_l1: each window emitted once",
+      "ok": true,
+      "detail": "25 distinct windows, 25 records"
+    },
+    {
+      "name": "python_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "python_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10079 ms after the flush's event time"
+    },
+    {
+      "name": "python_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "9/9 updates, 9 records"
+    },
+    {
+      "name": "python_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "25 windows in updates, 25 windows emitted"
+    },
+    {
+      "name": "python_l1: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "2 passes, 2 records: 0-540 llm, 540-750 llm"
+    },
+    {
+      "name": "python_l1: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 750 s, last cut 750 s"
+    },
+    {
+      "name": "python_l1: topics numbered 1..N",
+      "ok": true,
+      "detail": "3 topics"
+    },
+    {
+      "name": "no LATE_DROP alerts",
+      "ok": true,
+      "detail": "0 LATE_DROP"
+    },
+    {
+      "name": "DLQ as expected",
+      "ok": true,
+      "detail": "0 DLQ record(s), expected 0"
+    },
+    {
+      "name": "db: chunks == distinct transcripts",
+      "ok": true,
+      "detail": "75 in SQLite, 75 in Kafka"
+    },
+    {
+      "name": "db: windows == topic windows (keys and content)",
+      "ok": true,
+      "detail": "25 in SQLite, 25 distinct in Kafka"
+    },
+    {
+      "name": "db: live updates == topic updates, with all their drafts",
+      "ok": true,
+      "detail": "9 updates and 11 drafts in SQLite, 9 distinct updates in Kafka"
+    },
+    {
+      "name": "db: passes == topic passes, with all their topics and elements",
+      "ok": true,
+      "detail": "2 passes, 3 topics, 6 elements in SQLite"
+    },
+    {
+      "name": "db: no draft left in the search index of a finished lecture",
+      "ok": true,
+      "detail": "0 draft rows"
+    },
+    {
+      "name": "db: alerts == distinct topic alerts",
+      "ok": true,
+      "detail": "0 in SQLite"
+    }
+  ],
+  "lectures": {
+    "python_l1": {
+      "partition": 0,
+      "chunks_sent": 75,
+      "windows": 25,
+      "last_window_emitted_after_flush_ms": 10079,
+      "updates": {
+        "llm": 8,
+        "extractive": 1
+      },
+      "passes": {
+        "llm": 2
+      }
+    }
+  },
+  "notebooks": {
+    "python_l1": {
+      "topics": {
+        "1": {
+          "title": "Course Structure and Learning Approach",
+          "elements": [
+            [
+              "para",
+              230.0,
+              "Course Overview. The course has three main goals: knowledge of concepts, programming skills, and problem\u2011solving ability. These are taught through lectures, examples, and problem sets. Practice is the underlying requirement for all three"
+            ],
+            [
+              "para",
+              300.0,
+              "Programming Foundations. Learning how to program involves deciding which objects to create and how to represent knowledge with data structures. Programs are not linear; they include control flow that allows decisions and branching"
+            ],
+            [
+              "para",
+              330.0,
+              "Readable Code. Writing readable code and organizing code helps prevent a big mess that makes it hard to understand or re\u2011understand what you were doing"
+            ]
+          ],
+          "question": {
+            "q": "What are the three main goals of the course?",
+            "answer": "knowledge of concepts, programming skills, and problem\u2011solving ability."
+          },
+          "end": 410.0
+        },
+        "2": {
+          "title": "Computer Fundamentals and Knowledge Types",
+          "elements": [
+            [
+              "para",
+              430.0,
+              "Computer Functions. A computer performs calculations and stores them in memory, often handling billions of calculations per second and using hundreds of gigabytes of storage"
+            ],
+            [
+              "para",
+              520.0,
+              "Types of Knowledge. The first type of knowledge is declarative knowledge, which consists of statements of fact. Declarative knowledge is distinct from procedural knowledge, which involves knowing how to perform tasks"
+            ]
+          ],
+          "question": {
+            "q": "What distinguishes built\u2011in arithmetic operations from user\u2011defined calculations in Python?",
+            "answer": "Built\u2011in operations are primitive and part of the language; user\u2011defined calculations combine these primitives to create new operations."
+          },
+          "end": 540.0
+        },
+        "3": {
+          "title": "Imperative Knowledge and Random Selection",
+          "elements": [
+            [
+              "para",
+              570.0,
+              "Imperative knowledge defined. Imperative knowledge is the recipe or how\u2011to, a sequence of steps that tells a machine what to do in order to achieve a goal"
+            ]
+          ],
+          "question": {
+            "q": "What does the term 'imperative knowledge' refer to in the lecture?",
+            "answer": "A recipe or sequence of steps that tells a machine how to achieve a goal"
+          },
+          "end": 750.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": [
+            [
+              "u1e0",
+              null,
+              "Python Basics. We will start with Python basics, covering mathematical operations that can be performed in Python. The slides and in\u2011class exercises will be available before the lecture, so download them and keep them open for reference. Taking notes on the code during the session will help future review"
+            ],
+            [
+              "u1e1",
+              null,
+              "Success Tips. The course is fast\u2011paced, so reading problem sets as soon as they are released helps terminology sink in. During lectures, linking new terms to those seen in problem sets reinforces understanding. For beginners, the key is practice, similar to math or reading: the more you code, the better you become"
+            ]
+          ]
+        },
+        {
+          "update": 2,
+          "generator": "llm",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "Course Goals. The course has three main goals: knowledge of concepts, programming skills, and problem\u2011solving ability. These are taught through lectures, examples, and problem sets. Practice is the underlying requirement for all three"
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "llm",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "Learning how to program involves deciding which objects to create and how to represent knowledge with data structures. Programs are not linear; they include control flow that allows decisions and branching."
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "llm",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "Readable Code. Writing readable code and organizing code helps prevent a big mess that makes it hard to understand or re\u2011understand what you were doing"
+            ],
+            [
+              "u4e1",
+              null,
+              "Computer Functions. A computer performs calculations and stores them in memory, often handling billions of calculations per second and using hundreds of gigabytes of storage"
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "llm",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "Built\u2011in vs. user\u2011defined. Python provides built\u2011in arithmetic operations such as addition, subtraction, multiplication, and division. These primitive calculation types are part of the language core. Programmers can combine these primitives to create new, user\u2011defined calculations that the interpreter will execute. The computer performs only what it is explicitly told to calculate"
+            ],
+            [
+              "u5e1",
+              null,
+              "Computers lack intrinsic knowledge. Computers do not possess a mind; they execute only the instructions given by the programmer. They can perform calculations extremely quickly, but they do not understand or infer meaning on their own"
+            ]
+          ]
+        },
+        {
+          "update": 6,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u6e0",
+              null,
+              "Someone will win a prize before class ends. But how is someone going to win a Google Cardboard before class ends, right? So if I'm a machine, you need to tell me how someone will win a Google Cardboard before class."
+            ]
+          ]
+        },
+        {
+          "update": 7,
+          "generator": "llm",
+          "elements": [
+            [
+              "u7e0",
+              null,
+              "Random Selection. He then looks up the chosen number in the responder list to identify the winner"
+            ],
+            [
+              "u7e1",
+              null,
+              "Example (Python Code): The code snippet used is: random.randint(16,272). Code: import random\nwinner = random.randint(16,272)\nprint(winner)"
+            ]
+          ]
+        },
+        {
+          "update": 8,
+          "generator": "llm",
+          "elements": []
+        }
+      ]
+    }
+  },
+  "alerts_by_type": {},
+  "counts": {
+    "transcriptions": 76,
+    "window_summaries": 25,
+    "final_notes": 11,
+    "alerts": 0,
+    "dlq": 0
+  }
+}

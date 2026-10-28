@@ -3,6 +3,7 @@
 --
 -- Write rules (implemented in storage/db_sink.py):
 --   chunks, window_stats, notes, dlq : INSERT ... ON CONFLICT DO NOTHING   (first writer wins)
+--   notebook (live_updates ... glossary): see the notebook block below
 --   alerts                           : duplicates collapse on alert_id, keeping the larger value
 --   lectures                         : monotonic updates (COALESCE / MAX)
 --   notes_fts                        : rewritten only when a NEW notes row is the latest revision of its window
@@ -60,45 +61,58 @@ CREATE TABLE IF NOT EXISTS dlq (
   PRIMARY KEY (source_topic, src_partition, src_offset, stage)
 );
 
--- Rev 6 notebook (ARCHITECTURE §8.1, §9): one notes.v2 record per 90 s update. The update row, its points,
--- a new section and new terms are written in ONE transaction, and only if the update row is new
--- (first writer wins), so a duplicate record changes nothing.
-CREATE TABLE IF NOT EXISTS notebook_updates (
-  video_id TEXT, update_index INTEGER, media_start REAL, media_end REAL, section_id INTEGER,
-  window_starts TEXT, generator TEXT, model TEXT, quality_flags TEXT, agent_ms REAL, created_ts INTEGER,
-  sink_ts INTEGER,
+-- Notebook (NOTEBOOK_DESIGN §11), both on final_notes. Each record is written in ONE transaction and only if its
+-- row in live_updates / passes is new (first writer wins), so a duplicate record changes nothing.
+--   notes.v3          one live update per 90 s: its draft elements (and a course-info line)
+--   consolidation.v1  one pass per ~6 min stretch: finished topics, their elements, glossary entries. Drafts before
+--                     the pass's media_end are then hidden by readers (they stay here for audit) and leave the index.
+-- Element bodies are JSON (the shape of agents/study_notes.py); `text` is their plain text for search.
+CREATE TABLE IF NOT EXISTS live_updates (
+  video_id TEXT, update_index INTEGER, media_start REAL, media_end REAL, window_starts TEXT,
+  generator TEXT, model TEXT, quality_flags TEXT, agent_ms REAL, created_ts INTEGER, sink_ts INTEGER,
   PRIMARY KEY (video_id, update_index)
 );
 
-CREATE TABLE IF NOT EXISTS sections (
-  video_id TEXT, section_id INTEGER, title TEXT,
-  final_title TEXT,                   -- set by the end-of-lecture pass (M6b)
-  first_update INTEGER, media_start REAL,
-  PRIMARY KEY (video_id, section_id)
-);
-
-CREATE TABLE IF NOT EXISTS points (
-  video_id TEXT, update_index INTEGER, seq INTEGER, section_id INTEGER, kind TEXT, text TEXT, quote TEXT,
-  background TEXT, t REAL,
-  weak INTEGER DEFAULT 0,             -- flagged by the end-of-lecture pass (M6b)
+CREATE TABLE IF NOT EXISTS drafts (
+  video_id TEXT, update_index INTEGER, seq INTEGER, draft_id TEXT, extends TEXT,
+  root_t REAL,                        -- time of the paragraph it belongs to (a continuation: of the one it extends)
+  kind TEXT, t REAL, text TEXT, body TEXT,
   PRIMARY KEY (video_id, update_index, seq)
 );
 
-CREATE TABLE IF NOT EXISTS terms (
-  video_id TEXT, term TEXT COLLATE NOCASE, definition TEXT, source TEXT, update_index INTEGER, t REAL,
+CREATE TABLE IF NOT EXISTS course_info (
+  video_id TEXT, update_index INTEGER, text TEXT, t REAL,
+  PRIMARY KEY (video_id, update_index)
+);
+
+CREATE TABLE IF NOT EXISTS passes (
+  video_id TEXT, pass_index INTEGER, media_start REAL, media_end REAL, final INTEGER,
+  generator TEXT, model TEXT, quality_flags TEXT, agent_ms REAL, created_ts INTEGER, sink_ts INTEGER,
+  PRIMARY KEY (video_id, pass_index)
+);
+
+CREATE TABLE IF NOT EXISTS topics (
+  video_id TEXT, topic_n INTEGER, title TEXT, media_start REAL,
+  media_end REAL,                     -- grows (MAX) when a later stretch continues the topic
+  pass_index INTEGER, generator TEXT, question TEXT, answer TEXT,
+  PRIMARY KEY (video_id, topic_n)
+);
+
+CREATE TABLE IF NOT EXISTS elements (
+  video_id TEXT, pass_index INTEGER, seq INTEGER, topic_n INTEGER, kind TEXT, t REAL, text TEXT, body TEXT,
+  PRIMARY KEY (video_id, pass_index, seq)
+);
+
+CREATE TABLE IF NOT EXISTS glossary (
+  video_id TEXT, term TEXT COLLATE NOCASE, definition TEXT, t REAL, topic_n INTEGER,
+  pass_index INTEGER,                 -- a later pass that explains the term again replaces the entry
   PRIMARY KEY (video_id, term)
 );
 
--- End-of-lecture pass (M6b): one row per finished lecture, first writer wins. Storing it also sets the final
--- section titles and the weak-point flags in the same transaction (the only updates to notebook rows).
--- No summary column: the notebook is the summary; the assistant summarises on request (decision 28 Oct).
-CREATE TABLE IF NOT EXISTS lecture_notes (
-  video_id TEXT PRIMARY KEY, outline TEXT, glossary TEXT, questions TEXT,
-  generator TEXT, model TEXT, quality_flags TEXT, ended_by TEXT, agent_ms REAL, created_ts INTEGER, sink_ts INTEGER
-);
-
+-- Search over the notes for the Lecture Assistant: finished elements (ref p<pass>e<seq>) and live drafts
+-- (ref = draft id, kind 'draft'), the latter removed when their stretch is consolidated.
 CREATE VIRTUAL TABLE IF NOT EXISTS notebook_fts USING fts5(
-  video_id UNINDEXED, update_index UNINDEXED, t UNINDEXED, kind UNINDEXED, body
+  video_id UNINDEXED, ref UNINDEXED, t UNINDEXED, kind UNINDEXED, body
 );
 
 -- Rev 6 (M6e): what was said, searchable by the Lecture Assistant (BM25). One row per stored chunk.

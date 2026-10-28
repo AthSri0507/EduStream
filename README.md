@@ -41,7 +41,7 @@ powershell -ExecutionPolicy Bypass -File scripts\preflight.ps1        # read-onl
 | `producer/` | Lecture source (Kafka producer) |
 | `summarizer/transcription/` | Whisper transcription worker |
 | `stream_processor/` | Kafka Streams app (Java 17) |
-| `agents/` | Note Agent (live notebook), LLM client; Lecture Assistant from M6e |
+| `agents/` | Note Agent (study notes: live drafts every 90 s, organised into topics every ~6 min), LLM client, Lecture Assistant |
 | `storage/` | SQLite schema and the sink (only DB writer) |
 | `dashboard/` | Streamlit dashboard |
 | `common/` | Shared config, Kafka helpers, schema validation |

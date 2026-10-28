@@ -1,0 +1,40 @@
+{
+  "schema": "notes.v3",
+  "video_id": "python_l1",
+  "update_index": 7,
+  "media_start": 630.0,
+  "media_end": 660.0,
+  "window_starts": [
+    1792051830000
+  ],
+  "transcript": [
+    {
+      "chunk_id": 63,
+      "start_time": 630.0,
+      "end_time": 640.0,
+      "text": "So I'm going to import this random module and I'm going to use the rand int function."
+    },
+    {
+      "chunk_id": 64,
+      "start_time": 640.0,
+      "end_time": 650.0,
+      "text": "It gives me a random integer between 16 and 272, and it chose 75."
+    },
+    {
+      "chunk_id": 65,
+      "start_time": 650.0,
+      "end_time": 660.0,
+      "text": "That's an example of me being a machine, right? I followed the steps you gave me."
+    }
+  ],
+  "elements": [],
+  "info": null,
+  "generator": "llm",
+  "model": "openai/gpt-oss-120b",
+  "agent_ms": 2310.5,
+  "quality_flags": [
+    "all_elements_dropped"
+  ],
+  "session_start": 1792051200000,
+  "created_ts": 1792051890000
+}

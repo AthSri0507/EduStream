@@ -1,0 +1,279 @@
+{
+  "live": {
+    "updates": 9,
+    "llm_ok": 9,
+    "topic": 1,
+    "info": 2,
+    "proposed_new": 15,
+    "kept_new": 16,
+    "proposed_extend": 1,
+    "extend_converted": 1,
+    "flags": {
+      "topic_names_current": 1,
+      "located_by_support": 1,
+      "item_unsupported": 3,
+      "extend_converted": 1,
+      "quote_near_verbatim": 1,
+      "term_not_in_transcript": 1
+    },
+    "tokens_mean": 1585,
+    "latency_s_median": 0.997
+  },
+  "consolidation": {
+    "calls": 3,
+    "llm_ok": 3,
+    "tokens_mean": 2641,
+    "flags": {
+      "located_by_support": 2,
+      "quote_near_verbatim": 3,
+      "short_topic_merged": 2,
+      "block_topic_by_time": 1,
+      "item_unsupported": 4,
+      "question_unsupported": 1
+    }
+  },
+  "final": {
+    "topics": [
+      "1. Course success strategies and overall roadmap (00:00-06:00)",
+      "2. What a computer does: calculations and memory (06:00-08:40)",
+      "3. Declarative vs imperative knowledge and a Python random‑selection example (08:40-12:30)"
+    ],
+    "blocks": 18,
+    "blocks_per_6_min": 8.6,
+    "types": {
+      "list": 3,
+      "important": 4,
+      "key_idea": 6,
+      "definition": 3,
+      "example": 2
+    },
+    "questions": 3,
+    "glossary": [
+      "computer memory",
+      "Declarative knowledge",
+      "Imperative knowledge"
+    ],
+    "info": [
+      "Lecture recorded for OCW; seating choice affects background visibility; course info and computation overview will follow.",
+      "Slides will be posted before each lecture; download them and have them open for in‑class exercises."
+    ],
+    "similar_block_pairs": [],
+    "possible_housekeeping": []
+  },
+  "baseline_28_oct": {
+    "sections": 1,
+    "bullets": 30,
+    "housekeeping": 6,
+    "near_duplicate_pairs": 4
+  },
+  "per_update": [
+    {
+      "update": 0,
+      "span": "00:00-01:30",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 0.853,
+      "tokens": 1453,
+      "stats": {
+        "topic": 1,
+        "info": 1
+      },
+      "flags": [
+        "topic_names_current"
+      ],
+      "shift": null
+    },
+    {
+      "update": 1,
+      "span": "01:30-03:00",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.336,
+      "tokens": 1732,
+      "stats": {
+        "info": 1,
+        "proposed_new": 2,
+        "kept_new": 2
+      },
+      "flags": [
+        "located_by_support",
+        "item_unsupported(0.33): 'Let terminology sink in'",
+        "item_unsupported(0.33): 'Connect lecture content to problem‑set terms'"
+      ],
+      "shift": null
+    },
+    {
+      "update": 2,
+      "span": "03:00-04:30",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.718,
+      "tokens": 1488,
+      "stats": {
+        "proposed_new": 1,
+        "kept_new": 1
+      },
+      "flags": [],
+      "shift": null
+    },
+    {
+      "update": 3,
+      "span": "04:30-06:00",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.997,
+      "tokens": 1790,
+      "stats": {
+        "proposed_new": 1,
+        "kept_new": 2,
+        "proposed_extend": 1,
+        "extend_converted": 1
+      },
+      "flags": [
+        "extend_converted:other_topic"
+      ],
+      "shift": null
+    },
+    {
+      "update": 4,
+      "span": "06:00-07:30",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.284,
+      "tokens": 1594,
+      "stats": {
+        "proposed_new": 3,
+        "kept_new": 3
+      },
+      "flags": [
+        "quote_near_verbatim"
+      ],
+      "shift": null
+    },
+    {
+      "update": 5,
+      "span": "07:30-09:00",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.814,
+      "tokens": 1519,
+      "stats": {
+        "proposed_new": 3,
+        "kept_new": 3
+      },
+      "flags": [],
+      "shift": null
+    },
+    {
+      "update": 6,
+      "span": "09:00-10:30",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 1.093,
+      "tokens": 1749,
+      "stats": {
+        "proposed_new": 3,
+        "kept_new": 3
+      },
+      "flags": [
+        "term_not_in_transcript:'Anaconda IDE'"
+      ],
+      "shift": null
+    },
+    {
+      "update": 7,
+      "span": "10:30-12:00",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.074,
+      "tokens": 1782,
+      "stats": {
+        "proposed_new": 1,
+        "kept_new": 1
+      },
+      "flags": [],
+      "shift": null
+    },
+    {
+      "update": 8,
+      "span": "12:00-12:30",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 0.823,
+      "tokens": 1155,
+      "stats": {
+        "proposed_new": 1,
+        "kept_new": 1
+      },
+      "flags": [
+        "item_unsupported(0.33): 'Import random module'"
+      ],
+      "shift": null
+    }
+  ],
+  "per_consolidation": [
+    {
+      "span": "00:00-06:00",
+      "mode": "open",
+      "cut": 360.0,
+      "ok": true,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 2.223,
+      "tokens": 3092,
+      "topics": [
+        "Course success strategies and overall roadmap"
+      ],
+      "blocks": 7,
+      "questions": 1,
+      "flags": [
+        "located_by_support",
+        "quote_near_verbatim",
+        "quote_near_verbatim",
+        "located_by_support",
+        "short_topic_merged:'Core content areas: programming fundamentals, control flow, and code style' -> 'Course success strategies and overall roadmap' (4 blocks kept, 0 repeated)"
+      ]
+    },
+    {
+      "span": "06:00-12:00",
+      "mode": "open",
+      "cut": 720.0,
+      "ok": true,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 3.226,
+      "tokens": 3674,
+      "topics": [
+        "What a computer does: calculations and memory",
+        "Declarative vs imperative knowledge and a Python random‑selection example"
+      ],
+      "blocks": 9,
+      "questions": 2,
+      "flags": [
+        "block_topic_by_time",
+        "quote_near_verbatim",
+        "item_unsupported(0.33): 'Import the random module'"
+      ]
+    },
+    {
+      "span": "12:00-12:30",
+      "mode": "closed",
+      "cut": 750,
+      "ok": true,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.115,
+      "tokens": 1156,
+      "topics": [],
+      "blocks": 0,
+      "questions": 0,
+      "flags": [
+        "item_unsupported(0.29): 'Use random.choice(seq) to pick a random element from a seque'",
+        "item_unsupported(0.33): 'Or use random.randint(a,b) to get a random integer between a'",
+        "item_unsupported(0.12): 'The returned value can be directly used in everyday code, e.'",
+        "question_unsupported(0.27)",
+        "short_topic_merged:'Python random‑selection example (revisit)' -> 'Declarative vs imperative knowledge and a Python random‑selection example' (2 blocks kept, 0 repeated)"
+      ]
+    }
+  ]
+}

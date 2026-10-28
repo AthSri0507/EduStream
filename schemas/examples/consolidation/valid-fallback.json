@@ -1,0 +1,40 @@
+{
+  "schema": "consolidation.v1",
+  "video_id": "python_l1",
+  "pass_index": 0,
+  "media_start": 0.0,
+  "media_end": 360.0,
+  "final": false,
+  "topics": [
+    {
+      "n": 1,
+      "title": "Part 1",
+      "media_start": 0.0,
+      "media_end": 360.0,
+      "question": null,
+      "new": true
+    }
+  ],
+  "elements": [
+    {
+      "topic": 1,
+      "kind": "para",
+      "t": 130.0,
+      "said": "Today we talk about what computation is.",
+      "lead": "",
+      "sentences": [
+        "Today we talk about what computation is."
+      ],
+      "terms": [],
+      "background": null
+    }
+  ],
+  "glossary": [],
+  "generator": "fallback",
+  "model": null,
+  "agent_ms": 0.0,
+  "quality_flags": [
+    "llm_unavailable:disabled"
+  ],
+  "created_ts": 1792051600000
+}

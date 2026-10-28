@@ -28,8 +28,7 @@ load_dotenv(ROOT / ".env", override=False)
 TOPIC_AUDIO = "video_audio"
 TOPIC_TRANSCRIPTS = "transcriptions"
 TOPIC_WINDOWS = "window_summaries"
-TOPIC_NOTES = "final_notes"
-TOPIC_LECTURE_NOTES = "lecture_notes"     # rev 6, created from M6b (end-of-lecture pass)
+TOPIC_NOTES = "final_notes"          # notebook: live drafts (notes.v3) and consolidated topics (consolidation.v1)
 TOPIC_ALERTS = "alerts"
 TOPIC_DLQ = "dlq"
 
@@ -86,8 +85,8 @@ class Settings:
     @property
     def topic_partitions(self) -> dict[str, int]:
         return {TOPIC_AUDIO: self.partitions, TOPIC_TRANSCRIPTS: self.partitions,
-                TOPIC_WINDOWS: self.partitions, TOPIC_NOTES: self.partitions,
-                TOPIC_LECTURE_NOTES: self.partitions, TOPIC_ALERTS: self.partitions, TOPIC_DLQ: 1}
+                TOPIC_WINDOWS: self.partitions, TOPIC_NOTES: self.partitions, TOPIC_ALERTS: self.partitions,
+                TOPIC_DLQ: 1}
 
     def problems(self) -> list[str]:
         """Invariant violations; an empty list means the configuration is usable."""

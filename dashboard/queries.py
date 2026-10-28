@@ -7,6 +7,8 @@ import sqlite3
 
 import pandas as pd
 
+from agents.study_notes import fold_draft
+
 LECTURES_SQL = """
 SELECT l.video_id, COALESCE(l.title, l.video_id) AS title, l.src_partition AS partition, l.session_start,
        l.last_seen_ts, l.last_chunk_id, l.flushed_ts,
@@ -14,7 +16,8 @@ SELECT l.video_id, COALESCE(l.title, l.video_id) AS title, l.src_partition AS pa
        (SELECT MAX(c.chunk_id) FROM chunks c WHERE c.video_id = l.video_id) AS max_chunk_id,
        (SELECT COUNT(*) FROM window_latest w WHERE w.video_id = l.video_id) AS windows,
        (SELECT COUNT(*) FROM notes_latest n WHERE n.video_id = l.video_id) AS notes,
-       (SELECT COUNT(*) FROM notebook_updates u WHERE u.video_id = l.video_id) AS updates
+       (SELECT COUNT(*) FROM live_updates u WHERE u.video_id = l.video_id) AS updates,
+       (SELECT COUNT(*) FROM passes p WHERE p.video_id = l.video_id) AS passes
 FROM lectures l ORDER BY l.src_partition, l.video_id
 """
 
@@ -37,13 +40,14 @@ def kpis(conn: sqlite3.Connection) -> dict:
         "chunks": one("SELECT COUNT(*) FROM chunks"),
         "windows": one("SELECT COUNT(*) FROM window_latest"),
         "notes": one("SELECT COUNT(*) FROM notes_latest"),
-        "updates": one("SELECT COUNT(*) FROM notebook_updates"),
+        "updates": one("SELECT COUNT(*) FROM live_updates"),
+        "passes": one("SELECT COUNT(*) FROM passes"),
         "alerts": one("SELECT COUNT(*) FROM alerts WHERE type <> 'LATE_DROP'"),
         "late_drop": one("SELECT COUNT(*) FROM alerts WHERE type = 'LATE_DROP'"),
         "dlq": one("SELECT COUNT(*) FROM dlq"),
         "last_sink_ts": one("SELECT MAX(ts) FROM (SELECT MAX(sink_ts) ts FROM chunks UNION ALL "
                             "SELECT MAX(sink_ts) FROM window_stats UNION ALL SELECT MAX(sink_ts) FROM notes UNION ALL "
-                            "SELECT MAX(sink_ts) FROM notebook_updates)"),
+                            "SELECT MAX(sink_ts) FROM live_updates UNION ALL SELECT MAX(sink_ts) FROM passes)"),
     }
 
 
@@ -59,27 +63,50 @@ def notes(conn: sqlite3.Connection, video_id: str) -> pd.DataFrame:
     return df
 
 
-def notebook(conn: sqlite3.Connection, video_id: str) -> dict:
-    """The rev 6 notebook of one lecture: sections, points (with the generator of their update), terms,
-    and the live tail (transcript not yet covered by an update)."""
-    sections = pd.read_sql_query(
-        "SELECT section_id, COALESCE(final_title, title) AS title, media_start FROM sections"
-        " WHERE video_id = ? ORDER BY section_id", conn, params=(video_id,))
-    points = pd.read_sql_query(
-        "SELECT p.update_index, p.seq, p.section_id, p.kind, p.text, p.quote, p.background, p.t, p.weak, u.generator"
-        " FROM points p JOIN notebook_updates u ON u.video_id = p.video_id AND u.update_index = p.update_index"
-        " WHERE p.video_id = ? ORDER BY p.t, p.update_index, p.seq", conn, params=(video_id,))
-    terms = pd.read_sql_query("SELECT term, definition, source, t FROM terms WHERE video_id = ? ORDER BY t, term",
-                              conn, params=(video_id,))
-    covered = conn.execute("SELECT MAX(media_end), COUNT(*) FROM notebook_updates WHERE video_id = ?",
-                           (video_id,)).fetchone()
-    tail = pd.read_sql_query(
-        "SELECT chunk_id, start_time, text FROM chunks WHERE video_id = ? AND start_time >= ?"
-        " ORDER BY chunk_id", conn, params=(video_id, covered[0] or 0.0))
-    row = conn.execute("SELECT questions, generator FROM lecture_notes WHERE video_id = ?", (video_id,)).fetchone()
-    finished = {"questions": json.loads(row[0]), "generator": row[1]} if row else None
-    return {"sections": sections, "points": points, "terms": terms, "tail": tail,
-            "covered_s": covered[0] or 0.0, "updates": covered[1], "finished": finished}
+def notebook(conn: sqlite3.Connection, video_id: str, update_s: float = 90.0) -> dict:
+    """One lecture's notebook (NOTEBOOK_DESIGN §6, §11): finished topics with their elements, the live drafts after
+    the last consolidation (folded exactly as the Note Agent folds them), glossary, course info and the live state."""
+    topics = [{"n": r[0], "title": r[1], "start": r[2], "end": r[3], "question": r[4], "answer": r[5],
+               "generator": r[6], "elements": []} for r in conn.execute(
+        "SELECT topic_n, title, media_start, media_end, question, answer, generator FROM topics WHERE video_id = ?"
+        " ORDER BY topic_n", (video_id,))]
+    by_n = {t["n"]: t for t in topics}
+    for topic_n, body in conn.execute("SELECT topic_n, body FROM elements WHERE video_id = ? ORDER BY pass_index, seq",
+                                      (video_id,)):
+        if topic_n in by_n:
+            by_n[topic_n]["elements"].append(json.loads(body))
+    since, final = conn.execute("SELECT COALESCE(MAX(media_end), 0), COALESCE(MAX(final), 0) FROM passes"
+                                " WHERE video_id = ?", (video_id,)).fetchone()
+    drafts: list[dict] = []
+    for k, body in conn.execute("SELECT update_index, body FROM drafts WHERE video_id = ? ORDER BY update_index, seq",
+                                (video_id,)):
+        fold_draft(drafts, json.loads(body), k)
+    drafts = sorted((d for d in drafts if d["t"] >= since), key=lambda d: d["t"])   # spoken order (live run 1)
+    reach, updates, latest = conn.execute("SELECT COALESCE(MAX(media_end), 0), COUNT(*), MAX(update_index)"
+                                          " FROM live_updates WHERE video_id = ?", (video_id,)).fetchone()
+    said_until, flushed = conn.execute(
+        "SELECT (SELECT COALESCE(MAX(end_time), 0) FROM chunks WHERE video_id = ?),"
+        " (SELECT flushed_ts IS NOT NULL FROM lectures WHERE video_id = ?)", (video_id, video_id)).fetchone()
+    tail = [r[0] for r in conn.execute("SELECT text FROM chunks WHERE video_id = ? AND TRIM(text) <> ''"
+                                       " ORDER BY chunk_id DESC LIMIT 2", (video_id,))][::-1]
+    glossary = [{"term": r[0], "definition": r[1], "t": r[2]} for r in conn.execute(
+        "SELECT term, definition, t FROM glossary WHERE video_id = ? ORDER BY term COLLATE NOCASE", (video_id,))]
+    info = [{"text": r[0], "t": r[1]} for r in conn.execute(
+        "SELECT text, t FROM course_info WHERE video_id = ? ORDER BY t", (video_id,))]
+    finished = bool(final) or (bool(flushed) and updates > 0 and not drafts and reach <= since)
+    if flushed:
+        status = "⏳ finishing the notes …"
+    elif said_until - reach >= update_s:
+        status = f"⏳ writing notes for {_mmss(reach)}–{_mmss(reach + update_s)} …"
+    else:
+        status = f"Listening · next notes after {_mmss(reach + update_s)}"
+    return {"topics": topics, "drafts": drafts, "latest_k": latest, "since": since, "reach": reach,
+            "said_until": said_until, "now_text": " ".join(tail), "glossary": glossary, "info": info,
+            "updates": updates, "finished": finished, "status": status}
+
+
+def _mmss(seconds: float) -> str:
+    return f"{int(seconds) // 60:02d}:{int(seconds) % 60:02d}"
 
 
 def window_stats(conn: sqlite3.Connection) -> pd.DataFrame:

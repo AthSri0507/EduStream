@@ -1,0 +1,308 @@
+{
+  "live": {
+    "updates": 9,
+    "llm_ok": 9,
+    "proposed_para": 11,
+    "logistics_dropped": 1,
+    "info": 1,
+    "sentences_proposed": 20,
+    "sentences_filler": 4,
+    "sentences_kept": 13,
+    "kept_para": 8,
+    "sentences_unsupported": 2,
+    "sentences_cascade": 1,
+    "paragraphs_dropped": 1,
+    "tokens_mean": 1415
+  },
+  "consolidation": {
+    "calls": 3,
+    "llm": 2,
+    "proposed_para": 8,
+    "sentences_proposed": 18,
+    "sentences_filler": 2,
+    "sentences_kept": 15,
+    "proposed_remember": 1,
+    "remember_verified": 1,
+    "proposed_example": 2,
+    "sentences_unsupported": 1,
+    "paragraphs_dropped": 1,
+    "tokens_mean": 2827
+  },
+  "final": {
+    "topics": [
+      "1. Practice as the key to learning programming (00:00-06:00)",
+      "2. Fundamental Operations of a Computer (06:00-08:40)",
+      "3. Declarative vs Imperative Knowledge (08:40-12:30)"
+    ],
+    "elements": {
+      "para": 7,
+      "remember": 1,
+      "example": 1
+    },
+    "sentences": 15,
+    "words": 268,
+    "words_per_6_min": 129,
+    "list_lines_per_6_min": 1.4,
+    "questions": 3,
+    "glossary": [
+      "declarative knowledge",
+      "imperative knowledge"
+    ],
+    "info": [
+      "Slides with code will be posted before each lecture; download them and keep them open for in‑class exercises."
+    ]
+  },
+  "per_update": [
+    {
+      "update": 0,
+      "span": "00:00-01:30",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 0.976,
+      "tokens": 1411,
+      "stats": {
+        "proposed_para": 1,
+        "logistics_dropped": 1
+      },
+      "flags": [
+        "logistics_paragraph: 'The lecture is being recorded for OCW and students'"
+      ]
+    },
+    {
+      "update": 1,
+      "span": "01:30-03:00",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 0.808,
+      "tokens": 1347,
+      "stats": {
+        "info": 1
+      },
+      "flags": []
+    },
+    {
+      "update": 2,
+      "span": "03:00-04:30",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.07,
+      "tokens": 1464,
+      "stats": {
+        "proposed_para": 2,
+        "sentences_proposed": 4,
+        "sentences_filler": 1,
+        "sentences_kept": 2,
+        "kept_para": 2,
+        "sentences_unsupported": 1
+      },
+      "flags": [
+        "filler: 'The instructor emphasizes that you can safely experiment bec'",
+        "term_dropped:'practice'",
+        "sentence_unsupported(0.33): 'All three are built on the foundation of regular coding practice.'",
+        "term_dropped:'problem sets'"
+      ]
+    },
+    {
+      "update": 3,
+      "span": "04:30-06:00",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.343,
+      "tokens": 1444,
+      "stats": {
+        "proposed_para": 1,
+        "sentences_proposed": 4,
+        "sentences_kept": 4,
+        "kept_para": 1
+      },
+      "flags": [
+        "term_dropped:'data structures'",
+        "term_dropped:'control flow'",
+        "term_dropped:'modular code'"
+      ]
+    },
+    {
+      "update": 4,
+      "span": "06:00-07:30",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.1,
+      "tokens": 1477,
+      "stats": {
+        "proposed_para": 2,
+        "sentences_proposed": 2,
+        "sentences_kept": 2,
+        "kept_para": 2
+      },
+      "flags": [
+        "term_dropped:'readable code'",
+        "quote_near_verbatim",
+        "term_dropped:'calculations'",
+        "term_dropped:'memory'"
+      ]
+    },
+    {
+      "update": 5,
+      "span": "07:30-09:00",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.086,
+      "tokens": 1482,
+      "stats": {
+        "proposed_para": 2,
+        "sentences_proposed": 4,
+        "sentences_kept": 4,
+        "kept_para": 2
+      },
+      "flags": [
+        "term_dropped:'primitive calculations'",
+        "term_dropped:'user‑defined calculations'"
+      ]
+    },
+    {
+      "update": 6,
+      "span": "09:00-10:30",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.108,
+      "tokens": 1470,
+      "stats": {
+        "proposed_para": 1,
+        "sentences_proposed": 2,
+        "sentences_unsupported": 1,
+        "sentences_kept": 1,
+        "kept_para": 1
+      },
+      "flags": [
+        "sentence_unsupported(0.33): 'It contrasts with declarative knowledge, which is merely a statement o'"
+      ]
+    },
+    {
+      "update": 7,
+      "span": "10:30-12:00",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.734,
+      "tokens": 1526,
+      "stats": {
+        "proposed_para": 1,
+        "sentences_proposed": 2,
+        "sentences_filler": 2
+      },
+      "flags": [
+        "filler: 'The lecturer demonstrates how to pick a random responder by '",
+        "filler: 'He shows the result, 75, and then looks up that number in th'"
+      ]
+    },
+    {
+      "update": 8,
+      "span": "12:00-12:30",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.845,
+      "tokens": 1114,
+      "stats": {
+        "proposed_para": 1,
+        "sentences_proposed": 2,
+        "sentences_filler": 1,
+        "sentences_cascade": 1,
+        "paragraphs_dropped": 1
+      },
+      "flags": [
+        "filler: 'The lecturer encourages using Python for everyday tasks, suc'",
+        "cascade: 'This practice reinforces programming skills by integrating c'",
+        "paragraph_dropped(0/1)"
+      ]
+    }
+  ],
+  "per_consolidation": [
+    {
+      "span": "00:00-06:00",
+      "mode": "open",
+      "cut": 360.0,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 2.133,
+      "tokens": 3325,
+      "topics": [
+        "Practice as the key to learning programming"
+      ],
+      "stats": {
+        "proposed_para": 3,
+        "sentences_proposed": 10,
+        "sentences_filler": 1,
+        "sentences_kept": 9
+      },
+      "flags": [
+        "filler: 'You will not absorb programming by watching the instructor w'",
+        "term_dropped:'practice'",
+        "located_by_support",
+        "term_dropped:'knowledge of concepts'",
+        "term_dropped:'programming skills'",
+        "term_dropped:'problem‑solving ability'",
+        "located_by_support",
+        "term_dropped:'data structures'",
+        "term_dropped:'control flow'",
+        "term_dropped:'modular code'",
+        "short_topic_merged:'Course roadmap and learning outcomes' -> 'Practice as the key to learning programming' (1 kept, 0 repeated)",
+        "short_topic_merged:'Three main content sections of the course' -> 'Practice as the key to learning programming' (1 kept, 0 repeated)"
+      ]
+    },
+    {
+      "span": "06:00-12:00",
+      "mode": "open",
+      "cut": 720.0,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 3.015,
+      "tokens": 3659,
+      "topics": [
+        "Fundamental Operations of a Computer",
+        "Declarative vs Imperative Knowledge"
+      ],
+      "stats": {
+        "proposed_para": 4,
+        "sentences_proposed": 6,
+        "sentences_kept": 6,
+        "proposed_remember": 1,
+        "remember_verified": 1,
+        "proposed_example": 1
+      },
+      "flags": [
+        "term_dropped:'calculations'",
+        "term_dropped:'memory'",
+        "term_dropped:'primitive calculations'",
+        "term_dropped:'higher‑level calculations'",
+        "quote_near_verbatim",
+        "item_unsupported(0.33): 'Import the random module'"
+      ]
+    },
+    {
+      "span": "12:00-12:30",
+      "mode": "closed",
+      "cut": 750,
+      "generator": "fallback",
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.264,
+      "tokens": 1498,
+      "topics": [],
+      "stats": {
+        "proposed_para": 1,
+        "sentences_proposed": 2,
+        "sentences_filler": 1,
+        "proposed_example": 1,
+        "sentences_unsupported": 1,
+        "paragraphs_dropped": 1
+      },
+      "flags": [
+        "filler: 'The lecturer demonstrates that Python can be used for simple'",
+        "sentence_unsupported(0.22): \"Generating a random integer between 16 and 272 with Python's standard \"",
+        "paragraph_dropped(0/1)",
+        "item_unsupported(0.20): 'value = random.randint(16, 272)'",
+        "example_empty",
+        "question_unsupported(0.20)",
+        "fallback (nothing survived)"
+      ]
+    }
+  ]
+}

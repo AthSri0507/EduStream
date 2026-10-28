@@ -16,7 +16,8 @@ import time
 import pandas as pd
 
 ALLOWED = {"lectures", "chunks", "window_stats", "window_latest", "notes", "notes_latest", "alerts", "dlq", "lag",
-           "notebook_updates", "sections", "points", "terms", "notebook_fts", "transcript_fts", "notes_fts",
+           "live_updates", "drafts", "course_info", "passes", "topics", "elements", "glossary", "notebook_fts",
+           "transcript_fts", "notes_fts",
            "sqlite_master", "sqlite_schema"}
 FTS = ("notebook_fts", "transcript_fts", "notes_fts")
 TIME_LIMIT_S = 2.0
@@ -30,9 +31,15 @@ READY_MADE = {
         "SELECT video_id, window_index, ROUND(media_start/60.0, 1) AS minute, word_count, words_per_min,"
         " ROUND(score_avg, 3) AS score_avg, ROUND(score_min, 3) AS score_min, ROUND(score_max, 3) AS score_max"
         " FROM window_latest ORDER BY video_id, window_start",
-    "Notebook: updates per lecture and how they were written":
-        "SELECT video_id, COUNT(*) AS updates, SUM(generator = 'llm') AS by_llm,"
-        " SUM(generator = 'extractive') AS extractive FROM notebook_updates GROUP BY video_id",
+    "Notebook: live updates and consolidation passes per lecture":
+        "SELECT u.video_id, COUNT(*) AS live_updates, SUM(u.generator = 'llm') AS live_by_llm,"
+        " (SELECT COUNT(*) FROM passes p WHERE p.video_id = u.video_id) AS passes,"
+        " (SELECT SUM(p.generator = 'llm') FROM passes p WHERE p.video_id = u.video_id) AS passes_by_llm,"
+        " (SELECT COUNT(*) FROM topics t WHERE t.video_id = u.video_id) AS topics"
+        " FROM live_updates u GROUP BY u.video_id",
+    "Notebook: topics with their check-yourself questions":
+        "SELECT video_id, topic_n, title, ROUND(media_start/60.0, 1) AS from_min, ROUND(media_end/60.0, 1) AS to_min,"
+        " question, answer, generator FROM topics ORDER BY video_id, topic_n",
     "Transcript search (edit the word in quotes)":
         "SELECT video_id, chunk_id, start_time, body FROM transcript_fts WHERE transcript_fts MATCH 'computation'"
         " ORDER BY bm25(transcript_fts) LIMIT 20",

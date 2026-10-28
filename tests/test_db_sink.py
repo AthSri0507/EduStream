@@ -116,8 +116,9 @@ def test_a_failing_batch_is_rolled_back_completely(conn):
     assert conn.execute("SELECT COUNT(*) FROM chunks").fetchone()[0] == 0   # offsets would not be committed either
 
 
-# --------------------------------------------------------------------------------------------- D-2 (rev 6)
-NOTEBOOK_TABLES = ["notebook_updates", "sections", "points", "terms", "notebook_fts"]
+# --------------------------------------------------------------------------------------------- D-2 (notebook, §11)
+NOTEBOOK_TABLES = ["live_updates", "drafts", "course_info", "passes", "topics", "elements", "glossary",
+                   "notebook_fts"]
 
 
 def notebook_dump(conn) -> dict:
@@ -125,41 +126,91 @@ def notebook_dump(conn) -> dict:
 
 
 def notebook_records():
-    llm_update = fixture("notes_v2/valid-llm.json")
-    first = {**fixture("notes_v2/valid-extractive.json")}
-    other_title = {**llm_update, "update_index": 5, "section": {**llm_update["section"], "title": "Renamed?"},
-                   "terms": [{**llm_update["terms"][0], "definition": "A second, different definition."}],
-                   "points": [{**llm_update["points"][1], "section_id": 2}]}
-    return [rec(TOPIC_NOTES, first, 10), rec(TOPIC_NOTES, llm_update, 11), rec(TOPIC_NOTES, other_title, 12),
-            rec(TOPIC_NOTES, fixture("notes/valid-llm.json"), 13)]          # an old notes.v1 record still works
+    """Two live updates (the second continues a paragraph of the first), then a pass that consolidates the first."""
+    live = fixture("notes_v3/valid-llm.json")
+    earlier = {**fixture("notes_v3/valid-extractive.json"), "update_index": 6, "media_start": 540.0,
+               "media_end": 630.0}
+    earlier["elements"] = [{**earlier["elements"][0], "id": "u6e0", "t": 600.0}]
+    first_pass = {**fixture("consolidation/valid-fallback.json"), "media_end": 620.0}
+    later_pass = {**fixture("consolidation/valid-llm.json"), "pass_index": 1, "media_start": 640.0}
+    return [rec(TOPIC_NOTES, earlier, 10), rec(TOPIC_NOTES, live, 11), rec(TOPIC_NOTES, first_pass, 12),
+            rec(TOPIC_NOTES, later_pass, 13),
+            rec(TOPIC_NOTES, fixture("notes_v2/valid-llm.json"), 14),        # the retired rev 6 notebook: skipped
+            rec(TOPIC_NOTES, fixture("notes/valid-llm.json"), 15)]           # an old notes.v1 record still works
 
 
-def test_notebook_updates_are_stored_once_and_replay_identically(conn):
+def test_notebook_records_are_stored_once_and_replay_identically(conn):
     first = apply_batch(conn, notebook_records(), now=1_000, window_ms=WINDOW_MS)
     before = notebook_dump(conn)
     second = apply_batch(conn, notebook_records(), now=2_000, window_ms=WINDOW_MS)
-    assert first == {"stored": 4} and second == {"duplicate": 4}
+    assert first == {"stored": 5, "skipped": 1} and second == {"duplicate": 5, "skipped": 1}
     assert notebook_dump(conn) == before
     assert conn.execute("SELECT COUNT(*) FROM notes").fetchone()[0] == 1        # the notes.v1 record
 
 
 def test_notebook_tables_hold_what_was_sent(conn):
-    apply_batch(conn, notebook_records(), now=1_000, window_ms=WINDOW_MS)
-    assert conn.execute("SELECT section_id, title FROM sections ORDER BY 1").fetchall() == [
-        (1, "Part 1"), (2, "What does a computer do?")]                          # first title wins
-    assert conn.execute("SELECT COUNT(*) FROM points").fetchone()[0] == 4
-    assert conn.execute("SELECT section_id FROM points WHERE update_index = 4 ORDER BY seq").fetchall() == [(1,), (2,)]
-    assert conn.execute("SELECT definition, source FROM terms").fetchall() == [
-        ("Where a computer stores the results of its calculations.", "lecture")]  # first definition wins
-    # index: 4 points + 1 term + 2 new sections
-    assert conn.execute("SELECT COUNT(*) FROM notebook_fts").fetchone()[0] == 7
-    assert conn.execute("SELECT COUNT(*) FROM notebook_fts WHERE notebook_fts MATCH 'calculations'").fetchone()[0] >= 2
+    apply_batch(conn, notebook_records()[:3], now=1_000, window_ms=WINDOW_MS)
+    # drafts before a pass's cut (10:20) leave the search index: u6e0 and its continuation u7e0 are done
+    assert {r[0] for r in conn.execute("SELECT ref FROM notebook_fts WHERE kind = 'draft'")} == {"u7e1"}
+    apply_batch(conn, notebook_records()[3:], now=1_000, window_ms=WINDOW_MS)
+    drafts = conn.execute("SELECT draft_id, extends, root_t FROM drafts ORDER BY update_index, seq").fetchall()
+    assert drafts == [("u6e0", None, 600.0), ("u7e0", "u6e0", 600.0), ("u7e1", None, 630.0)]   # root of a continuation
+    assert conn.execute("SELECT text FROM course_info").fetchall() == [("Problem set 0 is due on Thursday.",)]
+    topics = conn.execute("SELECT topic_n, title, media_start, media_end, question IS NOT NULL FROM topics"
+                          " ORDER BY 1").fetchall()
+    assert topics == [(1, "Part 1", 0.0, 360.0, 0), (3, "Being a machine: following a recipe", 520.0, 750.0, 1)]
+    # topic 2 of the later pass continues a topic that is not stored here: the update touches nothing
+    assert conn.execute("SELECT topic_n, kind FROM elements ORDER BY pass_index, seq").fetchall() == [
+        (1, "para"), (2, "para"), (2, "table"), (3, "steps"), (3, "code"), (3, "remember")]
+    assert conn.execute("SELECT term, topic_n FROM glossary").fetchall() == [("Imperative knowledge", 2)]
+    assert conn.execute("SELECT COUNT(*) FROM notebook_fts WHERE kind = 'draft'").fetchone()[0] == 0   # cut 12:30
+    assert conn.execute("SELECT COUNT(*) FROM notebook_fts WHERE kind <> 'draft'").fetchone()[0] == 6
+    assert conn.execute("SELECT COUNT(*) FROM notebook_fts WHERE notebook_fts MATCH 'recipe'").fetchone()[0] >= 1
 
 
-def test_a_notebook_update_with_a_broken_point_goes_to_the_sink_dlq(conn):
-    bad = fixture("notes_v2/invalid-point-without-quote.json")
-    assert apply_batch(conn, [rec(TOPIC_NOTES, bad, 20)], now=1, window_ms=WINDOW_MS) == {"invalid": 1}
-    assert conn.execute("SELECT COUNT(*) FROM notebook_updates").fetchone()[0] == 0
+def test_a_continued_topic_grows_and_a_later_definition_replaces_the_glossary_entry(conn):
+    base = fixture("consolidation/valid-llm.json")
+    first = {**base, "pass_index": 0, "media_start": 0.0, "media_end": 520.0, "final": False,
+             "topics": [{**base["topics"][0], "new": True, "media_start": 0.0}],
+             "elements": base["elements"][:2]}
+    later = {**base, "glossary": [{**base["glossary"][0], "definition": "Imperative knowledge is a how-to.",
+                                   "t": 600.0}],
+             "topics": [{**base["topics"][0], "media_end": 640.0,
+                         "question": {"q": "What is imperative knowledge?", "answer": "A recipe."}},
+                        base["topics"][1]]}
+    apply_batch(conn, [rec(TOPIC_NOTES, first, 0), rec(TOPIC_NOTES, later, 1)], now=1, window_ms=WINDOW_MS)
+    assert conn.execute("SELECT topic_n, media_start, media_end, question FROM topics ORDER BY 1").fetchall() == [
+        (2, 0.0, 640.0, "What is imperative knowledge?"), (3, 520.0, 750.0, base["topics"][1]["question"]["q"])]
+    assert conn.execute("SELECT definition, pass_index FROM glossary").fetchall() == [
+        ("Imperative knowledge is a how-to.", 1)]
+
+
+def test_a_notebook_record_that_breaks_its_contract_goes_to_the_sink_dlq(conn):
+    bad = fixture("notes_v3/invalid-model-field-leaks.json")
+    worse = fixture("consolidation/invalid-element-without-topic.json")
+    assert apply_batch(conn, [rec(TOPIC_NOTES, bad, 20), rec(TOPIC_NOTES, worse, 21)], now=1,
+                       window_ms=WINDOW_MS) == {"invalid": 2}
+    assert conn.execute("SELECT COUNT(*) FROM live_updates").fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM passes").fetchone()[0] == 0
+
+
+def test_a_long_lecture_digest_is_trimmed_evenly_so_every_topic_is_summarised(conn):
+    from agents.lecture_tools import notebook_digest
+    base = fixture("consolidation/valid-fallback.json")
+    records = []
+    for n in (1, 2, 3):                                            # 3 topics of 14 paragraphs each
+        els = [{"topic": n, "kind": "para", "t": 1000.0 * n + i, "said": "", "lead": "", "terms": [],
+                "background": None, "sentences": [f"Point {i} about topic {n}."]} for i in range(14)]
+        records.append(rec(TOPIC_NOTES, {**base, "pass_index": n - 1, "media_start": 1000.0 * (n - 1),
+                                         "media_end": 1000.0 * n, "elements": els,
+                                         "topics": [{**base["topics"][0], "n": n, "title": f"Topic {n}"}]}, n))
+    apply_batch(conn, records, now=1, window_ms=WINDOW_MS)
+    lines = notebook_digest(conn, "python_l1", 0, 1e9, limit=24)
+    headings = [ln["text"] for ln in lines if ln["text"].startswith("Section ")]
+    assert headings == ["Section 1: Topic 1", "Section 2: Topic 2", "Section 3: Topic 3"] and len(lines) <= 24
+    per_topic = [sum(1 for ln in lines if f"about topic {n}." in ln["text"]) for n in (1, 2, 3)]
+    assert min(per_topic) == max(per_topic) == 7                   # an even share, not the first 21 paragraphs
+    assert any(f"Point {i} about topic 1" in ln["text"] for i in (11, 12, 13) for ln in lines)
 
 
 def test_transcripts_are_indexed_once_for_search(conn):

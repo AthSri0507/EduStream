@@ -1,6 +1,6 @@
 """EduStream dashboard (PLAN M5; ARCHITECTURE §1): a near-real-time, read-only view of data/edustream.db.
 
-Tabs: Notebook (live notebook + Lecture Assistant chat), Data (query the stored data),
+Tabs: Notebook (study notes + Lecture Assistant chat), Data (query the stored data),
 window stats, alerts, pipeline health. Live parts refresh in their own fragments (2 s; assistant 1 s). The database is
 opened read-only (mode=ro); storage/db_sink.py is the only writer.
 
@@ -24,6 +24,7 @@ if str(ROOT) not in sys.path:
 
 from common.config import load  # noqa: E402
 from dashboard import assistant_panel, queries, sql_box  # noqa: E402
+from dashboard import notebook_html as nbh  # noqa: E402
 from storage.db import connect_readonly, db_path  # noqa: E402
 
 st.set_page_config(page_title="EduStream", layout="wide")
@@ -69,51 +70,34 @@ def lecture_colors(lectures: pd.DataFrame) -> tuple[list[str], list[str]]:
 
 @st.fragment(run_every="2s")
 def notebook_view(video_id: str) -> None:
-    """The rev 6 notebook (§8.3); every [mm:ss] is a button: "explain from here"."""
+    """The notebook (NOTEBOOK_DESIGN §6, §11.6): contents rail, finished topics (collapsed except the latest while
+    live), the live box with the drafts since the last consolidation. Only lecture content: pipeline numbers are
+    on Pipeline health (decision 5)."""
     try:
         conn = connect_readonly(db_path())
     except sqlite3.Error:
         return
     try:
-        nb = queries.notebook(conn, video_id)
+        nb = queries.notebook(conn, video_id, SETTINGS.note_update_s)
         legacy = queries.notes(conn, video_id) if nb["updates"] == 0 else None
     finally:
         conn.close()
-    if nb["updates"] == 0:
-        if legacy is not None and not legacy.empty:
+    theme = mode()
+    st.html(nbh.wrap(nbh.head_html(nb), theme))
+    rail, main = st.columns([1, 3.3], gap="medium")
+    with rail:
+        st.html(nbh.wrap(nbh.rail_html(nb), theme))
+    with main:
+        if nb["updates"] == 0 and legacy is not None and not legacy.empty:
             st.caption("Notes from a run before the notebook (M6a):")
             for _, n in legacy.head(MAX_NOTES_SHOWN).iterrows():
                 st.markdown(f"**{mmss(n['media_start'])}** {n['summary']}")
-        else:
-            st.info("The first notebook update appears about 2 minutes into a lecture "
-                    "(90 s of lecture, then about 25 s until its last window closes).")
-    points, terms = nb["points"], nb["terms"]
-    for _, sec in nb["sections"].iterrows():
-        st.markdown(f"#### {sec['section_id']}. {sec['title']}")
-        rows = points[points["section_id"] == sec["section_id"]]
-        if rows.empty:
-            st.caption("(no points yet)")
-        for _, pt in rows.iterrows():
-            label = "*Example:* " if pt["kind"] == "example" else ""
-            extractive = " :gray[(extractive)]" if pt["generator"] == "extractive" else ""
-            st.markdown(f"- `[{mmss(pt['t'])}]` {label}{pt['text']}{extractive}", help=f"Said: “{pt['quote']}”")
-            if isinstance(pt["background"], str) and pt["background"]:
-                st.caption(f"Background (not from the lecture): {pt['background']}")
-    if not terms.empty:
-        with st.expander(f"Glossary ({len(terms)})"):
-            for _, term in terms.iterrows():
-                note = " *(background)*" if term["source"] == "background" else ""
-                st.markdown(f"**{term['term']}**{note}: {term['definition']} `[{mmss(term['t'])}]`")
-    if nb["finished"] and nb["finished"]["questions"]:
-        with st.expander(f"Review questions ({len(nb['finished']['questions'])})"):
-            for q in nb["finished"]["questions"]:
-                st.markdown(f"**{q['question']}**  `[{mmss(q['t'])}]`")
-                if q.get("answer"):
-                    st.caption(q["answer"])
-    if not nb["tail"].empty and not nb["finished"]:
-        with st.container(border=True):
-            st.caption(f"Live tail: said after {mmss(nb['covered_s'])}, not in the notebook yet")
-            st.write(" ".join(nb["tail"]["text"].tolist()[-12:]))
+        for i, topic in enumerate(nb["topics"]):
+            latest = i == len(nb["topics"]) - 1
+            with st.expander(nbh.topic_label(topic), expanded=nb["finished"] or latest):
+                st.html(nbh.wrap(nbh.topic_html(topic), theme))
+        if not nb["finished"]:
+            st.html(nbh.wrap(nbh.live_html(nb), theme))
 
 
 def data_tab() -> None:
@@ -203,6 +187,7 @@ def alerts_tab(conn: sqlite3.Connection) -> None:
 
 
 def health_tab(conn: sqlite3.Connection, lectures: pd.DataFrame, kpi: dict) -> None:
+    kpi_strip(kpi)
     st.markdown("**Partitions: lecture → transcription worker**")
     pmap = queries.partition_map(conn)
     if pmap.empty:
@@ -224,7 +209,7 @@ def health_tab(conn: sqlite3.Connection, lectures: pd.DataFrame, kpi: dict) -> N
     st.markdown("**Completeness**")
     if not lectures.empty:
         st.dataframe(lectures[["title", "partition", "status", "chunks_stored", "expected_chunks",
-                               "completeness_pct", "windows", "updates"]], hide_index=True, width="stretch")
+                               "completeness_pct", "windows", "updates", "passes"]], hide_index=True, width="stretch")
 
     st.markdown(f"**Dead-letter queue** ({kpi['dlq']} records)")
     dlq = queries.dlq(conn)
@@ -245,7 +230,8 @@ st.caption("Live lecture notes and a lecture assistant · Kafka → Whisper → 
 
 
 @st.fragment(run_every="2s")
-def kpi_strip(known: tuple) -> None:
+def lecture_watch(known: tuple) -> None:
+    """Waits for the database and reruns the page when a new lecture appears (refreshes the lecture picker)."""
     path = db_path()
     if not path.exists():
         st.info(f"Waiting for the database ({path}). Start the pipeline with `scripts\\start_all.ps1`.")
@@ -253,23 +239,27 @@ def kpi_strip(known: tuple) -> None:
     try:
         conn = connect_readonly(path)
         try:
-            kpi = queries.kpis(conn)
-            current = tuple(queries.lectures(conn)["video_id"]) if kpi["lectures"] else ()
+            current = tuple(queries.lectures(conn)["video_id"]) if queries.kpis(conn)["lectures"] else ()
         finally:
             conn.close()
     except sqlite3.Error as exc:
         st.warning(f"Database not readable yet ({exc}); retrying.")
         return
     if current != known:
-        st.rerun(scope="app")                       # a new lecture appeared: refresh the lecture picker
-    cols = st.columns(6)
+        st.rerun(scope="app")
+
+
+def kpi_strip(kpi: dict) -> None:
+    cols = st.columns(7)
     cols[0].metric("Lectures", kpi["lectures"], border=True)
     cols[1].metric("Chunks transcribed", kpi["chunks"], border=True)
     cols[2].metric("Windows closed", kpi["windows"], border=True)
     cols[3].metric("Notebook updates", kpi["updates"] or kpi["notes"], border=True,
-                   help="One per 90 s of lecture (rev 6)")
-    cols[4].metric("Alerts", kpi["alerts"], border=True, help="LOW_ASR_SCORE, SILENCE, CONSUMER_LAG")
-    cols[5].metric("LATE_DROP", kpi["late_drop"], border=True,
+                   help="Live notes: one per 90 s of lecture")
+    cols[4].metric("Consolidations", kpi["passes"], border=True,
+                   help="Live notes organised into topics: one per ~6 minutes, and one at the lecture's end")
+    cols[5].metric("Alerts", kpi["alerts"], border=True, help="LOW_ASR_SCORE, SILENCE, CONSUMER_LAG")
+    cols[6].metric("LATE_DROP", kpi["late_drop"], border=True,
                    help="Records dropped as late. Must stay 0 (S1: one lecture per partition).")
     if kpi["last_sink_ts"]:
         st.caption(f"Last write by the sink at {clock(kpi['last_sink_ts'])} · DLQ: {kpi['dlq']} records")
@@ -304,7 +294,7 @@ def page() -> None:
                 conn.close()
         except sqlite3.Error:
             lectures = pd.DataFrame()
-    kpi_strip(tuple(lectures["video_id"]) if not lectures.empty else ())
+    lecture_watch(tuple(lectures["video_id"]) if not lectures.empty else ())
     if lectures.empty:
         st.info("No lecture yet. Start one with `.venv\\Scripts\\python -m producer.lecture_source --demo` "
                 "(or replay recorded transcripts with `-m tools.replay_fixtures --demo`).")
@@ -315,11 +305,7 @@ def page() -> None:
             live_first = lectures.sort_values("status", key=lambda s: s != "live", kind="stable")
             titles = dict(zip(live_first["video_id"], live_first["title"]))
             video_id = st.selectbox("Lecture", list(titles), format_func=lambda v: titles[v], key="notes_lecture")
-            lecture = lectures[lectures["video_id"] == video_id].iloc[0]
-            st.caption(f"{lecture['status']} · partition {lecture['partition']} · "
-                       f"{lecture['chunks_stored']}/{lecture['expected_chunks']} chunks · "
-                       f"{lecture['windows']} windows · {lecture['updates']} notebook updates")
-            left, right = st.columns([3, 2])
+            left, right = st.columns([3.4, 2])
             with left:
                 notebook_view(video_id)
             with right:

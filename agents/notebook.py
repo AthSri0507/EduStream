@@ -1,28 +1,35 @@
-"""The notebook's pure logic (docs/ARCHITECTURE.md §8.1): no Kafka, no network, no clock of its own.
+"""The notebook's pure logic (docs/ARCHITECTURE.md §8.1, docs/NOTEBOOK_DESIGN.md §11): no Kafka, no network, no clock.
 
   * Window        a parsed window.v1 record and where it came from
-  * update_of     which notebook update a window belongs to (§8.1.1)
+  * update_of     which live update a window belongs to (§8.1.1)
   * Grouper       holds one partition's windows until their update is complete
-  * Memory        one lecture's notebook so far, rebuilt from notes.v2 records (§8.1.5)
-  * make_delta    validates an LLM reply, or builds the extractive one (§8.1.3, §8.1.4)
-  * build_update  the notes.v2 payload for one update
+  * Memory        one lecture's notebook so far, rebuilt from its own final_notes records (§8.1.5): live drafts
+                  (notes.v3) and consolidated topics (consolidation.v1)
+  * live stage    the 90 s call: prompt, validation into study-guide elements (agents/study_notes.py), the
+                  extractive fallback, and the notes.v3 payload
 
-Tested by tests/test_notebook_grouping.py (N-1) and tests/test_notebook_validation.py (N-2).
+The second stage, consolidation, is in agents/consolidation.py.
+Tested by tests/test_notebook_grouping.py (N-1) and tests/test_notebook_live.py (N-2).
 """
 
 from __future__ import annotations
 
+import os
 import time
+from collections import Counter
 from dataclasses import dataclass, field
 
+from agents import study_notes as sn
 from agents.extractive import top_sentences
-from agents.text import find_quote, mmss, norm, parse_t, similar, stem, support
+from agents.text import mmss
 
-MIN_SECTION_UPDATES = 2          # a new section needs >= 2 updates in the current one (§8.1.3)
-EXTRACTIVE_SECTION_EVERY = 10    # fallback opens "Part N" every 10 updates (15 min)
-LOCAL_SUPPORT_MIN = 0.30         # option A (step 0): point vs. its own quote's neighbourhood
-DUPLICATE_MIN = 0.60             # Jaccard of content words: a near-repeat of an earlier point
-MAX_POINTS, MAX_TERMS = 5, 4
+LIVE_MAX_ELEMENTS = 2
+LIVE_MAX_TOKENS = 1500
+# The live stage and consolidation use DIFFERENT models, so each has its own free per-minute limit. Live run 28 Oct:
+# on one model, a consolidation right after a live call got HTTP 429 (Groq counts each request's max_tokens).
+LIVE_MODEL = os.environ.get("LLM_NOTES_LIVE_MODEL", "").strip() or "openai/gpt-oss-20b"
+LIVE_CONTEXT_WORDS = 250        # the live text so far, as plain prose, so the model continues instead of repeating
+KNOWN_SENTENCES = 200           # repeat check: the most recent sentences of the notes
 
 
 # ----------------------------------------------------------------------------------------------- windows
@@ -145,323 +152,182 @@ class LectureEnd:
 
 # ----------------------------------------------------------------------------------------------- memory
 class Memory:
-    """One lecture's notebook, folded from notes.v2 payloads (the same code path live and on rebuild)."""
+    """One lecture's notebook, folded from its final_notes records (the same code path live and on rebuild):
+    notes.v3 live updates add drafts, consolidation.v1 passes turn the drafts before their cut into topics."""
 
     def __init__(self, video_id: str) -> None:
         self.video_id = video_id
-        self.sections: dict[int, dict] = {}        # id -> {id, title, first_update, updates}
-        self.points: list[dict] = []
-        self.terms: dict[str, dict] = {}           # lower-case term -> term
+        self.partition: int | None = None          # where its records live (same number in every topic)
         self.sent: set[int] = set()
         self.sent_windows: set[int] = set()
         self.last_sent = -1
-        self.partition: int | None = None          # where its records live (same number in every topic)
-        self.media_end = 0.0                       # how far the notebook reaches (media seconds)
-        self.lecture_notes_done = False            # the end-of-lecture pass has been produced (M6b)
+        self.media_end = 0.0                       # how far the live notes reach (media seconds)
+        self.drafts: list[dict] = []               # live elements not consolidated yet, folded (study_notes.fold_draft)
+        self.transcript: dict[int, dict] = {}      # chunk_id -> chunk, from consolidated_to on (consolidation input)
+        self.topics: list[dict] = []               # {n, title, start, end, question, elements}
+        self.glossary: dict[str, dict] = {}        # lower-case term -> {term, definition, t, topic}
+        self.info: list[dict] = []                 # course logistics, kept out of the notes
+        self.consolidated_to = 0.0                 # S: everything before it is in topics
+        self.passes = 0
+        self.finished = False                      # the pass that reached the lecture's end is out
+        self.last_live_at = 0.0                    # runtime only (not rebuilt): pacing of consolidation
+        self.retry_at = 0.0                        # runtime only: a deferred consolidation waits until then
+        self.ending_since: float | None = None     # runtime only: first pass attempted after the lecture's end
 
-    @property
-    def current(self) -> dict | None:
-        return self.sections[max(self.sections)] if self.sections else None
-
-    def apply(self, p: dict, partition: int | None = None) -> None:
+    def apply_update(self, p: dict, partition: int | None = None) -> None:
         if partition is not None:
             self.partition = partition
-        if p["update_index"] in self.sent:
+        k = p["update_index"]
+        if k in self.sent:
             return                                  # duplicate record (at-least-once): first one wins
-        sec = p["section"]
-        if sec["id"] not in self.sections:
-            self.sections[sec["id"]] = {"id": sec["id"], "title": sec["title"], "first_update": p["update_index"],
-                                        "updates": 0}
-        self.sections[sec["id"]]["updates"] += 1
-        self.points += [{**pt, "id": f"u{p['update_index']}p{seq}"} for seq, pt in enumerate(p["points"])]
-        self.media_end = max(self.media_end, float(p.get("media_end") or 0.0))
-        for t in p["terms"]:
-            self.terms.setdefault(t["term"].lower(), dict(t))
-        self.sent.add(p["update_index"])
+        for c in p["transcript"]:
+            if c["start_time"] >= self.consolidated_to:
+                self.transcript.setdefault(c["chunk_id"], c)
+        for el in p["elements"]:
+            sn.fold_draft(self.drafts, el, k)
+        if p.get("info"):
+            self.info.append(p["info"])
+        self.media_end = max(self.media_end, float(p["media_end"]))
+        self.sent.add(k)
         self.sent_windows.update(p["window_starts"])
-        self.last_sent = max(self.last_sent, p["update_index"])
+        self.last_sent = max(self.last_sent, k)
 
-    def context(self) -> str:
-        if not self.sections:
-            return "Notebook so far: (empty; this is the start of the lecture)"
-        cur = self.current
-        recent = [pt for pt in self.points if pt["section_id"] == cur["id"]][-6:]
-        lines = ["Notebook so far:", "Sections: " + "; ".join(f"{s['id']}. {s['title']}" for s in self.sections.values()),
-                 f"Current section: {cur['title']}", "Recent points in it:"]
-        lines += [f"- [{mmss(pt['t'])}] {pt['text']}" for pt in recent] or ["- (none yet)"]
-        names = [t["term"] for t in self.terms.values()][-40:]
-        lines.append("Terms already defined: " + (", ".join(names) or "(none)"))
-        return "\n".join(lines)
+    def apply_pass(self, p: dict, partition: int | None = None) -> None:
+        if partition is not None:
+            self.partition = partition
+        if p["pass_index"] < self.passes:
+            return                                  # duplicate record
+        by_n = {t["n"]: t for t in self.topics}
+        for t in p["topics"]:
+            if t["new"]:
+                by_n[t["n"]] = {"n": t["n"], "title": t["title"], "start": t["media_start"], "end": t["media_end"],
+                                "question": t.get("question"), "elements": []}
+                self.topics.append(by_n[t["n"]])
+            elif t["n"] in by_n:                    # an earlier topic that this stretch continues
+                old = by_n[t["n"]]
+                old["end"] = max(old["end"], t["media_end"])
+                old["question"] = old["question"] or t.get("question")
+        for el in p["elements"]:
+            if el["topic"] in by_n:
+                by_n[el["topic"]]["elements"].append({k: v for k, v in el.items() if k != "topic"})
+        for g in p["glossary"]:
+            self.glossary[g["term"].lower()] = g
+        self.consolidated_to = max(self.consolidated_to, float(p["media_end"]))
+        self.drafts = [d for d in self.drafts if d["t"] >= self.consolidated_to]
+        self.transcript = {cid: c for cid, c in self.transcript.items() if c["start_time"] >= self.consolidated_to}
+        self.passes = p["pass_index"] + 1
+        self.finished = self.finished or bool(p["final"])
 
+    # ------------------------------------------------------------------ views for the prompts
+    def chunks(self, end: float) -> list[dict]:
+        """The transcript from consolidated_to up to `end`, in order."""
+        return [c for _, c in sorted(self.transcript.items()) if c["start_time"] < end]
 
-# ----------------------------------------------------------------------------------------------- the prompt
-SYSTEM_PROMPT = """You are the note-taker for a live university lecture. Every 90 seconds you receive the next
-part of the transcript (automatic speech recognition, so it can contain errors) and the notebook written so far.
+    def sentences(self) -> list[str]:
+        done = [s for t in self.topics for el in t["elements"] for s in sn.sentences_of(el)]
+        live = [s for el in self.drafts for s in sn.sentences_of(el)]
+        return (done + live)[-KNOWN_SENTENCES:]
 
-Write what a diligent student would write down: ideas, definitions, worked examples, rules, warnings.
-Write the notes themselves, not a description of the talk (never "the lecturer says ...").
-Skip housekeeping (administration, logistics, recording or licence notices, jokes) unless it matters for studying.
-Returning no points is fine when nothing in this part is worth noting. Do not repeat points already in the notebook.
-
-Every point must restate ONLY what was said in this part. If a point needs an explanation the lecturer did
-not give, put that explanation in the point's "background" field (it is shown separately, labelled as
-background); never mix outside knowledge into "text".
-
-Return ONLY a JSON object:
-{"section": {"action": "continue" | "new", "title": "short topic title (new only)", "starts_at": "mm:ss (new only)"},
- "points": [{"text": "...", "t": "mm:ss", "kind": "point" | "example",
-             "quote": "3-15 consecutive words copied exactly from the transcript", "background": "..." or null}],
- "terms": [{"term": "...", "definition": "...", "t": "mm:ss", "quote": "...", "source": "lecture" | "background"}]}
-
-Rules:
-- 0 to 5 points, each at most 300 characters, specific and understandable on its own.
-- "quote" is copied word for word from the transcript: no "...", no changes; "t" is the [mm:ss] of its line.
-- Terms: at most 4, only terms the lecturer explains or uses in this part; the term must appear in the transcript.
-  Give "quote" (the words where it is said) and "source": "lecture" if your definition is what the lecturer said,
-  "background" if you had to add general knowledge. Do not repeat terms already defined.
-- Start a new section only when the topic clearly changes; otherwise continue the current one.
-  For a new section also give "starts_at": the [mm:ss] where the new topic begins."""
-
-
-def user_prompt(memory: Memory, chunks: list[dict]) -> str:
-    lines = "\n".join(f"[{mmss(c['start_time'])}] {c['text']}" for c in chunks)
-    return (f"{memory.context()}\n\nTranscript, {mmss(chunks[0]['start_time'])}-{mmss(chunks[-1]['end_time'])}:\n"
-            f"{lines}")
+    def index(self) -> str:
+        """The lecture so far (§4.2): earlier topic titles and the glossary terms, ~100 tokens."""
+        done = "; ".join(f"{t['n']}. {t['title']} ({mmss(t['start'])}-{mmss(t['end'])})" for t in self.topics)
+        terms = ", ".join(g["term"] for g in self.glossary.values())
+        return f"Finished topics: {done or '(none yet)'}\nGlossary so far: {terms or '(none yet)'}"
 
 
-# ----------------------------------------------------------------------------------------------- deltas
-def _section(memory: Memory, action, title: str, starts_at, update_index: int, generator: str, flags: list):
-    """Section decision made by code. Returns (section dict, previous section id or None, starts_at s)."""
-    cur = memory.current
-    if cur is None:
-        if action not in ("new", None):
-            flags.append("first_update_opens_section")
-        name = title or ("Introduction" if generator == "llm" else "Part 1")
-        return {"id": 1, "title": name[:80], "is_new": True}, None, None
-    if generator == "extractive":
-        if cur["updates"] >= EXTRACTIVE_SECTION_EVERY:
-            return {"id": cur["id"] + 1, "title": f"Part {cur['id'] + 1}", "is_new": True}, None, None
-        return {"id": cur["id"], "title": cur["title"], "is_new": False}, None, None
-    if action == "new":
-        if cur["updates"] < MIN_SECTION_UPDATES:
-            flags.append(f"premature_new_section:{title[:40]!r}")
-        elif title:
-            return {"id": cur["id"] + 1, "title": title[:80], "is_new": True}, cur["id"], parse_t(starts_at)
-    return {"id": cur["id"], "title": cur["title"], "is_new": False}, None, None
+# ----------------------------------------------------------------------------------------------- live stage (§11.4)
+LIVE_SYSTEM = f"""You write the running notes of a live university lecture, the way a good student writes them up.
+Every 90 seconds you receive the next part of the transcript (speech recognition, so it can contain errors) and the
+notes written since the last organised topic.
+
+Continue the notes with at most 2 elements for this part. A paragraph may continue the last paragraph of the notes
+so far: give "continue": true and no "lead". Start a new paragraph when the idea changes. Never repeat what is
+already in the notes. Returning no elements is fine. Course logistics go in "info" (one short line), not in the notes.
+
+{sn.ELEMENTS_DOC}
+
+{sn.STYLE}
+
+Return ONLY a JSON object: {{"elements": [ ... ], "info": null or {{"text": "...", "quote": "..."}}}}"""
 
 
-def extractive_delta(memory: Memory, chunks: list[dict], update_index: int, flags: list | None = None) -> dict:
-    flags = list(flags or [])
-    section, _, _ = _section(memory, None, "", None, update_index, "extractive", flags)
-    points = [{"section_id": section["id"], "text": s["text"], "t": s["t"], "kind": "point", "quote": s["text"]}
-              for s in top_sentences(chunks)]
-    return {"section": section, "points": points, "terms": [], "generator": "extractive", "quality_flags": flags}
+def live_user(memory: Memory, chunks: list[dict]) -> str:
+    words = "\n".join(sn.text_of(el) for el in memory.drafts).split()
+    so_far = ("… " if len(words) > LIVE_CONTEXT_WORDS else "") + " ".join(words[-LIVE_CONTEXT_WORDS:])
+    return (f"{memory.index()}\n\nNotes so far (since {mmss(memory.consolidated_to)}):\n{so_far or '(none yet)'}\n\n"
+            f"Transcript, {mmss(chunks[0]['start_time'])}-{mmss(chunks[-1]['end_time'])}:\n"
+            f"{sn.transcript_block(chunks)}")
 
 
-def llm_delta(memory: Memory, reply: dict, chunks: list[dict], update_index: int) -> dict:
-    """Validate an LLM reply (§8.1.3 + step-0 option A). Falls back to extractive when nothing survives."""
+def live_delta(memory: Memory, reply: dict, chunks: list[dict], update_index: int) -> dict:
+    """Validate a live reply into notes.v3 elements (§11.2-11.4). Ids are code-assigned: u<update>e<seq>."""
     flags: list[str] = []
+    stats: Counter = Counter()
     texts = [c["text"] for c in chunks]
-    whole = " ".join(texts)
-    sec = reply.get("section") if isinstance(reply.get("section"), dict) else {}
-    title = str(sec.get("title") or "").strip()
-    section, previous_id, starts_at = _section(memory, sec.get("action"), title, sec.get("starts_at"),
-                                               update_index, "llm", flags)
-
-    proposed = reply.get("points") if isinstance(reply.get("points"), list) else []
-    points: list[dict] = []
-    earlier = [pt["text"] for pt in memory.points[-30:]]
-    for pt in proposed[:MAX_POINTS]:
-        if not isinstance(pt, dict):
-            flags.append("malformed_point")
+    info = None
+    raw_info = reply.get("info") if isinstance(reply.get("info"), dict) else None
+    if raw_info and str(raw_info.get("text") or "").strip():
+        span = sn.ground(raw_info.get("quote"), str(raw_info["text"]), texts, flags)
+        if span is not None:
+            info = {"text": str(raw_info["text"]).strip()[:200], "t": float(chunks[span[0]]["start_time"])}
+    proposed = [x for x in (reply.get("elements") if isinstance(reply.get("elements"), list) else [])
+                if isinstance(x, dict)]
+    if len(proposed) > LIVE_MAX_ELEMENTS:
+        flags.append(f"too_many_elements({len(proposed)})")
+        proposed = proposed[:LIVE_MAX_ELEMENTS]
+    paras = [d for d in memory.drafts if d["kind"] == "para"]
+    last_para = (paras[-1]["id"], len(paras[-1]["sentences"])) if paras else None
+    known = memory.sentences()
+    elements: list[dict] = []
+    for raw in proposed:
+        el = sn.validate(raw, chunks, flags, stats, known, live=True)
+        if el is None:
             continue
-        text = str(pt.get("text") or "").strip()[:300]
-        span = find_quote(str(pt.get("quote") or ""), texts)
-        if not text:
-            continue
-        if span is None:
-            flags.append("quote_not_found")
-            continue
-        neighbourhood = " ".join(texts[max(0, span[0] - 1): span[1] + 2])
-        score = support(text, neighbourhood)
-        if score < LOCAL_SUPPORT_MIN:
-            flags.append(f"low_support({score:.2f})")
-            continue
-        if any(similar(text, other) >= DUPLICATE_MIN for other in earlier + [p["text"] for p in points]):
-            flags.append("duplicate_point")
-            continue
-        t = chunks[span[0]]["start_time"]
-        claimed = parse_t(pt.get("t"))
-        if claimed is not None and abs(claimed - t) > 10:
-            flags.append("timestamp_corrected")
-        sid = previous_id if (previous_id and starts_at is not None and t < starts_at) else section["id"]
-        background = pt.get("background")
-        points.append({"section_id": sid, "text": text, "t": t, "kind": "example" if pt.get("kind") == "example" else "point",
-                       "quote": str(pt.get("quote")).strip(),
-                       "background": str(background).strip()[:300] if isinstance(background, str) and background.strip() else None})
-
-    terms: list[dict] = []
-    proposed_terms = reply.get("terms") if isinstance(reply.get("terms"), list) else []
-    norm_whole = norm(whole)
-    stem_whole = " ".join(stem(w) for w in norm_whole.split())
-    for term in proposed_terms[:MAX_TERMS]:
-        if not isinstance(term, dict):
-            flags.append("malformed_term")
-            continue
-        name = str(term.get("term") or "").strip()[:80]
-        key = name.lower()
-        if not name or key in memory.terms or any(t["term"].lower() == key for t in terms):
-            continue
-        name_norm = norm(name)
-        if not name_norm or (name_norm not in norm_whole and " ".join(stem(w) for w in name_norm.split()) not in stem_whole):
-            flags.append("term_not_in_transcript")
-            continue
-        definition = str(term.get("definition") or "").strip()[:200]
-        span = find_quote(str(term.get("quote") or ""), texts)
-        lecture = (term.get("source") == "lecture" and span is not None
-                   and support(definition, " ".join(texts[max(0, span[0] - 1): span[1] + 2])) >= LOCAL_SUPPORT_MIN)
-        if term.get("source") == "lecture" and not lecture:
-            flags.append("term_relabelled_background")
-        where = span[0] if span else next((i for i, x in enumerate(texts) if name_norm in norm(x)), 0)
-        terms.append({"term": name, "definition": definition, "t": chunks[where]["start_time"],
-                      "source": "lecture" if lecture else "background"})
-
-    if proposed and not points:
-        return extractive_delta(memory, chunks, update_index, flags + ["llm_points_all_dropped"])
-    return {"section": section, "points": points, "terms": terms, "generator": "llm", "quality_flags": flags}
+        el_id = f"u{update_index}e{len(elements)}"
+        cont = el.pop("continue", False)
+        extends = None
+        if el["kind"] == "para" and cont:
+            if last_para and last_para[1] + len(el["sentences"]) <= sn.LIVE_PARA_MAX:
+                extends = last_para[0]
+                el["lead"] = ""
+                stats["continued"] += 1
+            else:
+                flags.append("continue_as_new_paragraph")
+        elements.append({"id": el_id, "extends": extends, **el})
+        known += sn.sentences_of(el)
+        if el["kind"] == "para":
+            last_para = (extends, last_para[1] + len(el["sentences"])) if extends else (el_id, len(el["sentences"]))
+        stats[f"kept_{el['kind']}"] += 1
+    if proposed and not elements:
+        flags.append("all_elements_dropped")
+    return {"elements": elements, "info": info, "generator": "llm", "quality_flags": flags, "stats": dict(stats)}
 
 
-def build_update(memory: Memory, held: Held, delta: dict, model: str | None, agent_ms: float,
-                 now_ms: int | None = None) -> dict:
+def extractive_live(memory: Memory, chunks: list[dict], update_index: int, flags: list | None = None) -> dict:
+    """No LLM: the update's best sentences as one paragraph, verbatim (agents/extractive.py)."""
+    picks = top_sentences(chunks)
+    elements = []
+    if picks:
+        elements.append({"id": f"u{update_index}e0", "extends": None, "kind": "para", "t": picks[0]["t"],
+                         "said": picks[0]["text"][:400], "lead": "", "sentences": [p["text"] for p in picks],
+                         "terms": [], "background": None})
+    return {"elements": elements, "info": None, "generator": "extractive", "quality_flags": list(flags or []),
+            "stats": {}}
+
+
+def build_update(held: Held, delta: dict, model: str | None, agent_ms: float, now_ms: int | None = None) -> dict:
     chunks = held.chunks()
     payload = {
-        "schema": "notes.v2", "video_id": held.video_id, "update_index": held.update_index,
+        "schema": "notes.v3", "video_id": held.video_id, "update_index": held.update_index,
         "media_start": min(c["start_time"] for c in chunks), "media_end": max(c["end_time"] for c in chunks),
         "window_starts": sorted(w.window_start for w in held.windows),
-        "section": delta["section"], "points": delta["points"], "terms": delta["terms"],
+        "transcript": [{k: c[k] for k in ("chunk_id", "start_time", "end_time", "text")} for c in chunks],
+        "elements": delta["elements"], "info": delta["info"],
         "generator": delta["generator"], "model": model if delta["generator"] == "llm" else None,
-        "agent_ms": round(agent_ms, 1), "quality_flags": delta["quality_flags"],
+        "agent_ms": round(agent_ms, 1), "quality_flags": [f[:200] for f in delta["quality_flags"]][:40],
         "created_ts": now_ms if now_ms is not None else int(time.time() * 1000),
     }
     session_start = next((w.session_start for w in held.windows if w.session_start is not None), None)
     if session_start is not None:
         payload["session_start"] = session_start
     return payload
-
-
-# ----------------------------------------------------------------------------------------------- end of lecture (M6b)
-# No lecture summary (your decision, 28 Oct): the notebook already is the condensed lecture, and the assistant
-# summarises any part on request. The end pass only fixes what live note-taking can't: titles written with 90 s
-# of context, a scattered glossary, review questions, weak points.
-END_PROMPT = """You finish the notebook of a university lecture that has just ended. You receive the whole notebook
-(section titles, timestamped points with ids, terms). Write ONLY from the notebook; add no new facts.
-
-Return ONLY a JSON object:
-{"outline": [{"section_id": 1, "title": "a clear final title for the section", "gist": "one sentence",
-              "weak_points": ["ids of points that are vague, wrong or housekeeping"]}],
- "glossary": [{"term": "...", "definition": "one sentence, as used in the lecture"}],
- "questions": [{"question": "...", "answer": "short answer from the notebook", "section_id": 1}]}
-
-Rules:
-- One outline entry for every section, using the given section_id; titles at most 80 characters.
-- Glossary: only terms that appear in the notebook; merge duplicates.
-- Exactly {n_questions} review questions that test understanding, spread over the sections, each tied to the
-  section it comes from."""
-
-
-def questions_wanted(memory: Memory) -> int:
-    """About one review question per 15 minutes of lecture, 3 to 8."""
-    return max(3, min(8, round(memory.media_end / 900)))
-
-
-def end_prompt(memory: Memory) -> str:
-    return END_PROMPT.replace("{n_questions}", str(questions_wanted(memory)))
-
-END_PROMPT_CHARS = 16_000         # about 4,000 tokens: a single request must fit the free per-minute limit (§8.0)
-
-
-def end_user_prompt(memory: Memory, cap_chars: int = END_PROMPT_CHARS) -> tuple[str, int]:
-    """The notebook as text, trimmed to fit: fewer points per section for long lectures. (text, points kept)."""
-    sections = list(memory.sections.values())
-    by_section = {s["id"]: [pt for pt in memory.points if pt["section_id"] == s["id"]] for s in sections}
-    terms = "; ".join(f"{t['term']}: {t['definition']}" for t in memory.terms.values())
-    for per_section in (1000, 12, 8, 5, 3, 2, 1):
-        lines = []
-        for sec in sections:
-            lines.append(f"Section {sec['id']}: {sec['title']}")
-            lines += [f"  {pt['id']} [{mmss(pt['t'])}] {pt['text']}" for pt in by_section[sec["id"]][:per_section]]
-        text = "\n".join(lines) + ("\nTerms: " + terms if terms else "")
-        if len(text) <= cap_chars:
-            break
-    return text[:cap_chars], sum(min(len(v), per_section) for v in by_section.values())
-
-
-def _section_start(memory: Memory, sid: int) -> float:
-    ts = [pt["t"] for pt in memory.points if pt["section_id"] == sid]
-    return min(ts) if ts else 0.0
-
-
-def lecture_fallback(memory: Memory, flags: list | None = None) -> dict:
-    """No LLM: outline from the section titles, glossary from the collected terms; no questions."""
-    return {"generator": "extractive", "quality_flags": list(flags or []), "questions": [],
-            "outline": [{"section_id": s["id"], "title": s["title"][:80], "gist": "", "weak_points": []}
-                        for s in memory.sections.values()],
-            "glossary": [{"term": t["term"], "definition": t["definition"][:300], "t": float(t["t"])}
-                         for t in memory.terms.values()]}
-
-
-def lecture_from_reply(memory: Memory, reply: dict) -> dict:
-    """Validate the end pass (§8.1.5): known section ids only, every section present, glossary terms that occur
-    in the notebook, weak points that exist, at most 5 questions tied to real sections."""
-    flags: list[str] = []
-    point_ids = {pt["id"] for pt in memory.points}
-    given: dict[int, dict] = {}
-    for o in reply.get("outline") if isinstance(reply.get("outline"), list) else []:
-        if isinstance(o, dict) and o.get("section_id") in memory.sections and o["section_id"] not in given:
-            weak = [w for w in o.get("weak_points") or [] if isinstance(w, str) and w in point_ids]
-            title = str(o.get("title") or "").strip()[:80] or memory.sections[o["section_id"]]["title"][:80]
-            given[o["section_id"]] = {"section_id": o["section_id"], "title": title,
-                                      "gist": str(o.get("gist") or "").strip()[:300], "weak_points": weak}
-        elif isinstance(o, dict):
-            flags.append("unknown_section_dropped")
-    outline = []
-    for sid, sec in memory.sections.items():
-        if sid not in given:
-            flags.append("section_missing_kept_live_title")
-        outline.append(given.get(sid) or {"section_id": sid, "title": sec["title"][:80], "gist": "", "weak_points": []})
-    notebook_text = norm(" ".join(pt["text"] for pt in memory.points) + " " + " ".join(memory.terms))
-    glossary, seen = [], set()
-    for g in reply.get("glossary") if isinstance(reply.get("glossary"), list) else []:
-        if not isinstance(g, dict) or not str(g.get("term") or "").strip():
-            continue
-        term = str(g["term"]).strip()[:80]
-        key = term.lower()
-        if key in seen:
-            continue
-        known = memory.terms.get(key)
-        if known is None and norm(term) not in notebook_text:
-            flags.append("glossary_term_not_in_notebook")
-            continue
-        seen.add(key)
-        t = float(known["t"]) if known else next((pt["t"] for pt in memory.points if norm(term) in norm(pt["text"])), 0.0)
-        glossary.append({"term": term, "definition": str(g.get("definition") or "").strip()[:300], "t": t})
-    for key, t in memory.terms.items():                       # a collected term is never lost
-        if key not in seen:
-            glossary.append({"term": t["term"], "definition": t["definition"][:300], "t": float(t["t"])})
-    questions = []
-    for q in reply.get("questions") if isinstance(reply.get("questions"), list) else []:
-        if isinstance(q, dict) and str(q.get("question") or "").strip() and q.get("section_id") in memory.sections:
-            questions.append({"question": str(q["question"]).strip()[:300], "answer": str(q.get("answer") or "").strip()[:400],
-                              "section_id": q["section_id"], "t": _section_start(memory, q["section_id"])})
-    wanted = questions_wanted(memory)
-    if len(questions) > wanted:
-        flags.append("questions_trimmed")
-    return {"outline": outline, "glossary": glossary, "questions": questions[:wanted], "generator": "llm",
-            "quality_flags": flags}
-
-
-def build_lecture_notes(memory: Memory, fields: dict, model: str | None, agent_ms: float, ended_by: str,
-                        now_ms: int | None = None) -> dict:
-    return {"schema": "lecture_notes.v1", "video_id": memory.video_id, **fields,
-            "model": model if fields["generator"] == "llm" else None, "agent_ms": round(agent_ms, 1),
-            "ended_by": ended_by, "created_ts": now_ms if now_ms is not None else int(time.time() * 1000)}

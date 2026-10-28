@@ -48,13 +48,17 @@ def conn(tmp_path_factory):
             "event_ts": S0 + r["chunk_id"] * 10_000, "text": r["text"], "asr_score": r["asr_score"],
             "model": "base.en", "src_partition": 0, "src_offset": r["chunk_id"],
             **({"title": "Python · Lecture 1 (Bell)"} if r["chunk_id"] == 0 else {})}, r["chunk_id"]))
+    sentence = "Declarative knowledge is statements of fact."
+    para = {"kind": "para", "t": 520.0, "said": "The first type of knowledge is declarative knowledge", "lead": "",
+            "sentences": [sentence], "terms": [{"term": "declarative knowledge", "definition": sentence}],
+            "background": None}
     records.append(rec("final_notes", {
-        "schema": "notes.v2", "video_id": "python_l1", "update_index": 5, "media_start": 450.0, "media_end": 540.0,
-        "window_starts": [S0 + 450_000], "section": {"id": 1, "title": "What does a computer do?", "is_new": True},
-        "points": [{"section_id": 1, "text": "Declarative knowledge is statements of fact.", "t": 520.0,
-                    "kind": "point", "quote": "The first type of knowledge is declarative knowledge"}],
-        "terms": [{"term": "declarative knowledge", "definition": "Knowledge made of statements of fact.",
-                   "t": 520.0, "source": "lecture"}],
+        "schema": "consolidation.v1", "video_id": "python_l1", "pass_index": 0, "media_start": 0.0,
+        "media_end": 540.0, "final": False,
+        "topics": [{"n": 1, "title": "What does a computer do?", "media_start": 0.0, "media_end": 540.0,
+                    "question": None, "new": True}],
+        "elements": [{"topic": 1, **para}],
+        "glossary": [{"term": "declarative knowledge", "definition": sentence, "t": 520.0, "topic": 1}],
         "generator": "llm", "created_ts": S0}, 0))
     w = connect_writer(path)
     apply_batch(w, records, now=1, window_ms=30_000)

@@ -82,8 +82,36 @@ def test_the_local_budget_skips_a_model_before_the_provider_would_refuse(env):
     env.setenv("LLM_NOTES_TPM_SHARE", "0.5")                      # 4,000 tokens/min for this process
     client = llm.Client("notes")
     for i in range(5):
-        client.complete_json("s", f"u{i}", max_tokens=1000)      # each records 1,200 tokens; estimate ~250
-    assert calls == ["openai/gpt-oss-120b"] * 4 + ["openai/gpt-oss-20b"]   # 4,800 used: the 5th won't fit
+        client.complete_json("s", f"u{i}", max_tokens=1000)      # each records 1,200 tokens; checked as ~1,000
+    # The full max_tokens counts (§11.10): after 3,600 used a 4th request of up to 1,000 would pass 4,000.
+    assert calls == ["openai/gpt-oss-120b"] * 3 + ["openai/gpt-oss-20b"] * 2
+
+
+def test_a_preferred_model_goes_first_and_the_chain_follows(env):
+    post, calls = fake_post({"openai/gpt-oss-20b": 429})
+    env.setattr(llm.requests, "post", post)
+    client = llm.Client("notes")
+    assert client.complete_json("s", "u", prefer="openai/gpt-oss-20b").model == "openai/gpt-oss-120b"
+    assert calls == ["openai/gpt-oss-20b", "openai/gpt-oss-120b"]
+
+
+def test_a_daily_limit_blocks_that_model_until_the_provider_says(env):
+    """Live run 28 Oct: Groq's tokens-per-day limit answers 429 with retry-after ~20 min; retrying every minute
+    only wastes requests."""
+    calls = []
+
+    def post(url, json=None, timeout=None, headers=None):    # noqa: A002
+        calls.append(json["model"])
+        if json["model"] == "openai/gpt-oss-120b":
+            return SimpleNamespace(status_code=429, json=lambda: {}, headers={"retry-after": "1179"})
+        body = {"choices": [{"message": {"content": '{"ok": true}'}}], "usage": {}}
+        return SimpleNamespace(status_code=200, json=lambda: body, headers={})
+    env.setattr(llm.requests, "post", post)
+    client = llm.Client("notes")
+    assert client.complete_json("s", "u1").model == "openai/gpt-oss-20b"
+    client.budget.used.clear()                                     # a minute later: the 1-minute back-off is over
+    assert client.complete_json("s", "u2").model == "openai/gpt-oss-20b"
+    assert calls == ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "openai/gpt-oss-20b"]   # 120b not asked again
 
 
 def test_budget_window_rolls_over():
@@ -114,3 +142,12 @@ def test_a_call_blocked_only_by_the_local_budget_waits_for_it(env):
     for t in client.chain:
         client.budget.record(t.model, client.budget.limit)
     assert client.complete_json("s", "u2").reason == "all_failed"                    # no waiting by default
+
+
+def test_a_request_larger_than_the_share_runs_alone_once_the_model_is_idle(env):
+    """Live run 28 Oct: a consolidation (~5,000 tokens with its max_tokens) never fitted the notes' 4,800 share."""
+    b = llm.TokenBudget(4800, ceiling=8000)
+    assert b.allows("m", 5000, now=0.0)                          # nothing used: may run alone
+    b.record("m", 1400, now=0.0)
+    assert not b.allows("m", 5000, now=45.0) and b.allows("m", 5000, now=61.0)
+    assert not llm.TokenBudget(4800, ceiling=8000).allows("m", 9000)   # never above the provider's limit

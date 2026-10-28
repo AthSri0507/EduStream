@@ -6,7 +6,8 @@ One OpenAI-compatible chat-completions call, tried over a chain of (provider, mo
   * Each agent starts its chain with a different model (LLM_NOTES_FIRST_MODEL, LLM_ASSISTANT_FIRST_MODEL),
     so the Note Agent and the assistant don't drain the same free per-minute quota (rev 6 review).
   * A per-process token budget per model (rolling 60 s, LLM_TPM_LIMIT x share) skips a model before the
-    provider would answer HTTP 429.
+    provider would answer HTTP 429. A request is checked with its FULL max_tokens: the provider counts the requested
+    maximum against the per-minute limit (NOTEBOOK_DESIGN §11.10: 429s with only ~1,000 tokens actually used).
   * HTTP 429 / 5xx / timeouts / network errors / invalid JSON move to the next model; no retry loops.
     If everything fails the caller uses its deterministic fallback.
   * LLM_ENABLED=false (everyday development) and LLM_FORCE_FAIL=true (fault demo F5) fail fast.
@@ -58,6 +59,7 @@ class Result:
     completion_tokens: int | None = None
     attempts: list = field(default_factory=list)       # [(model, reason)]
     reason: str | None = None                          # why it failed overall
+    retry_after: float | None = None                   # HTTP 429: seconds until the provider accepts again
     cached: bool = False
 
     @property
@@ -82,8 +84,9 @@ def targets(first_model: str | None = None) -> list[Target]:
 class TokenBudget:
     """Rolling 60 s token count per model for this process."""
 
-    def __init__(self, limit_per_min: int) -> None:
+    def __init__(self, limit_per_min: int, ceiling: int | None = None) -> None:
         self.limit = limit_per_min
+        self.ceiling = ceiling if ceiling is not None else limit_per_min     # the provider's own per-minute limit
         self.used: dict[str, deque] = {}
         self.lock = threading.Lock()
 
@@ -96,7 +99,10 @@ class TokenBudget:
     def allows(self, model: str, estimate: int, now: float | None = None) -> bool:
         now = time.time() if now is None else now
         with self.lock:
-            return sum(n for _, n in self._window(model, now)) + estimate <= self.limit
+            used = sum(n for _, n in self._window(model, now))
+            # A request larger than this process's share may still run alone (nothing used in the last minute):
+            # live run 28 Oct, a consolidation (~5,000 with its max_tokens) never fitted a 4,800 share and waited forever.
+            return used + estimate <= self.limit or (used == 0 and estimate <= self.ceiling)
 
     def record(self, model: str, tokens: int, now: float | None = None) -> None:
         now = time.time() if now is None else now
@@ -111,10 +117,12 @@ class Client:
         first = _env(f"LLM_{agent.upper()}_FIRST_MODEL") or None
         self.chain = targets(first)
         share = share if share is not None else float(_env(f"LLM_{agent.upper()}_TPM_SHARE", "1.0"))
-        self.budget = TokenBudget(int(int(_env("LLM_TPM_LIMIT", "8000")) * share))
+        tpm = int(_env("LLM_TPM_LIMIT", "8000"))
+        self.budget = TokenBudget(int(tpm * share), ceiling=tpm)
         self.enabled = _flag("LLM_ENABLED", False)
         self.force_fail = _flag("LLM_FORCE_FAIL", False)
         self.cache_path = ROOT / "data" / "llm_cache.sqlite" if _env("LLM_CACHE", "off").lower() == "on" else None
+        self.blocked_until: dict[str, float] = {}      # model -> time; a daily limit can last ~20 minutes
 
     # ---------------------------------------------------------------- cache (development only)
     def _cache_get(self, key: str) -> Result | None:
@@ -133,27 +141,38 @@ class Client:
             c.execute("INSERT OR REPLACE INTO cache VALUES (?, ?)", (key, json.dumps(result.__dict__)))
 
     # ---------------------------------------------------------------- the call
+    @staticmethod
+    def estimate(system: str, user: str, max_tokens: int) -> int:
+        return (len(system) + len(user)) // 4 + max_tokens
+
     def complete_json(self, system: str, user: str, max_tokens: int = 1500, timeout_s: float = TIMEOUT_S,
-                      wait_s: float = 0.0) -> Result:
+                      wait_s: float = 0.0, first_only: bool = False, prefer: str | None = None) -> Result:
         """wait_s: if every model is blocked only by this process's own token budget, wait up to this long for it
-        to free up before giving up (M6b live finding: three lectures ending together exhausted it in one tick)."""
+        to free up before giving up (M6b live finding: three lectures ending together exhausted it in one tick).
+        first_only: try only the first model of the chain (consolidation waits for the strong model, §11.5).
+        prefer: try this model first, then the rest of the chain in order (the live notes use their own model)."""
         if not self.enabled:
             return Result(False, reason="disabled")
         if self.force_fail:
             return Result(False, reason="forced_failure")
         if not self.chain:
             return Result(False, reason="no_provider_configured")
-        key = hashlib.sha256(json.dumps([system, user, max_tokens, [t.model for t in self.chain]]).encode()).hexdigest()
+        chain = sorted(self.chain, key=lambda t: t.model != prefer) if prefer else self.chain
+        chain = chain[:1] if first_only else chain
+        key = hashlib.sha256(json.dumps([system, user, max_tokens, [t.model for t in chain]]).encode()).hexdigest()
         cached = self._cache_get(key)
         if cached is not None:
             return cached
-        estimate = (len(system) + len(user)) // 4 + max_tokens // 4
+        estimate = self.estimate(system, user, max_tokens)
         deadline = time.time() + wait_s
-        while wait_s > 0 and not any(self.budget.allows(t.model, estimate) for t in self.chain) \
+        while wait_s > 0 and not any(self.budget.allows(t.model, estimate) for t in chain) \
                 and time.time() < deadline:
             time.sleep(1.0)
         attempts = []
-        for t in self.chain:
+        for t in chain:
+            if self.blocked_until.get(t.model, 0.0) > time.time():
+                attempts.append((t.model, "provider_blocked"))
+                continue
             if not self.budget.allows(t.model, estimate):
                 attempts.append((t.model, "local_budget"))
                 continue
@@ -168,7 +187,9 @@ class Client:
                 return result
             attempts.append((t.model, result.reason))
             if result.reason == "HTTP 429":
-                self.budget.record(t.model, self.budget.limit)          # back off this model for a minute
+                self.budget.record(t.model, self.budget.limit)          # back off this model for a minute ...
+                if result.retry_after and result.retry_after > 60:    # ... or as long as the provider says: the
+                    self.blocked_until[t.model] = time.time() + result.retry_after   # daily limit (live run 28 Oct)
         if self.log:
             self.log.warn("llm_all_failed", agent=self.agent, attempts=attempts)
         return Result(False, attempts=attempts, reason="all_failed")
@@ -188,7 +209,11 @@ class Client:
             return Result(False, reason=type(exc).__name__)
         latency = round(time.perf_counter() - started, 3)
         if r.status_code != 200:
-            return Result(False, reason=f"HTTP {r.status_code}", latency_s=latency)
+            try:
+                retry = float((getattr(r, "headers", None) or {}).get("retry-after") or 0) or None
+            except (TypeError, ValueError):
+                retry = None
+            return Result(False, reason=f"HTTP {r.status_code}", latency_s=latency, retry_after=retry)
         try:
             payload = r.json()
             data = json.loads(payload["choices"][0]["message"].get("content") or "")

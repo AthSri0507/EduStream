@@ -15,8 +15,8 @@ from jsonschema import Draft202012Validator
 from common.config import ROOT
 
 SCHEMA_DIR = ROOT / "schemas"
-NAMES = ("audio_chunk.v1", "transcript.v1", "window.v1", "notes.v1", "notes.v2", "lecture_notes.v1", "alert.v1",
-         "dlq.v1")
+NAMES = ("audio_chunk.v1", "transcript.v1", "window.v1", "notes.v1", "notes.v2", "lecture_notes.v1", "notes.v3",
+         "consolidation.v1", "alert.v1", "dlq.v1")
 
 
 class ContractError(ValueError):

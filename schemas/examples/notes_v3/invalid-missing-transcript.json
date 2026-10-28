@@ -1,0 +1,50 @@
+{
+  "schema": "notes.v3",
+  "video_id": "python_l1",
+  "update_index": 7,
+  "media_start": 630.0,
+  "media_end": 660.0,
+  "window_starts": [
+    1792051830000
+  ],
+  "elements": [
+    {
+      "id": "u7e0",
+      "extends": "u6e0",
+      "kind": "para",
+      "t": 650.0,
+      "said": "That's an example of me being a machine, right? I followed the steps you gave me.",
+      "lead": "",
+      "sentences": [
+        "Following the given steps exactly, without judgement, is what a machine does."
+      ],
+      "terms": [],
+      "background": null
+    },
+    {
+      "id": "u7e1",
+      "extends": null,
+      "kind": "example",
+      "t": 630.0,
+      "said": "So I'm going to import this random module and I'm going to use the rand int function.",
+      "title": "Picking a random responder",
+      "sentences": [
+        "random.randint(16, 272) returned 75, the number of the student who answers."
+      ],
+      "steps": [],
+      "code": "import random\nrandom.randint(16, 272)"
+    }
+  ],
+  "info": {
+    "text": "Problem set 0 is due on Thursday.",
+    "t": 640.0
+  },
+  "generator": "llm",
+  "model": "openai/gpt-oss-120b",
+  "agent_ms": 2310.5,
+  "quality_flags": [
+    "quote_near_verbatim"
+  ],
+  "session_start": 1792051200000,
+  "created_ts": 1792051890000
+}

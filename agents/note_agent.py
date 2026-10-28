@@ -1,14 +1,20 @@
-"""Note Agent (docs/ARCHITECTURE.md §8.1, rev 6): window_summaries -> one notebook per lecture -> final_notes.
+"""Note Agent (docs/ARCHITECTURE.md §8.1, docs/NOTEBOOK_DESIGN.md §11): window_summaries -> study notes -> final_notes.
 
-  * Group note-agent, raw bytes, read_committed, one record per poll (§6.3).
-  * Windows are HELD uncommitted per partition until their 90 s update is complete (agents/notebook.py),
-    then one LLM call (or the extractive fallback) writes a notes.v2 delta, which is produced to the same
-    partition number of final_notes; only then are the held offsets committed.
-  * Memory (sections, points, terms, updates sent) is rebuilt from final_notes itself on EVERY partition
-    assignment, so a restart or rebalance never repeats an LLM call or creates a duplicate update.
-  * A lock file (run/locks/note-agent.lock) keeps a second instance from starting.
-  * End of a lecture: lectures.flushed_ts / last_chunk_id from SQLite (read-only), checked every 5 s; then the
-    end-of-lecture pass writes lecture_notes.v1 (final titles, glossary, questions; no summary) once (M6b).
+Two stages, both written to final_notes (same partition number as the lecture):
+  * Live: windows are HELD uncommitted per partition until their 90 s update is complete (agents/notebook.py),
+    then one LLM call (or the extractive fallback) writes up to 2 study-guide elements as a notes.v3 record;
+    only then are the held offsets committed.
+  * Consolidation: every ~6 minutes of drafts, and at the lecture's end, one call turns the drafts and the
+    transcript of the stretch into finished topics (agents/consolidation.py), a consolidation.v1 record. It runs
+    from the 5 s timer, GAP_S after the lecture's last live call, so the two never share a minute of the free
+    token limit. A failed pass is deferred (the drafts stay live); only at the lecture's end, with the LLM off, or
+    after a long outage are the drafts published as they are. There is no separate end-of-lecture pass any more
+    (decision 4): the last consolidation finishes the notebook.
+  * Memory (drafts, topics, glossary, the transcript since the last pass, updates sent) is rebuilt from
+    final_notes itself on EVERY partition assignment, so a restart never repeats a call or a record.
+  * Group note-agent, raw bytes, read_committed, one record per poll (§6.3). A lock file
+    (run/locks/note-agent.lock) keeps a second instance from starting.
+  * End of a lecture: lectures.flushed_ts / last_chunk_id from SQLite (read-only), checked every 5 s.
   * Produce failures exit with EXIT_PRODUCE_FAILED; scripts/run_component.ps1 restarts the process.
 
     .venv\\Scripts\\python -m agents.note_agent
@@ -25,12 +31,11 @@ from kafka import ConsumerRebalanceListener, KafkaConsumer, TopicPartition
 from kafka.errors import CommitFailedError
 from kafka.structs import OffsetAndMetadata
 
-from agents import llm
-from agents.notebook import (SYSTEM_PROMPT, Grouper, Held, LectureEnd, Memory, Window,
-                             build_lecture_notes, build_update, end_prompt, end_user_prompt, extractive_delta,
-                             lecture_fallback, lecture_from_reply, llm_delta, user_prompt)
+from agents import consolidation, llm
+from agents.notebook import (LIVE_MAX_TOKENS, LIVE_MODEL, LIVE_SYSTEM, Grouper, Held, LectureEnd, Memory, Window, build_update,
+                             extractive_live, live_delta, live_user)
 from common import schemas
-from common.config import GROUP_NOTES, RUN_DIR, TOPIC_LECTURE_NOTES, TOPIC_NOTES, TOPIC_WINDOWS, load
+from common.config import GROUP_NOTES, RUN_DIR, TOPIC_NOTES, TOPIC_WINDOWS, load
 from common.kafka_utils import (EXIT_PRODUCE_FAILED, ProduceFailed, make_consumer, make_producer, poll_one,
                                 send_and_wait, send_to_dlq)
 from common.log import JsonLog
@@ -40,15 +45,21 @@ LOCK = RUN_DIR / "locks" / "note-agent.lock"
 TIMER_EVERY_S = 5
 END_IDLE_S = 30                 # flushed, but the last chunk's window never came: finish anyway
 EXIT_ALREADY_RUNNING = 2
+STRONG_WAIT_S, REST_WAIT_S = 30, 10      # consolidation waits for the strong model first, briefly for the rest
+NOTEBOOK_SCHEMAS = (b'"notes.v3"', b'"consolidation.v1"')
 
 
 # ----------------------------------------------------------------------------------------------- lock file
 def _pid_alive(pid: int) -> bool:
+    """True only if that pid is a running Note Agent. Live run 28 Oct: Windows reused a stopped agent's pid for
+    another process, so "the pid exists" kept every new agent out ("already_running") and no notes were written."""
     try:
         import psutil
-        return psutil.pid_exists(pid)
+        return any("agents.note_agent" in part for part in psutil.Process(pid).cmdline())
     except ImportError:          # pragma: no cover - psutil is in requirements
         return True
+    except Exception:            # gone, or not ours to inspect: not a running agent
+        return False
 
 
 def acquire_lock(path=LOCK) -> bool:
@@ -92,12 +103,12 @@ class NoteAgent:
 
     # ------------------------------------------------------------------ rebuild (§8.1.5)
     def rebuild(self, partitions: list[int]) -> None:
-        """Fold every notes.v2 record of these final_notes partitions into memory (read up to the end)."""
+        """Fold every notebook record of these final_notes partitions into memory (read up to the end)."""
         if not partitions:
             return
         reader = KafkaConsumer(bootstrap_servers=self.settings.kafka_bootstrap, client_id="note-agent-rebuild",
                                group_id=None, enable_auto_commit=False, isolation_level="read_committed")
-        tps = [TopicPartition(t, p) for t in (TOPIC_NOTES, TOPIC_LECTURE_NOTES) for p in partitions]
+        tps = [TopicPartition(TOPIC_NOTES, p) for p in partitions]
         try:
             reader.assign(tps)
             reader.seek_to_beginning(*tps)
@@ -107,16 +118,18 @@ class NoteAgent:
             while any(reader.position(tp) < ends[tp] for tp in tps):
                 for batch in reader.poll(timeout_ms=1000).values():
                     for r in batch:
-                        name = "lecture_notes.v1" if r.topic == TOPIC_LECTURE_NOTES else "notes.v2"
+                        name = notebook_schema(r.value)
                         try:
-                            p = schemas.decode(r.value, name)
+                            p = schemas.decode(r.value, name) if name else None
                         except schemas.ContractError:
-                            continue                       # notes.v1 or junk: not part of any notebook
+                            p = None
+                        if p is None:
+                            continue                       # older notes.v1/v2 or junk: not part of any notebook
                         memory = seen.setdefault(p["video_id"], Memory(p["video_id"]))
-                        if r.topic == TOPIC_LECTURE_NOTES:
-                            memory.lecture_notes_done = True     # never finish a lecture twice
+                        if name == "notes.v3":
+                            memory.apply_update(p, partition=r.partition)
                         else:
-                            memory.apply(p, partition=r.partition)
+                            memory.apply_pass(p, partition=r.partition)
                         count += 1
             self.memories.update(seen)
             self.log.info("memory_rebuilt", partitions=partitions, records=count, lectures=sorted(seen))
@@ -143,7 +156,7 @@ class NoteAgent:
 
     def timers(self, now: float) -> None:
         held = {g.held.video_id for g in self.groupers.values() if g.held is not None}
-        open_lectures = {v for v, m in self.memories.items() if m.sections and not m.lecture_notes_done}
+        open_lectures = {v for v, m in self.memories.items() if m.sent and not m.finished}
         ends = self._lecture_ends(held | open_lectures)
         for partition, grouper in self.groupers.items():
             if grouper.held is None:
@@ -152,17 +165,23 @@ class NoteAgent:
             if reason:
                 self.emit(grouper.take(), reason)
         still_held = {g.held.video_id for g in self.groupers.values() if g.held is not None}
-        for vid in sorted(open_lectures - still_held):
-            end = ends.get(vid)
-            if end is None:
-                continue
+        for vid in sorted(open_lectures):
             memory = self.memories[vid]
-            # The notebook has caught up with the flush, or nothing has arrived for END_IDLE_S (the last
-            # chunk's window may never come, e.g. its chunk went to the DLQ).
-            if memory.media_end >= (end.last_chunk_id + 1) * self.settings.chunk_seconds - 0.5:
-                self.finish(memory, "last_window")
-            elif now - max(end.flush_seen_at, self.last_update_at.get(vid, 0.0)) >= END_IDLE_S:
-                self.finish(memory, "idle")
+            # A pass runs while the next update is being collected (live run 28 Oct: waiting for "nothing held"
+            # delayed the first pass by 3 minutes); only the lecture's end waits for its last update.
+            ended = vid not in still_held and self._ended(memory, ends.get(vid), now)
+            plan = consolidation.due(memory, ended)
+            if plan is not None and now - memory.last_live_at >= consolidation.GAP_S and now >= memory.retry_at:
+                self.consolidate(memory, plan, now)
+
+    def _ended(self, memory: Memory, end: LectureEnd | None, now: float) -> bool:
+        """Flushed, and the notebook has caught up with the flush or nothing has arrived for END_IDLE_S (the last
+        chunk's window may never come, e.g. its chunk went to the DLQ)."""
+        if end is None:
+            return False
+        if memory.media_end >= (end.last_chunk_id + 1) * self.settings.chunk_seconds - 0.5:
+            return True
+        return now - max(end.flush_seen_at, self.last_update_at.get(memory.video_id, 0.0)) >= END_IDLE_S
 
     def _lecture_ends(self, video_ids: set[str]) -> dict[str, LectureEnd]:
         if not video_ids or not db_path().exists():
@@ -183,7 +202,7 @@ class NoteAgent:
             self.log.warn("lecture_end_check_failed", error=str(exc))
         return out
 
-    # ------------------------------------------------------------------ one update
+    # ------------------------------------------------------------------ one live update (§11.4)
     def emit(self, held: Held, reason: str) -> None:
         memory = self.memory(held.video_id)
         if held.update_index in memory.sent:                 # skip-if-exists (rebuilt memory)
@@ -191,48 +210,69 @@ class NoteAgent:
             return
         chunks = held.chunks()
         started = time.perf_counter()
-        result = self.client.complete_json(SYSTEM_PROMPT, user_prompt(memory, chunks), wait_s=20)
+        result = self.client.complete_json(LIVE_SYSTEM, live_user(memory, chunks), max_tokens=LIVE_MAX_TOKENS,
+                                           wait_s=20, prefer=LIVE_MODEL)
+        memory.last_live_at = time.time()
         if result.ok:
-            delta = llm_delta(memory, result.data, chunks, held.update_index)
+            delta = live_delta(memory, result.data, chunks, held.update_index)
         else:
-            delta = extractive_delta(memory, chunks, held.update_index, [f"llm_unavailable:{result.reason}"])
+            delta = extractive_live(memory, chunks, held.update_index, [f"llm_unavailable:{result.reason}"])
         if reason != "complete":
             delta["quality_flags"].append(f"emitted_on:{reason}")
-        payload = build_update(memory, held, delta, result.model, (time.perf_counter() - started) * 1000)
-        send_and_wait(self.producer, TOPIC_NOTES, schemas.encode("notes.v2", payload), key=held.video_id,
+        payload = build_update(held, delta, result.model, (time.perf_counter() - started) * 1000)
+        send_and_wait(self.producer, TOPIC_NOTES, schemas.encode("notes.v3", payload), key=held.video_id,
                       partition=held.partition)
-        memory.apply(payload, partition=held.partition)
+        memory.apply_update(payload, partition=held.partition)
         self.last_update_at[held.video_id] = time.time()
         self.commit(held.partition, held.last_offset)
         self.log.info("update", video_id=held.video_id, update=held.update_index, windows=len(held.windows),
                       reason=reason, generator=payload["generator"], model=payload["model"],
-                      points=len(payload["points"]), terms=len(payload["terms"]),
-                      section=payload["section"]["id"], flags=len(payload["quality_flags"]),
-                      agent_ms=payload["agent_ms"])
+                      elements=[e["kind"] + ("+" if e["extends"] else "") for e in payload["elements"]],
+                      stats=delta["stats"], flags=len(payload["quality_flags"]), agent_ms=payload["agent_ms"])
 
-    # ------------------------------------------------------------------ end of a lecture (M6b, §8.1.5)
-    def finish(self, memory: Memory, ended_by: str) -> None:
-        """One more call over the whole notebook: final titles, glossary, review questions, weak points."""
-        if memory.lecture_notes_done or not memory.sections:
+    # ------------------------------------------------------------------ one consolidation pass (§4, §11.5)
+    def consolidate(self, memory: Memory, plan: consolidation.Plan, now: float) -> None:
+        if plan.ending and memory.ending_since is None:
+            memory.ending_since = now
+        chunks = memory.chunks(plan.end)
+        if not chunks:                                       # nothing transcribed in the stretch: nothing to write
+            self._publish_pass(memory, plan, consolidation.fallback(memory, plan, ["no_transcript"]), None, 0.0)
             return
         started = time.perf_counter()
-        prompt, kept = end_user_prompt(memory)
-        result = self.client.complete_json(end_prompt(memory), prompt, max_tokens=2500, wait_s=90)   # not urgent
+        system = consolidation.system_prompt(memory, plan)
+        user = consolidation.user_prompt(memory, chunks, consolidation.drafts_for(memory, plan))
+        result = self.client.complete_json(system, user, max_tokens=consolidation.MAX_TOKENS, timeout_s=60,
+                                           wait_s=STRONG_WAIT_S, first_only=True)
+        if not result.ok and len(self.client.chain) > 1 and result.reason not in consolidation.OFF_REASONS:
+            later = self.client.complete_json(system, user, max_tokens=consolidation.MAX_TOKENS, timeout_s=60,
+                                              wait_s=REST_WAIT_S)
+            later.attempts = result.attempts + later.attempts
+            result = later
         if result.ok:
-            fields = lecture_from_reply(memory, result.data)
-        else:
-            fields = lecture_fallback(memory, [f"llm_unavailable:{result.reason}"])
-        if kept < len(memory.points):
-            fields["quality_flags"].append(f"prompt_trimmed:{kept}/{len(memory.points)}_points")
-        payload = build_lecture_notes(memory, fields, result.model, (time.perf_counter() - started) * 1000, ended_by)
-        send_and_wait(self.producer, TOPIC_LECTURE_NOTES, schemas.encode("lecture_notes.v1", payload),
-                      key=memory.video_id, partition=memory.partition)
-        memory.lecture_notes_done = True
-        self.log.info("lecture_finished", video_id=memory.video_id, ended_by=ended_by,
-                      generator=payload["generator"], model=payload["model"], sections=len(payload["outline"]),
-                      glossary=len(payload["glossary"]), questions=len(payload["questions"]),
-                      flags=payload["quality_flags"],
-                      agent_ms=payload["agent_ms"])
+            fields = consolidation.from_reply(memory, result.data, plan, chunks)
+        elif (result.reason in consolidation.OFF_REASONS
+              or (plan.ending and now - memory.ending_since >= consolidation.END_GRACE_S)
+              or memory.media_end - plan.start >= consolidation.GIVE_UP_S):
+            fields = consolidation.fallback(memory, plan, [f"llm_unavailable:{result.reason}"])
+        else:                                                # §11.10 fix 2: defer, the drafts stay live
+            memory.retry_at = now + (consolidation.RETRY_S if not plan.ending else consolidation.RETRY_S / 2)
+            self.log.warn("consolidation_deferred", video_id=memory.video_id, start=plan.start, end=plan.end,
+                          reason=result.reason, attempts=result.attempts)
+            return
+        self._publish_pass(memory, plan, fields, result.model, (time.perf_counter() - started) * 1000)
+
+    def _publish_pass(self, memory: Memory, plan: consolidation.Plan, fields: dict, model: str | None,
+                      agent_ms: float) -> None:
+        payload = consolidation.build_pass(memory, fields, model, agent_ms)
+        send_and_wait(self.producer, TOPIC_NOTES, schemas.encode("consolidation.v1", payload), key=memory.video_id,
+                      partition=memory.partition)
+        memory.apply_pass(payload, partition=memory.partition)
+        self.log.info("consolidated", video_id=memory.video_id, pass_index=payload["pass_index"], mode=plan.mode,
+                      final=payload["final"], start=payload["media_start"], cut=payload["media_end"],
+                      generator=payload["generator"], model=payload["model"],
+                      topics=[[t["n"], t["title"], t["new"]] for t in payload["topics"]],
+                      elements=len(payload["elements"]), glossary=len(payload["glossary"]), stats=fields["stats"],
+                      flags=len(payload["quality_flags"]), agent_ms=payload["agent_ms"])
 
     # ------------------------------------------------------------------ commits
     def commit(self, partition: int, offset: int) -> None:
@@ -257,6 +297,12 @@ class Rebalance(ConsumerRebalanceListener):
 
     def on_partitions_assigned(self, assigned):
         self.agent.rebuild(sorted(tp.partition for tp in assigned))
+
+
+def notebook_schema(value: bytes | None) -> str | None:
+    """final_notes carries notes.v3 and consolidation.v1 (older runs: notes.v1/v2, no longer read)."""
+    head = (value or b"")[:200]
+    return next((n.strip(b'"').decode() for n in NOTEBOOK_SCHEMAS if n in head), None)
 
 
 def main() -> int:

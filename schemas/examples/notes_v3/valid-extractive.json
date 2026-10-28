@@ -1,0 +1,55 @@
+{
+  "schema": "notes.v3",
+  "video_id": "python_l1",
+  "update_index": 7,
+  "media_start": 630.0,
+  "media_end": 660.0,
+  "window_starts": [
+    1792051830000
+  ],
+  "transcript": [
+    {
+      "chunk_id": 63,
+      "start_time": 630.0,
+      "end_time": 640.0,
+      "text": "So I'm going to import this random module and I'm going to use the rand int function."
+    },
+    {
+      "chunk_id": 64,
+      "start_time": 640.0,
+      "end_time": 650.0,
+      "text": "It gives me a random integer between 16 and 272, and it chose 75."
+    },
+    {
+      "chunk_id": 65,
+      "start_time": 650.0,
+      "end_time": 660.0,
+      "text": "That's an example of me being a machine, right? I followed the steps you gave me."
+    }
+  ],
+  "elements": [
+    {
+      "id": "u7e0",
+      "extends": null,
+      "kind": "para",
+      "t": 630.0,
+      "said": "So I'm going to import this random module and I'm going to use the rand int function.",
+      "lead": "",
+      "sentences": [
+        "So I'm going to import this random module and I'm going to use the rand int function.",
+        "It gives me a random integer between 16 and 272, and it chose 75."
+      ],
+      "terms": [],
+      "background": null
+    }
+  ],
+  "info": null,
+  "generator": "extractive",
+  "model": null,
+  "agent_ms": 2310.5,
+  "quality_flags": [
+    "llm_unavailable:all_failed"
+  ],
+  "session_start": 1792051200000,
+  "created_ts": 1792051890000
+}

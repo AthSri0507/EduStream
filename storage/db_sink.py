@@ -1,8 +1,8 @@
 """db-sink: the only SQLite writer (docs/ARCHITECTURE.md §9, A10).
 
-Consumes transcriptions, window_summaries, final_notes (notes.v2 notebook updates since M6a;
-notes.v1 still accepted for older records), alerts and dlq (group db-sink,
-read_committed, raw bytes). For each poll batch:
+Consumes transcriptions, window_summaries, final_notes (the notebook: notes.v3 live updates and consolidation.v1
+passes; notes.v1 still accepted for older records), alerts and dlq (group db-sink, read_committed, raw bytes).
+For each poll batch:
   1. BEGIN; apply every record (first writer wins; see storage/schema.sql); COMMIT
   2. commit Kafka offsets explicitly: offset + 1 of the last record per partition
 So a crash between 1 and 2 replays the batch, and the replay changes nothing (test D-1).
@@ -27,16 +27,18 @@ from kafka.errors import CommitFailedError
 from kafka.structs import OffsetAndMetadata
 
 from common import schemas
-from common.config import (TOPIC_ALERTS, TOPIC_DLQ, TOPIC_LECTURE_NOTES, TOPIC_NOTES, TOPIC_TRANSCRIPTS,
-                           TOPIC_WINDOWS, load)
+from agents.study_notes import text_of
+from common.config import TOPIC_ALERTS, TOPIC_DLQ, TOPIC_NOTES, TOPIC_TRANSCRIPTS, TOPIC_WINDOWS, load
 from common.kafka_utils import EXIT_PRODUCE_FAILED, make_consumer, raw_preview
 from common.log import JsonLog
 from storage.db import connect_writer
 
 GROUP = "db-sink"
-TOPICS = [TOPIC_TRANSCRIPTS, TOPIC_WINDOWS, TOPIC_NOTES, TOPIC_LECTURE_NOTES, TOPIC_ALERTS, TOPIC_DLQ]
+TOPICS = [TOPIC_TRANSCRIPTS, TOPIC_WINDOWS, TOPIC_NOTES, TOPIC_ALERTS, TOPIC_DLQ]
 SCHEMA_OF = {TOPIC_TRANSCRIPTS: "transcript.v1", TOPIC_WINDOWS: "window.v1", TOPIC_NOTES: "notes.v1",
-             TOPIC_LECTURE_NOTES: "lecture_notes.v1", TOPIC_ALERTS: "alert.v1", TOPIC_DLQ: "dlq.v1"}
+             TOPIC_ALERTS: "alert.v1", TOPIC_DLQ: "dlq.v1"}
+NOTES_SCHEMAS = ("notes.v3", "consolidation.v1", "notes.v2")      # by the payload's own name; notes.v1 otherwise
+RETIRED = ("notes.v2",)              # the rev 6 notebook before NOTEBOOK_DESIGN §11: no tables any more, skipped
 SQLITE_RETRIES = 5
 EXIT_SQLITE_FAILED = 4
 
@@ -59,61 +61,76 @@ def _notes_body(n: dict) -> str:
 
 
 def _schema_name(topic: str, value: bytes | None) -> str:
-    """final_notes carries notes.v2 (rev 6) and, from older runs, notes.v1: route by the payload's own name."""
-    if topic == TOPIC_NOTES and value is not None and b'"notes.v2"' in value[:200]:
-        return "notes.v2"
+    """final_notes carries notes.v3 and consolidation.v1 (and, from older runs, notes.v1/v2): route by name."""
+    if topic == TOPIC_NOTES and value is not None:
+        for name in NOTES_SCHEMAS:
+            if f'"{name}"'.encode() in value[:200]:
+                return name
     return SCHEMA_OF[topic]
 
 
-def _apply_notebook_update(conn: sqlite3.Connection, p: dict, now: int) -> str:
-    """notes.v2 (§9 rev 6): everything for one update in the caller's transaction, only if the update is new."""
+def _apply_live_update(conn: sqlite3.Connection, p: dict, now: int) -> str:
+    """notes.v3: the update row, its draft elements (indexed for search) and a course-info line."""
     cur = conn.execute(
-        "INSERT INTO notebook_updates VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING",
-        (p["video_id"], p["update_index"], p["media_start"], p["media_end"], p["section"]["id"],
-         json.dumps(p["window_starts"]), p["generator"], p.get("model"), json.dumps(p.get("quality_flags", [])),
-         p.get("agent_ms"), p["created_ts"], now))
+        "INSERT INTO live_updates VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING",
+        (p["video_id"], p["update_index"], p["media_start"], p["media_end"], json.dumps(p["window_starts"]),
+         p["generator"], p.get("model"), json.dumps(p.get("quality_flags", [])), p.get("agent_ms"), p["created_ts"],
+         now))
     if cur.rowcount != 1:
         return "duplicate"
-    sec = p["section"]
-    if sec["is_new"]:
-        in_section = [pt["t"] for pt in p["points"] if pt["section_id"] == sec["id"]]
-        start = min(in_section) if in_section else p["media_start"]
-        if conn.execute("INSERT INTO sections VALUES (?,?,?,NULL,?,?) ON CONFLICT DO NOTHING",
-                        (p["video_id"], sec["id"], sec["title"], p["update_index"], start)).rowcount == 1:
-            conn.execute("INSERT INTO notebook_fts VALUES (?,?,?,?,?)",
-                         (p["video_id"], p["update_index"], start, "section", sec["title"]))
-    for seq, pt in enumerate(p["points"]):
-        conn.execute("INSERT INTO points VALUES (?,?,?,?,?,?,?,?,?,0) ON CONFLICT DO NOTHING",
-                     (p["video_id"], p["update_index"], seq, pt["section_id"], pt["kind"], pt["text"], pt["quote"],
-                      pt.get("background"), pt["t"]))
-        conn.execute("INSERT INTO notebook_fts VALUES (?,?,?,?,?)",
-                     (p["video_id"], p["update_index"], pt["t"], pt["kind"], pt["text"]))
-    for term in p["terms"]:
-        if conn.execute("INSERT INTO terms VALUES (?,?,?,?,?,?) ON CONFLICT DO NOTHING",
-                        (p["video_id"], term["term"], term["definition"], term["source"], p["update_index"],
-                         term["t"])).rowcount == 1:
-            conn.execute("INSERT INTO notebook_fts VALUES (?,?,?,?,?)",
-                         (p["video_id"], p["update_index"], term["t"], "term", f"{term['term']}: {term['definition']}"))
+    for seq, el in enumerate(p["elements"]):
+        root = None
+        if el["extends"]:
+            row = conn.execute("SELECT root_t FROM drafts WHERE video_id = ? AND draft_id = ?",
+                               (p["video_id"], el["extends"])).fetchone()
+            root = row[0] if row else None
+        text = text_of(el)
+        conn.execute("INSERT INTO drafts VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING",
+                     (p["video_id"], p["update_index"], seq, el["id"], el["extends"],
+                      el["t"] if root is None else root, el["kind"], el["t"], text,
+                      json.dumps(el, ensure_ascii=False)))
+        conn.execute("INSERT INTO notebook_fts VALUES (?,?,?,?,?)", (p["video_id"], el["id"], el["t"], "draft", text))
+    if p.get("info"):
+        conn.execute("INSERT INTO course_info VALUES (?,?,?,?) ON CONFLICT DO NOTHING",
+                     (p["video_id"], p["update_index"], p["info"]["text"], p["info"]["t"]))
     return "stored"
 
 
-def _apply_lecture_notes(conn: sqlite3.Connection, p: dict, now: int) -> str:
-    """lecture_notes.v1 (M6b): first writer wins; also final titles and weak points, in the same transaction."""
+def _apply_pass(conn: sqlite3.Connection, p: dict, now: int) -> str:
+    """consolidation.v1: the pass row, new topics (an earlier topic it continues only grows), elements, glossary;
+    the drafts it replaces leave the search index."""
+    vid = p["video_id"]
     cur = conn.execute(
-        "INSERT INTO lecture_notes(video_id, outline, glossary, questions, generator, model, quality_flags, ended_by,"
-        " agent_ms, created_ts, sink_ts) VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING",
-        (p["video_id"], json.dumps(p["outline"]), json.dumps(p["glossary"]), json.dumps(p["questions"]),
-         p["generator"], p.get("model"), json.dumps(p.get("quality_flags", [])), p.get("ended_by"), p.get("agent_ms"),
-         p["created_ts"], now))
+        "INSERT INTO passes VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING",
+        (vid, p["pass_index"], p["media_start"], p["media_end"], int(p["final"]), p["generator"], p.get("model"),
+         json.dumps(p.get("quality_flags", [])), p.get("agent_ms"), p["created_ts"], now))
     if cur.rowcount != 1:
         return "duplicate"
-    for o in p["outline"]:
-        conn.execute("UPDATE sections SET final_title = ? WHERE video_id = ? AND section_id = ?",
-                     (o["title"], p["video_id"], o["section_id"]))
-        for pid in o["weak_points"]:
-            u, s = pid[1:].split("p")
-            conn.execute("UPDATE points SET weak = 1 WHERE video_id = ? AND update_index = ? AND seq = ?",
-                         (p["video_id"], int(u), int(s)))
+    for t in p["topics"]:
+        q = t.get("question") or {}
+        if t["new"]:
+            conn.execute("INSERT INTO topics VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING",
+                         (vid, t["n"], t["title"], t["media_start"], t["media_end"], p["pass_index"], p["generator"],
+                          q.get("q"), q.get("answer")))
+        else:
+            conn.execute("UPDATE topics SET media_end = MAX(media_end, ?), question = COALESCE(question, ?),"
+                         " answer = COALESCE(answer, ?) WHERE video_id = ? AND topic_n = ?",
+                         (t["media_end"], q.get("q"), q.get("answer"), vid, t["n"]))
+    for seq, el in enumerate(p["elements"]):
+        body = {k: v for k, v in el.items() if k != "topic"}
+        text = text_of(body)
+        conn.execute("INSERT INTO elements VALUES (?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING",
+                     (vid, p["pass_index"], seq, el["topic"], el["kind"], el["t"], text,
+                      json.dumps(body, ensure_ascii=False)))
+        conn.execute("INSERT INTO notebook_fts VALUES (?,?,?,?,?)",
+                     (vid, f"p{p['pass_index']}e{seq}", el["t"], el["kind"], text))
+    for g in p["glossary"]:
+        conn.execute("INSERT INTO glossary VALUES (?,?,?,?,?,?) ON CONFLICT(video_id, term) DO UPDATE SET"
+                     " definition = excluded.definition, t = excluded.t, topic_n = excluded.topic_n,"
+                     " pass_index = excluded.pass_index",
+                     (vid, g["term"], g["definition"], g["t"], g["topic"], p["pass_index"]))
+    conn.execute("DELETE FROM notebook_fts WHERE video_id = ? AND kind = 'draft' AND ref IN"
+                 " (SELECT draft_id FROM drafts WHERE video_id = ? AND root_t < ?)", (vid, vid, p["media_end"]))
     return "stored"
 
 
@@ -176,11 +193,14 @@ def apply_record(conn: sqlite3.Connection, topic: str, value: bytes | None, part
              json.dumps(p["chunk_ids"]), p["transcript"], p.get("emitted_ts"), now))
         return "stored" if cur.rowcount == 1 else "duplicate"
 
-    if topic == TOPIC_NOTES and p["schema"] == "notes.v2":
-        return _apply_notebook_update(conn, p, now)
+    if topic == TOPIC_NOTES and p["schema"] == "notes.v3":
+        return _apply_live_update(conn, p, now)
 
-    if topic == TOPIC_LECTURE_NOTES:
-        return _apply_lecture_notes(conn, p, now)
+    if topic == TOPIC_NOTES and p["schema"] == "consolidation.v1":
+        return _apply_pass(conn, p, now)
+
+    if topic == TOPIC_NOTES and p["schema"] in RETIRED:
+        return "skipped"
 
     if topic == TOPIC_NOTES:
         cur = conn.execute(

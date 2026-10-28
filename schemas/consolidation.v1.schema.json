@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "consolidation.v1",
+  "title": "One consolidation pass: a stretch of lecture as finished topics (topic final_notes, NOTEBOOK_DESIGN §4, §11.5)",
+  "type": "object",
+  "required": ["schema", "video_id", "pass_index", "media_start", "media_end", "final", "topics", "elements",
+               "glossary", "generator", "created_ts"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "consolidation.v1"},
+    "video_id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,64}$"},
+    "pass_index": {"type": "integer", "minimum": 0, "description": "0, 1, 2 ... per lecture; first writer wins"},
+    "media_start": {"type": "number", "minimum": 0, "description": "where the stretch starts (end of the previous pass)"},
+    "media_end": {"type": "number", "minimum": 0,
+                  "description": "the cut: drafts before it disappear; a topic still in progress starts after it"},
+    "final": {"type": "boolean", "description": "this pass reaches the end of the lecture"},
+    "topics": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["n", "title", "media_start", "media_end", "question", "new"],
+        "additionalProperties": false,
+        "properties": {
+          "n": {"type": "integer", "minimum": 1, "description": "topic number in the lecture, assigned by code"},
+          "title": {"type": "string", "minLength": 1, "maxLength": 90},
+          "media_start": {"type": "number", "minimum": 0},
+          "media_end": {"type": "number", "minimum": 0},
+          "question": {
+            "type": ["object", "null"],
+            "required": ["q", "answer"],
+            "additionalProperties": false,
+            "properties": {"q": {"type": "string", "minLength": 1, "maxLength": 300},
+                           "answer": {"type": "string", "minLength": 1, "maxLength": 400}}
+          },
+          "new": {"type": "boolean", "description": "false: an earlier topic that this stretch continues"}
+        }
+      }
+    },
+    "elements": {
+      "type": "array",
+      "maxItems": 40,
+      "items": {
+        "allOf": [{"$ref": "#/$defs/element"}],
+        "required": ["topic"],
+        "properties": {"topic": {"type": "integer", "minimum": 1}},
+        "unevaluatedProperties": false
+      }
+    },
+    "glossary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["term", "definition", "t", "topic"],
+        "additionalProperties": false,
+        "properties": {
+          "term": {"type": "string", "minLength": 1, "maxLength": 60},
+          "definition": {"type": "string", "minLength": 1, "maxLength": 400,
+                         "description": "the notes' own sentence that explains the term (grounded by construction)"},
+          "t": {"type": "number", "minimum": 0},
+          "topic": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "generator": {"enum": ["llm", "fallback"]},
+    "model": {"type": ["string", "null"]},
+    "agent_ms": {"type": "number", "minimum": 0},
+    "quality_flags": {"type": "array", "items": {"type": "string"}},
+    "created_ts": {"type": "integer", "minimum": 0}
+  },
+  "$defs": {
+    "element": {
+      "type": "object",
+      "description": "a study-guide element (NOTEBOOK_DESIGN §11.1); identical in notes.v3",
+      "required": ["kind", "t", "said"],
+      "properties": {
+        "kind": {"enum": ["para", "example", "steps", "table", "code", "remember"]},
+        "t": {"type": "number", "minimum": 0, "description": "media seconds of the chunk where it was said"},
+        "said": {"type": "string", "maxLength": 400, "description": "the transcript at that place (shown on hover)"},
+        "lead": {"type": "string", "maxLength": 60},
+        "title": {"type": "string", "maxLength": 80},
+        "caption": {"type": "string", "maxLength": 120},
+        "text": {"type": "string", "minLength": 1, "maxLength": 240},
+        "sentences": {"type": "array", "maxItems": 12, "items": {"type": "string", "minLength": 1, "maxLength": 400}},
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["term", "definition"],
+            "additionalProperties": false,
+            "properties": {"term": {"type": "string", "minLength": 1, "maxLength": 60},
+                           "definition": {"type": "string", "minLength": 1, "maxLength": 400}}
+          }
+        },
+        "background": {"type": ["string", "null"], "maxLength": 300},
+        "steps": {"type": "array", "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 220}},
+        "items": {"type": "array", "minItems": 2, "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 220}},
+        "code": {"type": ["string", "null"], "maxLength": 800},
+        "columns": {"type": "array", "minItems": 2, "maxItems": 3, "items": {"type": "string", "maxLength": 40}},
+        "rows": {"type": "array", "minItems": 1, "maxItems": 6,
+                 "items": {"type": "array", "items": {"type": "string", "maxLength": 140}}}
+      },
+      "allOf": [
+        {"if": {"properties": {"kind": {"const": "para"}}},
+         "then": {"required": ["lead", "sentences", "terms", "background"], "properties": {"sentences": {"minItems": 1}}}},
+        {"if": {"properties": {"kind": {"const": "example"}}}, "then": {"required": ["title", "sentences", "steps", "code"]}},
+        {"if": {"properties": {"kind": {"const": "steps"}}}, "then": {"required": ["lead", "items"]}},
+        {"if": {"properties": {"kind": {"const": "table"}}}, "then": {"required": ["caption", "columns", "rows"]}},
+        {"if": {"properties": {"kind": {"const": "code"}}},
+         "then": {"required": ["caption", "code"], "properties": {"code": {"type": "string", "minLength": 1}}}},
+        {"if": {"properties": {"kind": {"const": "remember"}}}, "then": {"required": ["text"]}}
+      ]
+    }
+  }
+}

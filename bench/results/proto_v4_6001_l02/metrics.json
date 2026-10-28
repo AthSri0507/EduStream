@@ -1,0 +1,451 @@
+{
+  "live": {
+    "updates": 14,
+    "llm_ok": 13,
+    "proposed_para": 19,
+    "sentences_proposed": 46,
+    "sentences_kept": 31,
+    "kept_para": 15,
+    "sentences_unsupported": 6,
+    "proposed_example": 1,
+    "kept_example": 1,
+    "sentences_filler": 3,
+    "sentences_repeat": 2,
+    "sentences_cascade": 3,
+    "paragraphs_dropped": 4,
+    "tokens_mean": 1367
+  },
+  "consolidation": {
+    "calls": 4,
+    "llm": 3,
+    "proposed_para": 14,
+    "sentences_proposed": 39,
+    "sentences_kept": 33,
+    "proposed_example": 6,
+    "sentences_filler": 4,
+    "proposed_table": 1,
+    "sentences_unsupported": 1,
+    "sentences_repeat": 1,
+    "tokens_mean": 2326
+  },
+  "final": {
+    "topics": [
+      "1. String Objects (00:00-03:00)",
+      "2. String Concatenation (03:00-06:00)",
+      "3. Notes 06:00–12:00 (06:00-13:20)",
+      "4. Comparison Operators and Booleans (13:20-15:30)",
+      "5. Logical Operators and Branching (15:30-18:00)",
+      "6. Control Flow with If Statements (18:00-20:00)"
+    ],
+    "elements": {
+      "para": 20,
+      "example": 5,
+      "table": 1
+    },
+    "sentences": 43,
+    "words": 826,
+    "words_per_6_min": 248,
+    "list_lines_per_6_min": 2.4,
+    "questions": 6,
+    "glossary": [],
+    "info": []
+  },
+  "per_update": [
+    {
+      "update": 0,
+      "span": "00:00-01:30",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.682,
+      "tokens": 1267,
+      "stats": {
+        "proposed_para": 1,
+        "sentences_proposed": 2,
+        "sentences_kept": 2,
+        "kept_para": 1
+      },
+      "flags": []
+    },
+    {
+      "update": 1,
+      "span": "01:30-03:00",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.992,
+      "tokens": 1467,
+      "stats": {
+        "proposed_para": 2,
+        "sentences_proposed": 5,
+        "sentences_kept": 5,
+        "kept_para": 2
+      },
+      "flags": [
+        "term_dropped:'string'",
+        "term_dropped:'assignment operator'",
+        "term_dropped:'variable binding'"
+      ]
+    },
+    {
+      "update": 2,
+      "span": "03:00-04:30",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.605,
+      "tokens": 1491,
+      "stats": {
+        "proposed_para": 1,
+        "sentences_proposed": 2,
+        "sentences_unsupported": 1,
+        "sentences_kept": 1,
+        "kept_para": 1
+      },
+      "flags": [
+        "sentence_unsupported(0.38): 'The operator does not insert any spaces automatically; a space must be'",
+        "term_dropped:'concatenation'",
+        "term_dropped:'plus operator'"
+      ]
+    },
+    {
+      "update": 3,
+      "span": "04:30-06:00",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.861,
+      "tokens": 1585,
+      "stats": {
+        "proposed_para": 1,
+        "sentences_proposed": 5,
+        "sentences_kept": 5,
+        "kept_para": 1,
+        "proposed_example": 1,
+        "kept_example": 1
+      },
+      "flags": [
+        "term_dropped:'string repetition'",
+        "term_dropped:'star operator'"
+      ]
+    },
+    {
+      "update": 4,
+      "span": "06:00-07:30",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.052,
+      "tokens": 1363,
+      "stats": {
+        "proposed_para": 1,
+        "sentences_proposed": 2,
+        "sentences_filler": 1,
+        "sentences_kept": 1,
+        "kept_para": 1
+      },
+      "flags": [
+        "filler: 'The lecturer demonstrates this by printing a string and a va'",
+        "term_dropped:'print'",
+        "term_dropped:'comma'",
+        "term_dropped:'plus'"
+      ]
+    },
+    {
+      "update": 5,
+      "span": "07:30-09:00",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.915,
+      "tokens": 1452,
+      "stats": {
+        "proposed_para": 2,
+        "sentences_proposed": 3,
+        "sentences_kept": 3,
+        "kept_para": 2
+      },
+      "flags": [
+        "term_dropped:'print statement'",
+        "term_dropped:'concatenation'",
+        "term_dropped:'str() conversion'"
+      ]
+    },
+    {
+      "update": 6,
+      "span": "09:00-10:30",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 1.337,
+      "tokens": 1419,
+      "stats": {
+        "proposed_para": 1,
+        "sentences_proposed": 2,
+        "sentences_kept": 2,
+        "kept_para": 1
+      },
+      "flags": [
+        "term_dropped:'input()'"
+      ]
+    },
+    {
+      "update": 7,
+      "span": "10:30-12:00",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.955,
+      "tokens": 1657,
+      "stats": {
+        "proposed_para": 2,
+        "sentences_proposed": 7,
+        "sentences_repeat": 2,
+        "sentences_kept": 5,
+        "kept_para": 2
+      },
+      "flags": [
+        "located_by_support",
+        "repeat: 'The input() function pauses execution and displays a prompt '",
+        "repeat: 'When the user presses Enter, the input is captured and store'",
+        "term_dropped:'input()'",
+        "term_dropped:'string object'",
+        "term_dropped:'casting'",
+        "term_dropped:'int()'",
+        "term_dropped:'float()'"
+      ]
+    },
+    {
+      "update": 8,
+      "span": "12:00-13:30",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.767,
+      "tokens": 1327,
+      "stats": {
+        "proposed_para": 1,
+        "sentences_proposed": 2,
+        "sentences_filler": 1,
+        "sentences_kept": 1,
+        "kept_para": 1
+      },
+      "flags": [
+        "filler: 'The lecturer demonstrated this by converting the typed value'",
+        "term_dropped:'input()'",
+        "term_dropped:'casting'",
+        "term_dropped:'int'"
+      ]
+    },
+    {
+      "update": 9,
+      "span": "13:30-15:00",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.86,
+      "tokens": 1523,
+      "stats": {
+        "proposed_para": 2,
+        "sentences_proposed": 4,
+        "sentences_kept": 4,
+        "kept_para": 2
+      },
+      "flags": [
+        "term_dropped:'comparison operators'",
+        "term_dropped:'Boolean'",
+        "term_dropped:'assignment'",
+        "term_dropped:'equality'"
+      ]
+    },
+    {
+      "update": 10,
+      "span": "15:00-16:30",
+      "ok": true,
+      "model": "openai/gpt-oss-120b",
+      "latency_s": 1.113,
+      "tokens": 1590,
+      "stats": {
+        "proposed_para": 1,
+        "sentences_proposed": 2,
+        "sentences_kept": 2,
+        "kept_para": 1
+      },
+      "flags": [
+        "term_dropped:'!= operator'",
+        "term_dropped:'not'"
+      ]
+    },
+    {
+      "update": 11,
+      "span": "16:30-18:00",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.792,
+      "tokens": 1663,
+      "stats": {
+        "proposed_para": 2,
+        "sentences_proposed": 6,
+        "sentences_unsupported": 3,
+        "sentences_cascade": 2,
+        "paragraphs_dropped": 2,
+        "sentences_filler": 1
+      },
+      "flags": [
+        "sentence_unsupported(0.27): 'String comparison uses the same operators as numbers; for example, a >'",
+        "sentence_unsupported(0.25): \"The comparison is lexicographic, so 'b' > 'a' is true and 'a' > 'b' is\"",
+        "cascade: 'This allows tests such as checking whether one string alphab'",
+        "paragraph_dropped(0/3)",
+        "sentence_unsupported(0.22): 'Branching lets a program choose between different actions based on tes'",
+        "filler: 'The lecturer illustrated this with a maze example: by follow'",
+        "cascade: 'This demonstrates how conditional logic can guide algorithmi'",
+        "paragraph_dropped(0/2)"
+      ]
+    },
+    {
+      "update": 12,
+      "span": "18:00-19:30",
+      "ok": false,
+      "model": null,
+      "latency_s": null,
+      "tokens": null,
+      "stats": {},
+      "flags": [
+        "llm_failed:all_failed [('openai/gpt-oss-120b', 'HTTP 429'), ('openai/gpt-oss-20b', 'local_budget')]"
+      ]
+    },
+    {
+      "update": 13,
+      "span": "19:30-20:00",
+      "ok": true,
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 0.812,
+      "tokens": 1335,
+      "stats": {
+        "proposed_para": 2,
+        "sentences_proposed": 4,
+        "sentences_unsupported": 2,
+        "sentences_cascade": 1,
+        "paragraphs_dropped": 2
+      },
+      "flags": [
+        "sentence_unsupported(0.33): 'The computer evaluates a condition and then executes the branch that s'",
+        "cascade: 'This is the core of control flow in programming.'",
+        "paragraph_dropped(1/3)",
+        "sentence_unsupported(0.36): 'The simplest control structure is the if statement, which makes one de'",
+        "paragraph_dropped(0/1)"
+      ]
+    }
+  ],
+  "per_consolidation": [
+    {
+      "span": "00:00-06:00",
+      "mode": "open",
+      "cut": 360,
+      "generator": "llm",
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 1.546,
+      "tokens": 3501,
+      "topics": [
+        "String Objects",
+        "String Concatenation"
+      ],
+      "stats": {
+        "proposed_para": 4,
+        "sentences_proposed": 12,
+        "sentences_kept": 12,
+        "proposed_example": 3
+      },
+      "flags": [
+        "term_dropped:'String'",
+        "term_dropped:'quotation marks'",
+        "term_dropped:'assignment operator'",
+        "term_dropped:'variable binding'",
+        "term_dropped:'concatenation'",
+        "term_dropped:'plus operator'",
+        "example_repeats_earlier",
+        "term_dropped:'star operator'",
+        "term_dropped:'string repetition'",
+        "short_topic_merged:'String Repetition' -> 'String Concatenation' (2 kept, 0 repeated)"
+      ]
+    },
+    {
+      "span": "06:00-12:00",
+      "mode": "open",
+      "cut": 720,
+      "generator": "fallback",
+      "model": null,
+      "latency_s": null,
+      "tokens": null,
+      "topics": [
+        "Notes 06:00–12:00"
+      ],
+      "stats": {},
+      "flags": [
+        "fallback (all_failed)"
+      ]
+    },
+    {
+      "span": "12:00-18:00",
+      "mode": "open",
+      "cut": 1080,
+      "generator": "llm",
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 1.837,
+      "tokens": 3584,
+      "topics": [
+        "Comparison Operators and Booleans",
+        "Logical Operators and Branching"
+      ],
+      "stats": {
+        "proposed_para": 6,
+        "sentences_proposed": 18,
+        "sentences_filler": 4,
+        "sentences_kept": 13,
+        "proposed_example": 2,
+        "proposed_table": 1,
+        "sentences_unsupported": 1
+      },
+      "flags": [
+        "filler: 'The lecturer demonstrated this by converting a user‑entered '",
+        "term_dropped:'input()'",
+        "term_dropped:'casting'",
+        "term_dropped:'integer'",
+        "quote_near_verbatim",
+        "filler: 'The lecturer showed an error when comparing a string to a nu'",
+        "term_dropped:'comparison operators'",
+        "term_dropped:'Boolean'",
+        "code_unsupported(0.00)",
+        "filler: 'The lecturer emphasized that equality checks the value, not '",
+        "term_dropped:'assignment'",
+        "term_dropped:'equality'",
+        "term_dropped:'inequality'",
+        "term_dropped:'not'",
+        "term_dropped:'and'",
+        "term_dropped:'or'",
+        "term_dropped:'not'",
+        "filler: 'The lecturer used a campus‑maze example to motivate branchin'",
+        "sentence_unsupported(0.00): 'This illustrates conditional logic in practice.'",
+        "term_dropped:'branching'",
+        "short_topic_merged:'Casting Input to Numbers' -> 'Notes 06:00–12:00' (2 kept, 0 repeated)"
+      ]
+    },
+    {
+      "span": "18:00-20:00",
+      "mode": "closed",
+      "cut": 1200,
+      "generator": "llm",
+      "model": "openai/gpt-oss-20b",
+      "latency_s": 1.287,
+      "tokens": 2219,
+      "topics": [
+        "Control Flow with If Statements"
+      ],
+      "stats": {
+        "proposed_para": 4,
+        "sentences_proposed": 9,
+        "sentences_repeat": 1,
+        "sentences_kept": 8,
+        "proposed_example": 1
+      },
+      "flags": [
+        "repeat: 'If walls surround the right, front, and left, turn around an'",
+        "term_dropped:'If statement'",
+        "term_dropped:'if'",
+        "term_dropped:'otherwise'",
+        "term_dropped:'decision point'",
+        "term_dropped:'control flow'"
+      ]
+    }
+  ]
+}
