@@ -4,7 +4,7 @@
 #
 # Stops everything, then deletes: the broker's data (C:\edustream-kafka\single), Streams
 # state (run\state), lecture state files (run\lectures), the SQLite database
-# (data\edustream.db*), and run\pids. The dataset, models and .env are NOT touched.
+# (data\edustream.db*), the retrieval index (dataectors.db*) and run\pids. The dataset, models and .env are NOT touched.
 # The broker storage is reformatted so start_all.ps1 can start straight away.
 
 param([switch]$Force, [switch]$ClearLogs)
@@ -20,6 +20,7 @@ Start-Sleep -Seconds 2
 
 $targets = @($BrokerData, (Join-Path $Root "run\state"), (Join-Path $Root "run\lectures"), $PidDir)
 $targets += Get-ChildItem (Join-Path $Root "data") -Filter "edustream.db*" -ErrorAction SilentlyContinue | ForEach-Object FullName
+$targets += Get-ChildItem (Join-Path $Root "data") -Filter "vectors.db*" -ErrorAction SilentlyContinue | ForEach-Object FullName
 if ($ClearLogs) { $targets += $LogDir }
 foreach ($target in $targets) {
     if (Test-Path $target) {

@@ -1,6 +1,7 @@
 """EduStream dashboard (PLAN M5; ARCHITECTURE §1): a near-real-time, read-only view of data/edustream.db.
 
-Refreshes every 2 s. Tabs: live notes, window stats, alerts, pipeline health. The database is
+Tabs: Notebook (live notebook + Lecture Assistant chat), Data (query the stored data),
+window stats, alerts, pipeline health. Live parts refresh in their own fragments (2 s; assistant 1 s). The database is
 opened read-only (mode=ro); storage/db_sink.py is the only writer.
 
     .venv\\Scripts\\streamlit run dashboard\\app.py          (normally started by scripts\\start_all.ps1)
@@ -22,7 +23,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from common.config import load  # noqa: E402
-from dashboard import queries  # noqa: E402
+from dashboard import assistant_panel, queries, sql_box  # noqa: E402
 from storage.db import connect_readonly, db_path  # noqa: E402
 
 st.set_page_config(page_title="EduStream", layout="wide")
@@ -34,7 +35,7 @@ MUTED = {"light": "#898781", "dark": "#a3a29b"}
 SEVERITY = {"info": "ℹ️ info", "warn": "⚠️ warn", "crit": "⛔ crit"}
 MAX_NOTES_SHOWN = 12
 # Tab labels double as URL values (bind="query-params"): e.g. http://localhost:8501/?tab=Pipeline+health
-TABS = ["Notebook", "Window stats", "Alerts", "Pipeline health"]
+TABS = ["Notebook", "Data", "Window stats", "Alerts", "Pipeline health"]
 SETTINGS = load()
 
 
@@ -66,24 +67,38 @@ def lecture_colors(lectures: pd.DataFrame) -> tuple[list[str], list[str]]:
 # Tabs
 # --------------------------------------------------
 
-def notebook_view(conn: sqlite3.Connection, video_id: str) -> bool:
-    """Rev 6 notebook (minimal M6a view; M6c adds the player, exports and final titles). False if empty."""
-    nb = queries.notebook(conn, video_id)
+@st.fragment(run_every="2s")
+def notebook_view(video_id: str) -> None:
+    """The rev 6 notebook (§8.3); every [mm:ss] is a button: "explain from here"."""
+    try:
+        conn = connect_readonly(db_path())
+    except sqlite3.Error:
+        return
+    try:
+        nb = queries.notebook(conn, video_id)
+        legacy = queries.notes(conn, video_id) if nb["updates"] == 0 else None
+    finally:
+        conn.close()
     if nb["updates"] == 0:
-        return False
+        if legacy is not None and not legacy.empty:
+            st.caption("Notes from a run before the notebook (M6a):")
+            for _, n in legacy.head(MAX_NOTES_SHOWN).iterrows():
+                st.markdown(f"**{mmss(n['media_start'])}** {n['summary']}")
+        else:
+            st.info("The first notebook update appears about 2 minutes into a lecture "
+                    "(90 s of lecture, then about 25 s until its last window closes).")
     points, terms = nb["points"], nb["terms"]
     for _, sec in nb["sections"].iterrows():
         st.markdown(f"#### {sec['section_id']}. {sec['title']}")
         rows = points[points["section_id"] == sec["section_id"]]
         if rows.empty:
             st.caption("(no points yet)")
-        for _, p in rows.iterrows():
-            label = "*Example:* " if p["kind"] == "example" else ""
-            extractive = " <sub>`extractive`</sub>" if p["generator"] == "extractive" else ""
-            st.markdown(f"- `[{mmss(p['t'])}]` {label}{p['text']}{extractive}", unsafe_allow_html=True,
-                        help=f"Said: \"{p['quote']}\"")
-            if isinstance(p["background"], str) and p["background"]:
-                st.caption(f"Background (not from the lecture): {p['background']}")
+        for _, pt in rows.iterrows():
+            label = "*Example:* " if pt["kind"] == "example" else ""
+            extractive = " :gray[(extractive)]" if pt["generator"] == "extractive" else ""
+            st.markdown(f"- `[{mmss(pt['t'])}]` {label}{pt['text']}{extractive}", help=f"Said: “{pt['quote']}”")
+            if isinstance(pt["background"], str) and pt["background"]:
+                st.caption(f"Background (not from the lecture): {pt['background']}")
     if not terms.empty:
         with st.expander(f"Glossary ({len(terms)})"):
             for _, term in terms.iterrows():
@@ -93,49 +108,33 @@ def notebook_view(conn: sqlite3.Connection, video_id: str) -> bool:
         with st.container(border=True):
             st.caption(f"Live tail: said after {mmss(nb['covered_s'])}, not in the notebook yet")
             st.write(" ".join(nb["tail"]["text"].tolist()[-12:]))
-    return True
 
 
-def notes_tab(conn: sqlite3.Connection, lectures: pd.DataFrame) -> None:
-    if lectures.empty:
-        st.info("No lecture yet. Start one with `.venv\\Scripts\\python -m producer.lecture_source --demo` "
-                "(or replay recorded transcripts with `-m tools.replay_fixtures --demo`).")
-        return
-    titles = dict(zip(lectures["video_id"], lectures["title"]))
-    video_id = st.selectbox("Lecture", list(titles), format_func=lambda v: titles[v], key="notes_lecture")
-    lecture = lectures[lectures["video_id"] == video_id].iloc[0]
-    st.caption(f"{lecture['status']} · partition {lecture['partition']} · "
-               f"{lecture['chunks_stored']}/{lecture['expected_chunks']} chunks · "
-               f"{lecture['windows']} windows · {lecture['updates']} notebook updates")
-    if notebook_view(conn, video_id):
-        return
-    df = queries.notes(conn, video_id)          # notes.v1 from runs before M6a
-    if df.empty:
-        st.info("No notes yet: the first notebook update appears about 2 minutes into a lecture "
-                "(90 s of lecture, then about 25 s until its last window closes).")
-        tail = queries.notebook(conn, video_id)["tail"]
-        if not tail.empty:
-            st.caption("Live transcript so far")
-            st.write(" ".join(tail["text"].tolist()[-12:]))
-        return
-    if len(df) > MAX_NOTES_SHOWN:
-        st.caption(f"Newest {MAX_NOTES_SHOWN} of {len(df)} windows")
-    for _, n in df.head(MAX_NOTES_SHOWN).iterrows():
-        with st.container(border=True):
-            badge = "LLM" if n["generator"] == "llm" else "extractive"
-            revision = f" · revision {n['revision']}" if n["revision"] > 1 else ""
-            st.markdown(f"**{mmss(n['media_start'])}–{mmss(n['media_end'])}** · window {n['window_index']} · "
-                        f"`{badge}`{revision}")
-            st.markdown(n["summary"] or "_(no sentence long enough for a note)_")
-            points = [p for p in n["key_points"] if p != n["summary"]]
-            if points:
-                st.markdown("\n".join(f"- {p}" for p in points))
-            if n["terms"]:
-                st.markdown("**Terms:** " + "; ".join(f"*{t['term']}*: {t['definition']}" for t in n["terms"]))
-            if n["questions"]:
-                st.markdown("**Review:** " + " ".join(n["questions"]))
-            with st.expander("Transcript of this window"):
-                st.write(n["transcript"] or "")
+def data_tab() -> None:
+    """Storage you can query (A19): ready-made queries and a locked, read-only SQL box."""
+    st.markdown("**Query the stored data** (SQLite, read-only). Pick a ready-made query or write your own SELECT.")
+    name = st.selectbox("Ready-made query", list(sql_box.READY_MADE), key="data_query")
+    sql = st.text_area("SQL", sql_box.READY_MADE[name], key=f"data_sql_{name}", height=110)
+    if st.button("Run query", type="primary", key="data_run"):
+        try:
+            conn = connect_readonly(db_path())
+            try:
+                df, truncated = sql_box.run_query(conn, sql)
+            finally:
+                conn.close()
+        except sql_box.QueryRefused as exc:
+            st.error(f"Query refused: {exc}")
+            return
+        except sqlite3.Error as exc:
+            st.error(f"Database not readable: {exc}")
+            return
+        st.dataframe(df, hide_index=True, width="stretch")
+        st.caption(f"{len(df)} rows" + (f" (first {sql_box.MAX_ROWS} only)" if truncated else ""))
+        st.download_button("Download CSV", df.to_csv(index=False).encode("utf-8"), file_name="edustream_query.csv",
+                           mime="text/csv", key="data_csv")
+    st.caption(f"Only SELECT on the EduStream tables is allowed; queries stop after {sql_box.TIME_LIMIT_S:g} s "
+               f"and return at most {sql_box.MAX_ROWS} rows. Tables: " + ", ".join(sorted(
+                   t for t in sql_box.ALLOWED if not t.startswith("sqlite"))) + ".")
 
 
 def stats_tab(conn: sqlite3.Connection, lectures: pd.DataFrame) -> None:
@@ -219,7 +218,7 @@ def health_tab(conn: sqlite3.Connection, lectures: pd.DataFrame, kpi: dict) -> N
     st.markdown("**Completeness**")
     if not lectures.empty:
         st.dataframe(lectures[["title", "partition", "status", "chunks_stored", "expected_chunks",
-                               "completeness_pct", "windows", "notes"]], hide_index=True, width="stretch")
+                               "completeness_pct", "windows", "updates"]], hide_index=True, width="stretch")
 
     st.markdown(f"**Dead-letter queue** ({kpi['dlq']} records)")
     dlq = queries.dlq(conn)
@@ -235,51 +234,97 @@ def health_tab(conn: sqlite3.Connection, lectures: pd.DataFrame, kpi: dict) -> N
 # --------------------------------------------------
 
 st.title("EduStream")
-st.caption("Live lecture transcription and notes · Kafka → Whisper → Kafka Streams → SQLite · "
-           "near-real-time view, refreshes every 2 s")
+st.caption("Live lecture notes and a lecture assistant · Kafka → Whisper → Kafka Streams → SQLite · "
+           "near-real-time view")
 
 
 @st.fragment(run_every="2s")
-def live() -> None:
+def kpi_strip(known: tuple) -> None:
     path = db_path()
     if not path.exists():
         st.info(f"Waiting for the database ({path}). Start the pipeline with `scripts\\start_all.ps1`.")
         return
     try:
         conn = connect_readonly(path)
-        kpi = queries.kpis(conn)
+        try:
+            kpi = queries.kpis(conn)
+            current = tuple(queries.lectures(conn)["video_id"]) if kpi["lectures"] else ()
+        finally:
+            conn.close()
     except sqlite3.Error as exc:
         st.warning(f"Database not readable yet ({exc}); retrying.")
         return
+    if current != known:
+        st.rerun(scope="app")                       # a new lecture appeared: refresh the lecture picker
+    cols = st.columns(6)
+    cols[0].metric("Lectures", kpi["lectures"], border=True)
+    cols[1].metric("Chunks transcribed", kpi["chunks"], border=True)
+    cols[2].metric("Windows closed", kpi["windows"], border=True)
+    cols[3].metric("Notebook updates", kpi["updates"] or kpi["notes"], border=True,
+                   help="One per 90 s of lecture (rev 6)")
+    cols[4].metric("Alerts", kpi["alerts"], border=True, help="LOW_ASR_SCORE, SILENCE, CONSUMER_LAG")
+    cols[5].metric("LATE_DROP", kpi["late_drop"], border=True,
+                   help="Records dropped as late. Must stay 0 (S1: one lecture per partition).")
+    if kpi["last_sink_ts"]:
+        st.caption(f"Last write by the sink at {clock(kpi['last_sink_ts'])} · DLQ: {kpi['dlq']} records")
+
+
+@st.fragment(run_every="2s")
+def refreshing(tab: str) -> None:
+    try:
+        conn = connect_readonly(db_path())
+    except sqlite3.Error:
+        return
     try:
         lectures = queries.lectures(conn)
-        cols = st.columns(6)
-        cols[0].metric("Lectures", kpi["lectures"], border=True)
-        cols[1].metric("Chunks transcribed", kpi["chunks"], border=True)
-        cols[2].metric("Windows closed", kpi["windows"], border=True)
-        cols[3].metric("Notebook updates", kpi["updates"] or kpi["notes"], border=True,
-                       help="One per 90 s of lecture (rev 6)")
-        cols[4].metric("Alerts", kpi["alerts"], border=True, help="LOW_ASR_SCORE, SILENCE, CONSUMER_LAG")
-        cols[5].metric("LATE_DROP", kpi["late_drop"], border=True,
-                       help="Records dropped as late. Must stay 0 (S1: one lecture per partition).")
-        if kpi["last_sink_ts"]:
-            st.caption(f"Last write by the sink at {clock(kpi['last_sink_ts'])} · DLQ: {kpi['dlq']} records")
-        # Bound to the URL; only the visible tab is computed on each 2 s refresh (.open is True for it).
-        notes_t, stats_t, alerts_t, health_t = st.tabs(TABS, key="tab", bind="query-params")
-        with notes_t:
-            if notes_t.open is not False:
-                notes_tab(conn, lectures)
-        with stats_t:
-            if stats_t.open:
-                stats_tab(conn, lectures)
-        with alerts_t:
-            if alerts_t.open:
-                alerts_tab(conn)
-        with health_t:
-            if health_t.open:
-                health_tab(conn, lectures, kpi)
+        if tab == "Window stats":
+            stats_tab(conn, lectures)
+        elif tab == "Alerts":
+            alerts_tab(conn)
+        else:
+            health_tab(conn, lectures, queries.kpis(conn))
     finally:
         conn.close()
 
 
-live()
+def page() -> None:
+    lectures = pd.DataFrame()
+    if db_path().exists():
+        try:
+            conn = connect_readonly(db_path())
+            try:
+                lectures = queries.lectures(conn)
+            finally:
+                conn.close()
+        except sqlite3.Error:
+            lectures = pd.DataFrame()
+    kpi_strip(tuple(lectures["video_id"]) if not lectures.empty else ())
+    if lectures.empty:
+        st.info("No lecture yet. Start one with `.venv\\Scripts\\python -m producer.lecture_source --demo` "
+                "(or replay recorded transcripts with `-m tools.replay_fixtures --demo`).")
+        return
+    notebook_t, data_t, stats_t, alerts_t, health_t = st.tabs(TABS, key="tab", bind="query-params", on_change="rerun")
+    with notebook_t:
+        if notebook_t.open is not False:
+            live_first = lectures.sort_values("status", key=lambda s: s != "live", kind="stable")
+            titles = dict(zip(live_first["video_id"], live_first["title"]))
+            video_id = st.selectbox("Lecture", list(titles), format_func=lambda v: titles[v], key="notes_lecture")
+            lecture = lectures[lectures["video_id"] == video_id].iloc[0]
+            st.caption(f"{lecture['status']} · partition {lecture['partition']} · "
+                       f"{lecture['chunks_stored']}/{lecture['expected_chunks']} chunks · "
+                       f"{lecture['windows']} windows · {lecture['updates']} notebook updates")
+            left, right = st.columns([3, 2])
+            with left:
+                notebook_view(video_id)
+            with right:
+                assistant_panel.panel(video_id)
+    with data_t:
+        if data_t.open:
+            data_tab()
+    for tab, name in ((stats_t, "Window stats"), (alerts_t, "Alerts"), (health_t, "Pipeline health")):
+        with tab:
+            if tab.open:
+                refreshing(name)
+
+
+page()

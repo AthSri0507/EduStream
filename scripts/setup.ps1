@@ -68,6 +68,16 @@ if (-not $SkipModels) {
 }
 
 # --------------------------------------------------
+# 4b. Embedding model for the assistant's hybrid search (loaded offline later; ARCHITECTURE §8.5)
+# --------------------------------------------------
+
+if (-not $SkipModels) {
+    Write-Host "Downloading the embedding model (bge-small-en-v1.5, about 70 MB) ..."
+    & "$VenvPy" -c "import sys; from fastembed import TextEmbedding; TextEmbedding('BAAI/bge-small-en-v1.5', cache_dir=sys.argv[1])" (Join-Path $Root "models\fastembed")
+    if ($LASTEXITCODE -ne 0) { throw "Embedding model download failed" }
+}
+
+# --------------------------------------------------
 # 5. Preflight
 # --------------------------------------------------
 

@@ -13,7 +13,7 @@ from storage.db_sink import apply_batch
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "schemas" / "examples"
 WINDOW_MS = 30_000
-TABLES = ["lectures", "chunks", "window_stats", "notes", "alerts", "dlq", "notes_fts"]
+TABLES = ["lectures", "chunks", "window_stats", "notes", "alerts", "dlq", "notes_fts", "transcript_fts"]
 
 
 def fixture(path: str) -> dict:
@@ -160,3 +160,11 @@ def test_a_notebook_update_with_a_broken_point_goes_to_the_sink_dlq(conn):
     bad = fixture("notes_v2/invalid-point-without-quote.json")
     assert apply_batch(conn, [rec(TOPIC_NOTES, bad, 20)], now=1, window_ms=WINDOW_MS) == {"invalid": 1}
     assert conn.execute("SELECT COUNT(*) FROM notebook_updates").fetchone()[0] == 0
+
+
+def test_transcripts_are_indexed_once_for_search(conn):
+    apply_batch(conn, run_records(), now=1_000, window_ms=WINDOW_MS)
+    apply_batch(conn, run_records(), now=2_000, window_ms=WINDOW_MS)          # replay: no second index row
+    rows = conn.execute("SELECT chunk_id FROM transcript_fts ORDER BY chunk_id").fetchall()
+    stored = conn.execute("SELECT chunk_id FROM chunks WHERE TRIM(text) <> '' ORDER BY chunk_id").fetchall()
+    assert rows == stored and len(rows) >= 1

@@ -14,6 +14,9 @@ jsonschema
 requests
 python-dotenv
 
+# Embeddings for the assistant's hybrid search (ONNX on the CPU; reuses faster-whisper's onnxruntime)
+fastembed
+
 # Dashboard and analysis
 streamlit
 pandas

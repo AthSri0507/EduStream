@@ -1,0 +1,576 @@
+{
+  "questions": 30,
+  "words": 17,
+  "min_similarity": 0.55,
+  "summary": {
+    "bm25": {
+      "recall@5": 0.967,
+      "recall@5_words": 1.0,
+      "recall@5_paraphrase": 0.923,
+      "mrr": 0.883,
+      "median_ms": 0.8
+    },
+    "vector": {
+      "recall@5": 0.967,
+      "recall@5_words": 1.0,
+      "recall@5_paraphrase": 0.923,
+      "mrr": 0.89,
+      "median_ms": 8.1
+    },
+    "hybrid": {
+      "recall@5": 1.0,
+      "recall@5_words": 1.0,
+      "recall@5_paraphrase": 1.0,
+      "mrr": 0.944,
+      "median_ms": 8.0
+    }
+  },
+  "per_question": {
+    "bm25": [
+      {
+        "question": "What is the definition of declarative knowledge?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 2.6
+      },
+      {
+        "question": "What is imperative knowledge?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.6
+      },
+      {
+        "question": "How do you find the square root of a number starting from a guess?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.9
+      },
+      {
+        "question": "How is the new guess computed in the square root algorithm?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.8
+      },
+      {
+        "question": "What are the three parts of a recipe?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.7
+      },
+      {
+        "question": "How does the recipe know when to stop?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 0.9
+      },
+      {
+        "question": "Why can't a calculator be used to send email?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 0.8
+      },
+      {
+        "question": "What changed with stored program computers?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.7
+      },
+      {
+        "question": "What does the ALU do?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.3
+      },
+      {
+        "question": "What does the program counter do?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.7
+      },
+      {
+        "question": "Who showed that six primitives are enough to compute anything?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.7
+      },
+      {
+        "question": "If something can be programmed in Python, can it be done in other languages?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 0.8
+      },
+      {
+        "question": "What is an example of bad syntax in English?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.8
+      },
+      {
+        "question": "What does static semantics mean?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.5
+      },
+      {
+        "question": "Can a sentence have more than one meaning?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 1.0
+      },
+      {
+        "question": "How did she choose the person who wins the prize?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 0.6
+      },
+      {
+        "question": "Could I damage my laptop by experimenting with commands?",
+        "kind": "paraphrase",
+        "rank": 3,
+        "ms": 0.5
+      },
+      {
+        "question": "Why should other people be able to understand my code?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 1.1
+      },
+      {
+        "question": "What happens inside the machine while it runs a program step by step?",
+        "kind": "paraphrase",
+        "rank": 2,
+        "ms": 1.2
+      },
+      {
+        "question": "Why don't we write programs using only Turing's handful of commands?",
+        "kind": "paraphrase",
+        "rank": 3,
+        "ms": 0.9
+      },
+      {
+        "question": "Formally, what is a computational problem?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.8
+      },
+      {
+        "question": "Can one input have several correct answers?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 1.1
+      },
+      {
+        "question": "How do we describe a problem without listing the answer for every input?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 1.1
+      },
+      {
+        "question": "Why must two students share a birthday if there are more than 365 of them?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 1.0
+      },
+      {
+        "question": "Why should an algorithm work for a class of any size?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 0.9
+      },
+      {
+        "question": "What is an algorithm?",
+        "kind": "words",
+        "rank": 3,
+        "ms": 0.7
+      },
+      {
+        "question": "How does the birthday algorithm work?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.8
+      },
+      {
+        "question": "Does an algorithm have to give exactly one output for each input?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 0.8
+      },
+      {
+        "question": "How can we show the algorithm is right for any number of students?",
+        "kind": "paraphrase",
+        "rank": null,
+        "ms": 1.3
+      },
+      {
+        "question": "What do we need for an inductive proof?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 0.7
+      }
+    ],
+    "vector": [
+      {
+        "question": "What is the definition of declarative knowledge?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 10.7
+      },
+      {
+        "question": "What is imperative knowledge?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.0
+      },
+      {
+        "question": "How do you find the square root of a number starting from a guess?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 8.7
+      },
+      {
+        "question": "How is the new guess computed in the square root algorithm?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.9
+      },
+      {
+        "question": "What are the three parts of a recipe?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.3
+      },
+      {
+        "question": "How does the recipe know when to stop?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 6.7
+      },
+      {
+        "question": "Why can't a calculator be used to send email?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 11.9
+      },
+      {
+        "question": "What changed with stored program computers?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.2
+      },
+      {
+        "question": "What does the ALU do?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 6.7
+      },
+      {
+        "question": "What does the program counter do?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 6.5
+      },
+      {
+        "question": "Who showed that six primitives are enough to compute anything?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.6
+      },
+      {
+        "question": "If something can be programmed in Python, can it be done in other languages?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 8.5
+      },
+      {
+        "question": "What is an example of bad syntax in English?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.5
+      },
+      {
+        "question": "What does static semantics mean?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.0
+      },
+      {
+        "question": "Can a sentence have more than one meaning?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 8.6
+      },
+      {
+        "question": "How did she choose the person who wins the prize?",
+        "kind": "paraphrase",
+        "rank": null,
+        "ms": 8.4
+      },
+      {
+        "question": "Could I damage my laptop by experimenting with commands?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 8.8
+      },
+      {
+        "question": "Why should other people be able to understand my code?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 8.3
+      },
+      {
+        "question": "What happens inside the machine while it runs a program step by step?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 8.4
+      },
+      {
+        "question": "Why don't we write programs using only Turing's handful of commands?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 10.2
+      },
+      {
+        "question": "Formally, what is a computational problem?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 8.2
+      },
+      {
+        "question": "Can one input have several correct answers?",
+        "kind": "paraphrase",
+        "rank": 2,
+        "ms": 6.8
+      },
+      {
+        "question": "How do we describe a problem without listing the answer for every input?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 10.1
+      },
+      {
+        "question": "Why must two students share a birthday if there are more than 365 of them?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 8.4
+      },
+      {
+        "question": "Why should an algorithm work for a class of any size?",
+        "kind": "paraphrase",
+        "rank": 2,
+        "ms": 7.4
+      },
+      {
+        "question": "What is an algorithm?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 6.2
+      },
+      {
+        "question": "How does the birthday algorithm work?",
+        "kind": "words",
+        "rank": 2,
+        "ms": 6.5
+      },
+      {
+        "question": "Does an algorithm have to give exactly one output for each input?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 8.4
+      },
+      {
+        "question": "How can we show the algorithm is right for any number of students?",
+        "kind": "paraphrase",
+        "rank": 5,
+        "ms": 8.4
+      },
+      {
+        "question": "What do we need for an inductive proof?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.4
+      }
+    ],
+    "hybrid": [
+      {
+        "question": "What is the definition of declarative knowledge?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.9
+      },
+      {
+        "question": "What is imperative knowledge?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 6.5
+      },
+      {
+        "question": "How do you find the square root of a number starting from a guess?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 8.5
+      },
+      {
+        "question": "How is the new guess computed in the square root algorithm?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 8.0
+      },
+      {
+        "question": "What are the three parts of a recipe?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.1
+      },
+      {
+        "question": "How does the recipe know when to stop?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 9.4
+      },
+      {
+        "question": "Why can't a calculator be used to send email?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 8.7
+      },
+      {
+        "question": "What changed with stored program computers?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.1
+      },
+      {
+        "question": "What does the ALU do?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 6.6
+      },
+      {
+        "question": "What does the program counter do?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.1
+      },
+      {
+        "question": "Who showed that six primitives are enough to compute anything?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 8.0
+      },
+      {
+        "question": "If something can be programmed in Python, can it be done in other languages?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 9.5
+      },
+      {
+        "question": "What is an example of bad syntax in English?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 8.6
+      },
+      {
+        "question": "What does static semantics mean?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.7
+      },
+      {
+        "question": "Can a sentence have more than one meaning?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 8.8
+      },
+      {
+        "question": "How did she choose the person who wins the prize?",
+        "kind": "paraphrase",
+        "rank": 2,
+        "ms": 7.6
+      },
+      {
+        "question": "Could I damage my laptop by experimenting with commands?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 9.6
+      },
+      {
+        "question": "Why should other people be able to understand my code?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 9.4
+      },
+      {
+        "question": "What happens inside the machine while it runs a program step by step?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 9.1
+      },
+      {
+        "question": "Why don't we write programs using only Turing's handful of commands?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 9.5
+      },
+      {
+        "question": "Formally, what is a computational problem?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.3
+      },
+      {
+        "question": "Can one input have several correct answers?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 8.0
+      },
+      {
+        "question": "How do we describe a problem without listing the answer for every input?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 9.8
+      },
+      {
+        "question": "Why must two students share a birthday if there are more than 365 of them?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 9.4
+      },
+      {
+        "question": "Why should an algorithm work for a class of any size?",
+        "kind": "paraphrase",
+        "rank": 2,
+        "ms": 7.8
+      },
+      {
+        "question": "What is an algorithm?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 6.7
+      },
+      {
+        "question": "How does the birthday algorithm work?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 6.5
+      },
+      {
+        "question": "Does an algorithm have to give exactly one output for each input?",
+        "kind": "paraphrase",
+        "rank": 1,
+        "ms": 10.3
+      },
+      {
+        "question": "How can we show the algorithm is right for any number of students?",
+        "kind": "paraphrase",
+        "rank": 3,
+        "ms": 8.7
+      },
+      {
+        "question": "What do we need for an inductive proof?",
+        "kind": "words",
+        "rank": 1,
+        "ms": 7.7
+      }
+    ]
+  }
+}

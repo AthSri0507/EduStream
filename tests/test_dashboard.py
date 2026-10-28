@@ -32,7 +32,7 @@ def test_dashboard_renders_all_tabs_without_errors(db):
     assert metrics["Notebook updates"] == "1"          # falls back to the notes.v1 count (runs before M6a)
     assert metrics["Alerts"] == "1"
     assert metrics["LATE_DROP"] == "0"
-    assert [t.label for t in at.tabs] == ["Notebook", "Window stats", "Alerts", "Pipeline health"]
+    assert [t.label for t in at.tabs] == ["Notebook", "Data", "Window stats", "Alerts", "Pipeline health"]
     assert at.selectbox(key="notes_lecture").value == "python_l1"
 
 
@@ -55,3 +55,43 @@ def test_the_notebook_tab_renders_sections_points_and_glossary(tmp_path, monkeyp
     assert "2. What does a computer do?" in text and "performs calculations" in text
     assert "computer memory" in text                                  # glossary
     assert any("Background (not from the lecture)" in c.value for c in at.caption)
+
+
+def test_the_assistant_answers_from_the_evidence_when_the_llm_is_off(tmp_path, monkeypatch):
+    import time
+    path = tmp_path / "edustream.db"
+    conn = connect_writer(path)
+    apply_batch(conn, run_records() + notebook_records(), now=1_792_051_300_000, window_ms=WINDOW_MS)
+    conn.close()
+    monkeypatch.setenv("EDU_DB", str(path))
+    monkeypatch.setenv("LLM_ENABLED", "false")
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    assert not at.exception, at.exception
+    assert not at.button                                  # a plain chat: no buttons (decision 15 Oct)
+    at.chat_input(key="a_input").set_value("I didn't get the last 10 seconds").run()
+    for _ in range(20):                                    # the turn runs in a background thread
+        time.sleep(0.25)
+        at.run()
+        if any("What was said" in c.value for c in at.caption):
+            break
+    assert not at.exception, at.exception
+    captions = " ".join(c.value for c in at.caption)
+    assert "Explaining" in captions and "What was said:" in captions
+
+
+def test_the_data_tab_runs_a_read_only_query(tmp_path, monkeypatch):
+    path = tmp_path / "edustream.db"
+    conn = connect_writer(path)
+    apply_batch(conn, run_records() + notebook_records(), now=1_792_051_300_000, window_ms=WINDOW_MS)
+    conn.close()
+    monkeypatch.setenv("EDU_DB", str(path))
+    at = AppTest.from_file(APP, default_timeout=60)
+    at.query_params["tab"] = "Data"
+    at.run()
+    assert not at.exception, at.exception
+    at.button(key="data_run").click().run()
+    assert not at.exception, at.exception
+    assert len(at.dataframe) == 1 and len(at.dataframe[0].value) == 1          # one lecture
+    at.text_area[0].set_value("DELETE FROM chunks").run()
+    at.button(key="data_run").click().run()
+    assert at.error and "Query refused" in at.error[0].value

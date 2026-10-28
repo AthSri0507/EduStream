@@ -85,6 +85,7 @@ for ($i = 1; $i -le $Workers; $i++) {
 }
 Start-Window "note-agent" "-Module agents.note_agent -Restart"
 Start-Window "db-sink" "-Module storage.db_sink -Restart"
+Start-Window "indexer" "-Module storage.indexer -Restart"
 Start-Window "dashboard" "-Module streamlit -ModuleArgs `"run dashboard/app.py --server.headless true --server.port 8501`" -Restart"
 
 Write-Host ""

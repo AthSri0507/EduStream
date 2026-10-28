@@ -93,6 +93,11 @@ CREATE VIRTUAL TABLE IF NOT EXISTS notebook_fts USING fts5(
   video_id UNINDEXED, update_index UNINDEXED, t UNINDEXED, kind UNINDEXED, body
 );
 
+-- Rev 6 (M6e): what was said, searchable by the Lecture Assistant (BM25). One row per stored chunk.
+CREATE VIRTUAL TABLE IF NOT EXISTS transcript_fts USING fts5(
+  video_id UNINDEXED, chunk_id UNINDEXED, start_time UNINDEXED, body
+);
+
 -- Consumer lag, refreshed every 5 s by the sink's lag thread (dashboard "Pipeline health").
 CREATE TABLE IF NOT EXISTS lag (
   group_id TEXT, topic TEXT, partition INTEGER,

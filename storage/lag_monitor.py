@@ -45,6 +45,7 @@ def watched_groups(settings: Settings) -> list[Watched]:
     return [
         Watched(GROUP_WORKERS, TOPIC_AUDIO, settings.chunk_seconds, True),
         Watched("edustream-streams", TOPIC_TRANSCRIPTS, settings.chunk_seconds, False),
+        Watched("indexer", TOPIC_TRANSCRIPTS, settings.chunk_seconds, True),          # rev 6: retrieval index
         Watched(GROUP_NOTES, TOPIC_WINDOWS, settings.window_seconds * settings.speedup, True,
                 max(0, settings.note_update_s // max(1, int(settings.window_seconds * settings.speedup)) - 1)),
     ]

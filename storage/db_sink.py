@@ -136,7 +136,12 @@ def apply_record(conn: sqlite3.Connection, topic: str, value: bytes | None, part
              p.get("avg_logprob"), p.get("no_speech_prob"), p.get("compression_ratio"),
              int(bool(p.get("retried", False))), p.get("worker_id"), p["src_partition"], p["src_offset"],
              p["event_ts"], p.get("transcribed_ts"), p.get("proc_ms"), now))
-        return "stored" if cur.rowcount == 1 else "duplicate"
+        if cur.rowcount != 1:
+            return "duplicate"
+        if p["text"].strip():           # index only new chunks (first writer wins), in the same transaction
+            conn.execute("INSERT INTO transcript_fts VALUES (?, ?, ?, ?)",
+                         (p["video_id"], p["chunk_id"], p["start_time"], p["text"]))
+        return "stored"
 
     if topic == TOPIC_WINDOWS:
         s = p["stats"]
