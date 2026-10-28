@@ -1,7 +1,8 @@
 """The Lecture Assistant's panel in the dashboard (ARCHITECTURE §8.2, §8.3): a plain chat, like any LLM chat.
 
 The user types everything ("I didn't get the last 10 seconds", "explain that more simply", "what happened at
-12:30?"); there are no buttons (your decision, 15 Oct). Streamlit re-runs the script on every interaction, and
+12:30?"); there are no buttons in the chat (your decision, 15 Oct). One switch above it chooses the source (28 Oct):
+the lecture only (default), or the lecture plus general knowledge, always labelled as not from the lecture. Streamlit re-runs the script on every interaction, and
 a re-run aborts whatever the old run was doing (step 0, bench/STEP0_RESULTS.md §3), so a turn never runs in the
 script: it runs in a background thread that writes into a job dict kept in session_state, and this panel (its
 own fragment, polled every second) shows the job's progress and then the verified answer.
@@ -39,6 +40,7 @@ def _state() -> dict:
     s.setdefault("a_turns", [])         # [{role, text, answer}]
     s.setdefault("a_job", None)         # the running job, if any
     s.setdefault("a_explained", [])
+    s.setdefault("a_outside", False)    # the switch: general knowledge allowed
     return s
 
 
@@ -53,7 +55,7 @@ def _position(conn, video_id: str) -> A.Position | None:
     return A.Position(video_id, info["title"], True, max(0.0, clock), info["covered_s"])
 
 
-def _run_job(job: dict, video_id: str, msg: str, turns: list, explained: list) -> None:
+def _run_job(job: dict, video_id: str, msg: str, turns: list, explained: list, outside: bool = False) -> None:
     shared = _shared()
     try:
         conn = connect_readonly()
@@ -73,14 +75,15 @@ def _run_job(job: dict, video_id: str, msg: str, turns: list, explained: list) -
             vconn = indexer.connect_readonly()          # None until the indexer has written anything
             try:
                 answer = A.run_turn(conn, shared["client"], msg, turns, pos, explained=explained, vconn=vconn,
-                                    embedder=embeddings.get())
+                                    embedder=embeddings.get(), outside=outside)
             finally:
                 if vconn is not None:
                     vconn.close()
             job.update(done=True, answer=answer)
             shared["log"].info("turn", video_id=video_id, message=msg[:200], plan=answer.plan.chip(),
                                intent=answer.plan.intent, source=answer.plan.source, generator=answer.generator,
-                               model=answer.model, items=len(answer.items), background=len(answer.background),
+                               model=answer.model, outside=outside, items=len(answer.items),
+                               background=len(answer.background),
                                flags=answer.flags, latency_s=answer.latency_s)
         finally:
             conn.close()
@@ -98,17 +101,19 @@ def submit(video_id: str, msg: str) -> None:
     history = [{"role": t["role"], "text": t["text"]} for t in s["a_turns"][:-1]]
     job = {"done": False, "status": "thinking…"}
     s["a_job"] = job
-    threading.Thread(target=_run_job, daemon=True, args=(job, video_id, msg, history, list(s["a_explained"]))).start()
+    threading.Thread(target=_run_job, daemon=True,
+                     args=(job, video_id, msg, history, list(s["a_explained"]), bool(s["a_outside"]))).start()
 
 
 def _render_answer(answer: A.Answer) -> None:
-    st.caption(answer.plan.chip())
+    source = "lecture + general knowledge" if answer.outside else "from the lecture only"
+    st.caption(f"{answer.plan.chip()} · {source}")
     if answer.note and not answer.items:
         st.write(answer.note)
     for item in answer.items:
         st.markdown(f"{item['text']} `[{mmss(item['t'])}]`", help=f"Said: “{item['quote']}”")
     for text in answer.background:
-        st.markdown(f":gray-background[Background, not from the lecture] {text}")
+        st.markdown(f":gray-background[Beyond the lecture: general knowledge] {text}")
     for q in answer.questions:
         with st.expander(q["q"] + (f"  `[{mmss(q['t'])}]`" if q.get("t") is not None else "")):
             st.write(q["answer"] or "")
@@ -140,7 +145,11 @@ def panel(video_id: str) -> None:
                 s["a_explained"] = (s["a_explained"] + [answer.plan.term])[-20:]
         s["a_job"] = job = None
 
-    st.markdown("**Lecture Assistant**")
+    head, switch = st.columns([1, 1.3], vertical_alignment="center")
+    head.markdown("**Lecture Assistant**")
+    switch.toggle("Use general knowledge", key="a_outside",
+                  help="Off: answers come only from what was said in this lecture. On: the assistant may add general "
+                       "knowledge, always labelled as not from the lecture.")
     with st.container(height=600, border=True):
         if not s["a_turns"] and job is None:
             st.caption("Ask anything about the lecture, the way you would ask any chat assistant. For example: "

@@ -106,8 +106,13 @@ def element_html(el: dict, fresh: int | None = None) -> str:
             f'{mmss(el["t"])}</span></div>')
 
 
+FALLBACK_NOTE = "Written without the language model: the live notes as they were."
+
+
 def topic_html(topic: dict) -> str:
     body = "".join(element_html(x) for x in topic["elements"])
+    if topic.get("generator") == "fallback":
+        body = f'<p class="bg">{FALLBACK_NOTE}</p>' + body
     if topic.get("question"):
         body += (f'<div class="check"><b>Check yourself:</b> {e(topic["question"])}'
                  f'<details><summary>Show answer</summary>{e(topic.get("answer") or "")}</details></div>')

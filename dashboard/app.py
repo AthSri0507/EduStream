@@ -24,6 +24,7 @@ if str(ROOT) not in sys.path:
 
 from common.config import load  # noqa: E402
 from dashboard import assistant_panel, queries, sql_box  # noqa: E402
+from dashboard import export  # noqa: E402
 from dashboard import notebook_html as nbh  # noqa: E402
 from storage.db import connect_readonly, db_path  # noqa: E402
 
@@ -69,10 +70,10 @@ def lecture_colors(lectures: pd.DataFrame) -> tuple[list[str], list[str]]:
 # --------------------------------------------------
 
 @st.fragment(run_every="2s")
-def notebook_view(video_id: str) -> None:
+def notebook_view(video_id: str, title: str) -> None:
     """The notebook (NOTEBOOK_DESIGN §6, §11.6): contents rail, finished topics (collapsed except the latest while
-    live), the live box with the drafts since the last consolidation. Only lecture content: pipeline numbers are
-    on Pipeline health (decision 5)."""
+    live), the live box with the drafts since the last consolidation, and the downloads (M6c). Only lecture content:
+    pipeline numbers are on Pipeline health (decision 5)."""
     try:
         conn = connect_readonly(db_path())
     except sqlite3.Error:
@@ -88,6 +89,8 @@ def notebook_view(video_id: str) -> None:
     with rail:
         st.html(nbh.wrap(nbh.rail_html(nb), theme))
     with main:
+        if nb["topics"] or nb["drafts"]:
+            download_row(video_id, title)
         if nb["updates"] == 0 and legacy is not None and not legacy.empty:
             st.caption("Notes from a run before the notebook (M6a):")
             for _, n in legacy.head(MAX_NOTES_SHOWN).iterrows():
@@ -98,6 +101,26 @@ def notebook_view(video_id: str) -> None:
                 st.html(nbh.wrap(nbh.topic_html(topic), theme))
         if not nb["finished"]:
             st.html(nbh.wrap(nbh.live_html(nb), theme))
+
+
+def download_row(video_id: str, title: str) -> None:
+    """Markdown, Word and PDF of the notes. Each file is built when its button is clicked (a callable), from the
+    notebook as it is at that moment, not on every 2 s refresh."""
+    def build(fmt: str):
+        def make() -> bytes:
+            conn = connect_readonly(db_path())
+            try:
+                nb = queries.notebook(conn, video_id, SETTINGS.note_update_s)
+            finally:
+                conn.close()
+            return export.FORMATS[fmt][2](nb, title)
+        return make
+
+    with st.container(horizontal=True, vertical_alignment="center"):
+        for fmt, (ext, mime, _) in export.FORMATS.items():
+            st.download_button(fmt, build(fmt), file_name=f"{export.file_stem(title)}_notes.{ext}", mime=mime,
+                               key=f"dl_{fmt}_{video_id}", on_click="ignore", icon=":material/download:")
+        st.caption("Download the notes")
 
 
 def data_tab() -> None:
@@ -307,7 +330,7 @@ def page() -> None:
             video_id = st.selectbox("Lecture", list(titles), format_func=lambda v: titles[v], key="notes_lecture")
             left, right = st.columns([3.4, 2])
             with left:
-                notebook_view(video_id)
+                notebook_view(video_id, titles[video_id])
             with right:
                 assistant_panel.panel(video_id)
     with data_t:

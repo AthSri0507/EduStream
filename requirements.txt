@@ -22,6 +22,10 @@ streamlit
 pandas
 matplotlib
 
+# Notebook downloads (M6c): PDF (with matplotlib's bundled DejaVu fonts) and Word
+fpdf2
+python-docx
+
 # Evaluation, benchmarks (psutil: memory per worker) and tests
 psutil
 jiwer

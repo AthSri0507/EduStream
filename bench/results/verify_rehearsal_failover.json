@@ -1,0 +1,610 @@
+{
+  "checks": [
+    {
+      "name": "all records match the JSON Schemas",
+      "ok": true,
+      "detail": "220 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_demaine_l2: complete",
+      "ok": true,
+      "detail": "48/48 chunks across 16 windows"
+    },
+    {
+      "name": "algorithms_demaine_l2: each window emitted once",
+      "ok": true,
+      "detail": "16 distinct windows, 16 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_demaine_l2: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10056 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_demaine_l2: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "6/6 updates, 6 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: every window in exactly one update",
+      "ok": true,
+      "detail": "16 windows in updates, 16 windows emitted"
+    },
+    {
+      "name": "algorithms_demaine_l2: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "1 passes, 1 records: 0-480 fallback"
+    },
+    {
+      "name": "algorithms_demaine_l2: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 480 s, last cut 480 s"
+    },
+    {
+      "name": "algorithms_demaine_l2: topics numbered 1..N",
+      "ok": true,
+      "detail": "1 topics"
+    },
+    {
+      "name": "algorithms_ku_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_ku_l1: complete",
+      "ok": true,
+      "detail": "48/48 chunks across 16 windows"
+    },
+    {
+      "name": "algorithms_ku_l1: each window emitted once",
+      "ok": true,
+      "detail": "16 distinct windows, 16 records"
+    },
+    {
+      "name": "algorithms_ku_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_ku_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10051 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_ku_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "6/6 updates, 6 records"
+    },
+    {
+      "name": "algorithms_ku_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "16 windows in updates, 16 windows emitted"
+    },
+    {
+      "name": "algorithms_ku_l1: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "1 passes, 1 records: 0-480 fallback"
+    },
+    {
+      "name": "algorithms_ku_l1: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 480 s, last cut 480 s"
+    },
+    {
+      "name": "algorithms_ku_l1: topics numbered 1..N",
+      "ok": true,
+      "detail": "1 topics"
+    },
+    {
+      "name": "python_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "python_l1: complete",
+      "ok": true,
+      "detail": "48/48 chunks across 16 windows"
+    },
+    {
+      "name": "python_l1: each window emitted once",
+      "ok": true,
+      "detail": "16 distinct windows, 16 records"
+    },
+    {
+      "name": "python_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "python_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10042 ms after the flush's event time"
+    },
+    {
+      "name": "python_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "6/6 updates, 6 records"
+    },
+    {
+      "name": "python_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "16 windows in updates, 16 windows emitted"
+    },
+    {
+      "name": "python_l1: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "1 passes, 1 records: 0-480 fallback"
+    },
+    {
+      "name": "python_l1: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 480 s, last cut 480 s"
+    },
+    {
+      "name": "python_l1: topics numbered 1..N",
+      "ok": true,
+      "detail": "1 topics"
+    },
+    {
+      "name": "no LATE_DROP alerts",
+      "ok": true,
+      "detail": "0 LATE_DROP"
+    },
+    {
+      "name": "DLQ as expected",
+      "ok": true,
+      "detail": "0 DLQ record(s), expected 0"
+    },
+    {
+      "name": "db: chunks == distinct transcripts",
+      "ok": true,
+      "detail": "144 in SQLite, 144 in Kafka"
+    },
+    {
+      "name": "db: windows == topic windows (keys and content)",
+      "ok": true,
+      "detail": "48 in SQLite, 48 distinct in Kafka"
+    },
+    {
+      "name": "db: live updates == topic updates, with all their drafts",
+      "ok": true,
+      "detail": "18 updates and 21 drafts in SQLite, 18 distinct updates in Kafka"
+    },
+    {
+      "name": "db: passes == topic passes, with all their topics and elements",
+      "ok": true,
+      "detail": "3 passes, 3 topics, 21 elements in SQLite"
+    },
+    {
+      "name": "db: no draft left in the search index of a finished lecture",
+      "ok": true,
+      "detail": "0 draft rows"
+    },
+    {
+      "name": "db: alerts == distinct topic alerts",
+      "ok": true,
+      "detail": "4 in SQLite"
+    }
+  ],
+  "lectures": {
+    "algorithms_demaine_l2": {
+      "partition": 2,
+      "chunks_sent": 48,
+      "windows": 16,
+      "last_window_emitted_after_flush_ms": 10056,
+      "updates": {
+        "llm": 3,
+        "extractive": 3
+      },
+      "passes": {
+        "fallback": 1
+      }
+    },
+    "algorithms_ku_l1": {
+      "partition": 1,
+      "chunks_sent": 48,
+      "windows": 16,
+      "last_window_emitted_after_flush_ms": 10051,
+      "updates": {
+        "llm": 2,
+        "extractive": 4
+      },
+      "passes": {
+        "fallback": 1
+      }
+    },
+    "python_l1": {
+      "partition": 0,
+      "chunks_sent": 48,
+      "windows": 16,
+      "last_window_emitted_after_flush_ms": 10042,
+      "updates": {
+        "llm": 4,
+        "extractive": 2
+      },
+      "passes": {
+        "fallback": 1
+      }
+    }
+  },
+  "notebooks": {
+    "algorithms_demaine_l2": {
+      "topics": {
+        "1": {
+          "title": "Part 1",
+          "elements": [
+            [
+              "para",
+              70.0,
+              "Interface vs Data Structure. An interface, also called an API or ADT, specifies what operations are available without describing how they are implemented"
+            ],
+            [
+              "para",
+              160.0,
+              "Two main interfaces. The course will concentrate on two primary abstract data types and their special cases. By separating the what\u2011you\u2011want\u2011to\u2011do from the how\u2011you\u2011do\u2011it, we can study multiple implementations for the same interface"
+            ],
+            [
+              "para",
+              170.0,
+              "Separate what you want to do from how you do it."
+            ],
+            [
+              "para",
+              200.0,
+              "Problem statement & data structures. A problem statement defines the task, and algorithmic solutions address it; similarly, a data structure maintains data according to a set of operations. The same problem can be solved by many different data structures, each offering different performance trade\u2011offs for those operations"
+            ],
+            [
+              "para",
+              270.0,
+              "And this is the first item, the second item, the last item. On this sequence data structure, at the end, I'll mention the interface for sets, but we're going to be actually solving sequences today. The number of items doesn't change, though the actual items might."
+            ],
+            [
+              "para",
+              370.0,
+              "Build is how you get started to build a data structure in this interface you call build of X exactly how you... make a new data structure of size and a new static sequence of size n that has those items in that order. I want to be able to output x0 through xn minus 1 in the sequence order, in that specified order that they were built in."
+            ],
+            [
+              "para",
+              450.0,
+              "change xi to a given new item. But what is the obvious data structure that solves this problem? I prefer to call it an array, but to each their own we're going to use list list could mean"
+            ]
+          ],
+          "question": null,
+          "end": 480.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": [
+            [
+              "u0e0",
+              null,
+              "Interface vs Data Structure. An interface, also called an API or ADT, specifies what operations are available without describing how they are implemented"
+            ]
+          ]
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": [
+            [
+              "u1e0",
+              null,
+              "Two main interfaces. The course will concentrate on two primary abstract data types and their special cases. By separating the what\u2011you\u2011want\u2011to\u2011do from the how\u2011you\u2011do\u2011it, we can study multiple implementations for the same interface"
+            ],
+            [
+              "u1e1",
+              null,
+              "Separate what you want to do from how you do it."
+            ]
+          ]
+        },
+        {
+          "update": 2,
+          "generator": "llm",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "Problem statement & data structures. A problem statement defines the task, and algorithmic solutions address it; similarly, a data structure maintains data according to a set of operations. The same problem can be solved by many different data structures, each offering different performance trade\u2011offs for those operations"
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "And this is the first item, the second item, the last item. On this sequence data structure, at the end, I'll mention the interface for sets, but we're going to be actually solving sequences today. The number of items doesn't change, though the actual items might."
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "Build is how you get started to build a data structure in this interface you call build of X exactly how you... make a new data structure of size and a new static sequence of size n that has those items in that order. I want to be able to output x0 through xn minus 1 in the sequence order, in that specified order that they were built in."
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "change xi to a given new item. But what is the obvious data structure that solves this problem? I prefer to call it an array, but to each their own we're going to use list list could mean"
+            ]
+          ]
+        }
+      ]
+    },
+    "algorithms_ku_l1": {
+      "topics": {
+        "1": {
+          "title": "Part 1",
+          "elements": [
+            [
+              "para",
+              50.0,
+              "Course Overview. The course is an introduction to algorithms, focusing on teaching how to solve computational problems and how to communicate solutions effectively"
+            ],
+            [
+              "para",
+              100.0,
+              "Proof and efficiency. The class emphasizes proving that a solution is correct and arguing about its efficiency. It also stresses communicating these ideas clearly to others, not just to a computer"
+            ],
+            [
+              "para",
+              220.0,
+              "It's a problem is kind of, you've got a set of inputs. But these are the possible outputs to my problem. And what a problem is, is a binary relation between these inputs and outputs."
+            ],
+            [
+              "para",
+              280.0,
+              "So, uh, maybe this guy maps to that output, and maybe this guy maps to, I don't know, two or three outputs, right? apartheid graph between these inputs and outputs. output, I can check whether that output is correct or not."
+            ],
+            [
+              "para",
+              360.0,
+              "we're putting it in terms of predicates, because in general, we don't really want to talk about small instances of problems. So let's generalize it a little bit, say that I don't know. I need a bigger space of birthdays for this question to be interesting."
+            ],
+            [
+              "para",
+              450.0,
+              "whether two of you have the same birth time, let's say. OK, so in general, in this class, we're not going to concentrate on input such as I could do a lot of different things, but what we do in this class, this is for a fixed classroom of you, I want to make out the"
+            ]
+          ],
+          "question": null,
+          "end": 480.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": [
+            [
+              "u0e0",
+              null,
+              "Course Overview. The course is an introduction to algorithms, focusing on teaching how to solve computational problems and how to communicate solutions effectively"
+            ]
+          ]
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": [
+            [
+              "u1e0",
+              null,
+              "Proof and efficiency. The class emphasizes proving that a solution is correct and arguing about its efficiency. It also stresses communicating these ideas clearly to others, not just to a computer"
+            ]
+          ]
+        },
+        {
+          "update": 2,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "It's a problem is kind of, you've got a set of inputs. But these are the possible outputs to my problem. And what a problem is, is a binary relation between these inputs and outputs."
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "So, uh, maybe this guy maps to that output, and maybe this guy maps to, I don't know, two or three outputs, right? apartheid graph between these inputs and outputs. output, I can check whether that output is correct or not."
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "we're putting it in terms of predicates, because in general, we don't really want to talk about small instances of problems. So let's generalize it a little bit, say that I don't know. I need a bigger space of birthdays for this question to be interesting."
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "whether two of you have the same birth time, let's say. OK, so in general, in this class, we're not going to concentrate on input such as I could do a lot of different things, but what we do in this class, this is for a fixed classroom of you, I want to make out the"
+            ]
+          ]
+        }
+      ]
+    },
+    "python_l1": {
+      "topics": {
+        "1": {
+          "title": "Part 1",
+          "elements": [
+            [
+              "para",
+              60.0,
+              "Course Intro. The first lecture covers basic administrative details and an overview of computation. The session will discuss what computers do at a high level to ensure all students are aligned"
+            ],
+            [
+              "para",
+              90.0,
+              "Python Basics. We will start with Python basics, focusing on mathematical operations that can be performed with Python. The slides and code examples will be available before the lecture, so students should download them and open them for reference"
+            ],
+            [
+              "para",
+              140.0,
+              "Study Strategy. During lectures, connecting lecture content to terms seen in problem sets helps retention. Practice is emphasized as essential for mastering programming, similar to math or reading"
+            ],
+            [
+              "para",
+              180.0,
+              "Practice over fear. You should download the code before lecture and type along, because watching alone won\u2019t make you absorb programming. New programmers often fear breaking their computer, but you can simply restart it if something goes wrong, so don\u2019t be afraid to experiment"
+            ],
+            [
+              "para",
+              220.0,
+              "Course roadmap. The course aims for three outcomes: knowledge of concepts, programming skills, and problem\u2011solving ability through problem sets"
+            ],
+            [
+              "para",
+              280.0,
+              "Course content. The course material is split into three sections: programming fundamentals, control flow, and code style. Programming fundamentals cover creating objects and representing knowledge with data structures. Control flow deals with decisions and jumps within programs. Code style emphasizes readable, modular code that others can understand and maintain"
+            ],
+            [
+              "para",
+              370.0,
+              "And the last section is going to deal with, so the first two are actually part of the programming in Introduction to Programming and Computing. And the last one deals mostly with the computer science part in introduction to programming and computer science in Python. Once you've learned how to write programs in Python, how do You compare programs in python?"
+            ],
+            [
+              "para",
+              450.0,
+              "So these are the very low level types of calculations. Calculation types, you as a programmer can put these types Together and then define your own calculations. And you create new times types of calculations."
+            ]
+          ],
+          "question": null,
+          "end": 480.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": [
+            [
+              "u0e0",
+              null,
+              "Course Intro. The first lecture covers basic administrative details and an overview of computation. The session will discuss what computers do at a high level to ensure all students are aligned"
+            ]
+          ]
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": [
+            [
+              "u1e0",
+              null,
+              "Python Basics. We will start with Python basics, focusing on mathematical operations that can be performed with Python. The slides and code examples will be available before the lecture, so students should download them and open them for reference"
+            ],
+            [
+              "u1e1",
+              null,
+              "Study Strategy. During lectures, connecting lecture content to terms seen in problem sets helps retention. Practice is emphasized as essential for mastering programming, similar to math or reading"
+            ]
+          ]
+        },
+        {
+          "update": 2,
+          "generator": "llm",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "Practice over fear. You should download the code before lecture and type along, because watching alone won\u2019t make you absorb programming. New programmers often fear breaking their computer, but you can simply restart it if something goes wrong, so don\u2019t be afraid to experiment"
+            ],
+            [
+              "u2e1",
+              null,
+              "Course roadmap. The course aims for three outcomes: knowledge of concepts, programming skills, and problem\u2011solving ability through problem sets"
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "llm",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "Course content. The course material is split into three sections: programming fundamentals, control flow, and code style. Programming fundamentals cover creating objects and representing knowledge with data structures. Control flow deals with decisions and jumps within programs. Code style emphasizes readable, modular code that others can understand and maintain"
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "And the last section is going to deal with, so the first two are actually part of the programming in Introduction to Programming and Computing. And the last one deals mostly with the computer science part in introduction to programming and computer science in Python. Once you've learned how to write programs in Python, how do You compare programs in python?"
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "So these are the very low level types of calculations. Calculation types, you as a programmer can put these types Together and then define your own calculations. And you create new times types of calculations."
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "alerts_by_type": {
+    "LOW_ASR_SCORE": 2,
+    "CONSUMER_LAG": 2
+  },
+  "counts": {
+    "transcriptions": 147,
+    "window_summaries": 48,
+    "final_notes": 21,
+    "alerts": 4,
+    "dlq": 0
+  }
+}

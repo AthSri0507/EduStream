@@ -172,7 +172,8 @@ class Memory:
         self.finished = False                      # the pass that reached the lecture's end is out
         self.last_live_at = 0.0                    # runtime only (not rebuilt): pacing of consolidation
         self.retry_at = 0.0                        # runtime only: a deferred consolidation waits until then
-        self.ending_since: float | None = None     # runtime only: first pass attempted after the lecture's end
+        self.ending_since: float | None = None     # runtime only: when the lecture was first seen ended
+        self.last_attempt_at = 0.0                 # runtime only: the last pass attempt (fair turns across lectures)
 
     def apply_update(self, p: dict, partition: int | None = None) -> None:
         if partition is not None:

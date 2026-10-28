@@ -1,0 +1,890 @@
+{
+  "checks": [
+    {
+      "name": "all records match the JSON Schemas",
+      "ok": true,
+      "detail": "482 records"
+    },
+    {
+      "name": "hypothesis_testing_0208: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "hypothesis_testing_0208: complete",
+      "ok": true,
+      "detail": "150/150 chunks across 50 windows"
+    },
+    {
+      "name": "hypothesis_testing_0208: each window emitted once",
+      "ok": true,
+      "detail": "50 distinct windows, 50 records"
+    },
+    {
+      "name": "hypothesis_testing_0208: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "hypothesis_testing_0208: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10069 ms after the flush's event time"
+    },
+    {
+      "name": "hypothesis_testing_0208: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "17/17 updates, 17 records"
+    },
+    {
+      "name": "hypothesis_testing_0208: every window in exactly one update",
+      "ok": true,
+      "detail": "50 windows in updates, 50 windows emitted"
+    },
+    {
+      "name": "hypothesis_testing_0208: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "4 passes, 4 records: 0-360 fallback, 360-720 llm, 720-1080 llm, 1080-1500 llm"
+    },
+    {
+      "name": "hypothesis_testing_0208: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 1500 s, last cut 1500 s"
+    },
+    {
+      "name": "hypothesis_testing_0208: topics numbered 1..N",
+      "ok": true,
+      "detail": "4 topics"
+    },
+    {
+      "name": "python_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "python_l1: complete",
+      "ok": true,
+      "detail": "150/150 chunks across 50 windows"
+    },
+    {
+      "name": "python_l1: each window emitted once",
+      "ok": true,
+      "detail": "50 distinct windows, 50 records"
+    },
+    {
+      "name": "python_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "python_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10066 ms after the flush's event time"
+    },
+    {
+      "name": "python_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "17/17 updates, 17 records"
+    },
+    {
+      "name": "python_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "50 windows in updates, 50 windows emitted"
+    },
+    {
+      "name": "python_l1: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "5 passes, 5 records: 0-360 llm, 360-720 llm, 720-1080 llm, 1080-1440 llm, 1440-1500 llm"
+    },
+    {
+      "name": "python_l1: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 1500 s, last cut 1500 s"
+    },
+    {
+      "name": "python_l1: topics numbered 1..N",
+      "ok": true,
+      "detail": "7 topics"
+    },
+    {
+      "name": "no LATE_DROP alerts",
+      "ok": true,
+      "detail": "0 LATE_DROP"
+    },
+    {
+      "name": "DLQ as expected",
+      "ok": true,
+      "detail": "0 DLQ record(s), expected 0"
+    },
+    {
+      "name": "db: chunks == distinct transcripts",
+      "ok": true,
+      "detail": "300 in SQLite, 300 in Kafka"
+    },
+    {
+      "name": "db: windows == topic windows (keys and content)",
+      "ok": true,
+      "detail": "100 in SQLite, 100 distinct in Kafka"
+    },
+    {
+      "name": "db: live updates == topic updates, with all their drafts",
+      "ok": true,
+      "detail": "34 updates and 39 drafts in SQLite, 34 distinct updates in Kafka"
+    },
+    {
+      "name": "db: passes == topic passes, with all their topics and elements",
+      "ok": true,
+      "detail": "9 passes, 11 topics, 37 elements in SQLite"
+    },
+    {
+      "name": "db: no draft left in the search index of a finished lecture",
+      "ok": true,
+      "detail": "0 draft rows"
+    },
+    {
+      "name": "db: alerts == distinct topic alerts",
+      "ok": true,
+      "detail": "37 in SQLite"
+    }
+  ],
+  "lectures": {
+    "hypothesis_testing_0208": {
+      "partition": 1,
+      "chunks_sent": 150,
+      "windows": 50,
+      "last_window_emitted_after_flush_ms": 10069,
+      "updates": {
+        "llm": 15,
+        "extractive": 2
+      },
+      "passes": {
+        "fallback": 1,
+        "llm": 3
+      }
+    },
+    "python_l1": {
+      "partition": 0,
+      "chunks_sent": 150,
+      "windows": 50,
+      "last_window_emitted_after_flush_ms": 10066,
+      "updates": {
+        "llm": 16,
+        "extractive": 1
+      },
+      "passes": {
+        "llm": 5
+      }
+    }
+  },
+  "notebooks": {
+    "hypothesis_testing_0208": {
+      "topics": {
+        "1": {
+          "title": "Hypothesis Forms and Decision Errors",
+          "elements": [
+            [
+              "para",
+              410.0,
+              "Recall hypothesis definition. A hypothesis is a statement about a population parameter that we aim to test using sample data"
+            ],
+            [
+              "para",
+              450.0,
+              "Null and alternate forms. The null hypothesis (H\u2080) will always be expressed in one of the standard forms and never contains an equality sign; the alternate hypothesis (H\u2081) also follows a standard form and likewise has no equality sign"
+            ],
+            [
+              "para",
+              500.0,
+              "Judgment outcomes. When evaluating a hypothesis, our judgment can be correct if the ground truth matches the sample evidence, leading to a correct decision to accept or reject H\u2080; otherwise the judgment is incorrect"
+            ],
+            [
+              "para",
+              550.0,
+              "Type I and Type II errors. A Type I error occurs when we reject H\u2080 while it is actually true; a Type II error occurs when we fail to reject H\u2080 while it is actually false"
+            ],
+            [
+              "para",
+              690.0,
+              "Definition of level of significance. The level of significance is the maximum probability of making a Type I error that the researcher is willing to accept"
+            ],
+            [
+              "para",
+              760.0,
+              "Alpha and confidence. An alpha value of 0.05 corresponds to a 95 % confidence level, while an alpha of 0.01 corresponds to a 99 % confidence level. The confidence level reflects the small tail probability that we are willing to risk when making a decision"
+            ]
+          ],
+          "question": {
+            "q": "What is a Type\u202fI error in hypothesis testing?",
+            "answer": "Rejecting the null hypothesis when it is actually true."
+          },
+          "end": 820.0
+        },
+        "2": {
+          "title": "Test Types, Sampling Distribution, and Rejection Rule",
+          "elements": [
+            [
+              "para",
+              830.0,
+              "Available test distributions. Hypothesis tests may be based on normal, t, F, or chi\u2011square distributions, but for this course we restrict ourselves to the normal distribution (and the related \"feed\" distribution)"
+            ],
+            [
+              "para",
+              950.0,
+              "Sampling distribution of the test statistic. Under the null hypothesis we assume a sampling distribution for the chosen statistic; for a normal population this distribution is normal with mean \u03bc and standard deviation \u03c3/\u221an"
+            ],
+            [
+              "para",
+              1060.0,
+              "Two\u2011tailed versus single\u2011tailed. A test can be two\u2011tailed or single\u2011tailed depending on the alternative hypothesis; in a two\u2011tailed test the null is rejected if the statistic is either too large or too small relative to critical values on the standard normal curve"
+            ],
+            [
+              "para",
+              1070.0,
+              "Rejecting the null hypothesis. We reject the null hypothesis when the observed test statistic falls beyond the upper or lower critical thresholds on the standard normal curve, i.e., when it is too large or too small"
+            ]
+          ],
+          "question": {
+            "q": "In a two\u2011tailed test, when is the null hypothesis rejected?",
+            "answer": "When the test statistic is either larger than the upper critical value or smaller than the lower critical value on the standard normal curve"
+          },
+          "end": 1080.0
+        },
+        "3": {
+          "title": "Z\u2011Test Derivation and Critical Regions",
+          "elements": [
+            [
+              "para",
+              1080.0,
+              "Z\u2011test statistic. The Z\u2011score is the sample statistic minus the population mean divided by the population standard deviation. Because the sampling distribution of the sample mean has mean equal to the population mean, the Z\u2011score follows a standard normal distribution with mean 0 and variance 1"
+            ],
+            [
+              "para",
+              1140.0,
+              "Critical regions. For a two\u2011tailed test at significance level 0.05, the critical values are \u00b11.96. Values of the test statistic falling beyond these limits lie in the rejection region and lead to rejection of the null hypothesis"
+            ]
+          ],
+          "question": {
+            "q": "What are the critical values for a two\u2011tailed test at \u03b1 = 0.05?",
+            "answer": "\u00b11.96"
+          },
+          "end": 1250.0
+        },
+        "4": {
+          "title": "Designing a Decision Rule for a Coin Toss Example",
+          "elements": [
+            [
+              "para",
+              1350.0,
+              "Decision rule setup. To design a decision rule, first draw the standard normal curve and mark the critical regions based on the chosen level of significance. The rule states that if the computed Z value lies outside the interval [\u2212z_c, z_c], the null hypothesis is rejected"
+            ],
+            [
+              "example",
+              1470.0,
+              "Example (Coin Toss Test): In a sample of 64 tosses of a fair coin, the expected number of heads is \u03bc = 64\u00d70.5 = 32. The decision rule at \u03b1 = 0.05 is to reject H\u2080 if the observed number of heads is less than 32\u22121.96\u221a(64\u00d70.5\u00d70.5) or greater than 32+1.96\u221a(64\u00d70.5\u00d70.5). Steps: Compute \u03bc = 32; Compute \u03c3 = \u221a(64\u00d70.5\u00d70.5); Compute critical values 32\u00b11.96\u03c3."
+            ]
+          ],
+          "question": {
+            "q": "What is the decision rule for rejecting H\u2080 in the coin toss example at \u03b1 = 0.05?",
+            "answer": "Reject H\u2080 if the number of heads is less than 32\u22121.96\u03c3 or greater than 32+1.96\u03c3"
+          },
+          "end": 1500.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 2,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 3,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 4,
+          "generator": "llm",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "Recall hypothesis definition. A hypothesis is a statement about a population parameter that we aim to test using sample data"
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "llm",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "Null and alternate forms. The null hypothesis will always be one of the standard forms, and the alternate hypothesis will also be one of the standard forms. Neither hypothesis contains an equality sign"
+            ],
+            [
+              "u5e1",
+              null,
+              "Judgment outcomes. When evaluating a hypothesis, your judgment can be either correct or incorrect. A correct judgment occurs when the ground truth matches the sample evidence, leading to a correct decision to accept or reject the null hypothesis"
+            ]
+          ]
+        },
+        {
+          "update": 6,
+          "generator": "llm",
+          "elements": [
+            [
+              "u6e0",
+              null,
+              "Type I & II Errors. A type I error occurs when we reject the null hypothesis while it is actually true"
+            ]
+          ]
+        },
+        {
+          "update": 7,
+          "generator": "llm",
+          "elements": [
+            [
+              "u7e0",
+              null,
+              "Level of Significance. The level of significance is defined as the maximum probability of making a Type I error that the researcher is willing to accept"
+            ]
+          ]
+        },
+        {
+          "update": 8,
+          "generator": "llm",
+          "elements": [
+            [
+              "u8e0",
+              null,
+              "Alpha and confidence. Alpha values such as 0.05 correspond to a 95% confidence level, while 0.01 corresponds to a 99% confidence level. The confidence level reflects the small tail probability that we are willing to risk"
+            ]
+          ]
+        },
+        {
+          "update": 9,
+          "generator": "llm",
+          "elements": [
+            [
+              "u9e0",
+              null,
+              "Test Types. The lecture lists the common test distributions: normal, t, F, and chi\u2011square. For this course we will only use the normal distribution and the feed distribution. The test can be two\u2011tailed or single\u2011tailed depending on the alternative hypothesis"
+            ]
+          ]
+        },
+        {
+          "update": 10,
+          "generator": "llm",
+          "elements": [
+            [
+              "u10e0",
+              null,
+              "Sampling Distribution. The sampling distribution of a test statistic is the distribution of that statistic over all possible samples from the population. For a normal population, the sampling distribution of the sample mean is also normal, with mean equal to the population mean and standard deviation equal to sigma divided by the square root of the sample size"
+            ],
+            [
+              "u10e1",
+              null,
+              "Normal Approximation. When the sample size is large or the population is normal, the sampling distribution can be approximated by a normal distribution with mean \u03bc and standard deviation \u03c3/\u221an"
+            ]
+          ]
+        },
+        {
+          "update": 11,
+          "generator": "llm",
+          "elements": [
+            [
+              "u11e0",
+              null,
+              "Rejecting Null. Rejecting the null hypothesis occurs when the test statistic is either too large or too small relative to the critical values on the standard normal curve. In a two\u2011tailed test, if the statistic lies beyond the upper or lower critical threshold, the null is rejected"
+            ]
+          ]
+        },
+        {
+          "update": 12,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u12e0",
+              null,
+              "sample statistic that you've got minus, see you can use the sample mean it's itself as an estimate for the population mean because you do x minus x bar divided by sigma. sampling distribution will have mean which is equal to the population mean."
+            ]
+          ]
+        },
+        {
+          "update": 13,
+          "generator": "llm",
+          "elements": [
+            [
+              "u13e0",
+              null,
+              "Critical Regions. The 95% area of the sampling distribution is split into two critical regions, one on each tail"
+            ]
+          ]
+        },
+        {
+          "update": 14,
+          "generator": "llm",
+          "elements": [
+            [
+              "u14e0",
+              null,
+              "Decision Rule Setup. To find a decision rule, first draw the standard normal curve and mark the critical regions based on the chosen level of significance"
+            ],
+            [
+              "u14e1",
+              null,
+              "Sampling Context. The example uses a sample of 64 tosses of a coin, which provides a sample mean that estimates the population mean"
+            ]
+          ]
+        },
+        {
+          "update": 15,
+          "generator": "llm",
+          "elements": [
+            [
+              "u15e0",
+              null,
+              "Decision Rule. To reject the null hypothesis at a 0.05 level of significance, the test statistic must fall in the rejection region beyond the critical values \u20131.96 or +1.96. At a 0.01 level, the critical values are \u20132.58 or +2.58, so the statistic must lie beyond these to reject the null"
+            ],
+            [
+              "u15e1",
+              null,
+              "Rejection Region. The rejection region consists of the extreme right or left tail probabilities; if the test statistic falls in either tail, the null hypothesis is rejected"
+            ]
+          ]
+        },
+        {
+          "update": 16,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u16e0",
+              null,
+              "not as the coin is fair, that the coin is fair. and you are assuming that the coin is fair, therefore you can find out the mean for this. is nothing but 64 into 0.5 which is basically 32."
+            ]
+          ]
+        }
+      ]
+    },
+    "python_l1": {
+      "topics": {
+        "1": {
+          "title": "Course Goals and Success Strategy",
+          "elements": [
+            [
+              "para",
+              140.0,
+              "Course Goals. The course has three main goals: understanding concepts, developing programming skills, and learning problem\u2011solving through problem sets. Practice is the underlying requirement for all three"
+            ],
+            [
+              "para",
+              190.0,
+              "Success Strategy. Fear of breaking the computer is unfounded because running Anaconda and typing commands cannot damage the system"
+            ],
+            [
+              "para",
+              280.0,
+              "Course Structure. The class is divided into three main sections: learning how to program, understanding control flow, and writing good code. The first section covers how to represent knowledge with data structures and deciding what objects to create"
+            ],
+            [
+              "para",
+              290.0,
+              "Learning how to program involves figuring out what objects to create and how to represent knowledge with data structures."
+            ],
+            [
+              "para",
+              300.0,
+              "Control Flow. The second part focuses on control flow, where programs make decisions and jump between statements"
+            ],
+            [
+              "para",
+              330.0,
+              "Code Quality. The third part deals with writing good code: readable, modular, and organized so that others can understand it"
+            ]
+          ],
+          "question": {
+            "q": "What is the underlying requirement for all three main goals of the course?",
+            "answer": "Practice"
+          },
+          "end": 360.0
+        },
+        "2": {
+          "title": "Computers and Calculations",
+          "elements": [
+            [
+              "para",
+              440.0,
+              "Computers and Calculations. A computer performs massive numbers of calculations and stores the results in memory. Modern machines can execute on the order of a billion operations per second and have hundreds of gigabytes of storage available. Computers perform two kinds of calculations: low\u2011level operations built into the language such as addition, subtraction, and multiplication, and higher\u2011level operations composed from these primitives. A programmer can combine primitive types to define new calculations that the computer will execute as well"
+            ]
+          ],
+          "question": {
+            "q": "What are the two kinds of calculations a computer performs?",
+            "answer": "Low\u2011level operations built into the language and higher\u2011level operations composed from these primitives."
+          },
+          "end": 520.0
+        },
+        "3": {
+          "title": "Declarative vs Imperative Knowledge and Random Selection",
+          "elements": [
+            [
+              "para",
+              520.0,
+              "Declarative knowledge consists of statements of fact that a computer can store. In the lecture, the statement of fact was that someone would win a Google Cardboard before class ends."
+            ],
+            [
+              "para",
+              570.0,
+              "Imperative knowledge is the recipe or sequence of steps a machine must follow to achieve a goal. The machine must be told how to make someone win a Google Cardboard before class ends, not just that it will happen."
+            ],
+            [
+              "example",
+              630.0,
+              "Example (Random Selection): The chosen number, 75, was then used to locate the corresponding responder on the sheet. Steps: Import random package; Call random.randint(16,272); Use result to find responder."
+            ]
+          ],
+          "question": {
+            "q": "What is the difference between declarative and imperative knowledge?",
+            "answer": "Declarative knowledge is a statement of fact; imperative knowledge is a sequence of steps to achieve a goal."
+          },
+          "end": 720.0
+        },
+        "4": {
+          "title": "Imperative Recipe for Computing Square Roots",
+          "elements": [
+            [
+              "para",
+              800.0,
+              "Imperative recipe. The imperative recipe for finding a square root starts with a guess G, then repeatedly computes G\u00b7G and compares it to the target x. If G\u00b7G is not close enough, a new guess is formed by averaging G and x/G"
+            ],
+            [
+              "para",
+              870.0,
+              "Control flow. The recipe contains four essential parts: a simple sequence of steps, control decisions about closeness, repeated execution of the steps, and a stopping condition. These parts together form the flow of control for the algorithm"
+            ],
+            [
+              "para",
+              910.0,
+              "Stopping condition. The stopping condition prevents endless execution; it is satisfied when the guess is close enough to the true square root, for example within 0.01 or 0.001 of the target"
+            ]
+          ],
+          "question": {
+            "q": "What are the four essential parts of an imperative recipe?",
+            "answer": "A simple sequence of steps, control decisions about closeness, repeated execution, and a stopping condition."
+          },
+          "end": 960.0
+        },
+        "5": {
+          "title": "Stored\u2011Program Computers and Basic Architecture",
+          "elements": [
+            [
+              "para",
+              1000.0,
+              "Stored\u2011program computers can hold a sequence of instructions that the CPU executes, allowing the same hardware to perform different tasks by changing the instruction sequence. This contrasts with fixed\u2011program computers that could only perform one task."
+            ],
+            [
+              "para",
+              1030.0,
+              "Basic architecture. The basic computer architecture consists of four main parts: memory, input/output, the arithmetic\u2011logic unit (ALU), and the control unit. Memory stores both data and the instruction sequence; the ALU performs primitive operations such as addition and subtraction; the control unit orchestrates instruction execution; peripherals handle input and output"
+            ]
+          ],
+          "question": {
+            "q": "What are the four main components of basic computer architecture?",
+            "answer": "Memory, input/output, the arithmetic\u2011logic unit (ALU), and the control unit."
+          },
+          "end": 1080.0
+        },
+        "6": {
+          "title": "Control Flow in Stored\u2011Program Computers",
+          "elements": [
+            [
+              "para",
+              1080.0,
+              "Control Unit and Program Counter. The control unit contains a program counter that holds the address of the next instruction to execute. When a sequence of instructions is loaded, the program counter starts at the first instruction and supplies that instruction to the ALU. After the ALU completes its operation, the program counter increments by one to point to the next instruction in the sequence"
+            ],
+            [
+              "para",
+              1130.0,
+              "Branching and Tests. A test instruction compares two values and returns a Boolean result. Depending on whether the result is true or false, the program counter may either advance to the next instruction or jump to a different address, such as the beginning of the program. Thus control flow can skip or repeat instructions"
+            ],
+            [
+              "para",
+              1190.0,
+              "Instruction Set Primitives. The primitive operations a stored\u2011program computer can perform are addition, subtraction, logic operations, tests (equal, less than, etc.), and data movement such as loading and storing. The interpreter decides whether to proceed to the next instruction, skip, or repeat based on these operations"
+            ]
+          ],
+          "question": {
+            "q": "What determines whether the program counter jumps to a different address during execution?",
+            "answer": "The result of a test instruction (true or false)."
+          },
+          "end": 1230.0
+        },
+        "7": {
+          "title": "Primitive Operations and Turing Completeness",
+          "elements": [
+            [
+              "para",
+              1230.0,
+              "Turing\u2019s Six Primitives. Alan Turing showed that any computation can be achieved with just six primitives: move left, move right, read right, scan, and do nothing"
+            ],
+            [
+              "example",
+              1250.0,
+              "Example (Turing\u2019s Six Primitives in Action): A Turing machine can move its head left or right, read the symbol under the head, scan the tape, or do nothing, and by sequencing these actions it can perform any computation. Steps: move left; move right; read right; scan; do nothing."
+            ],
+            [
+              "para",
+              1260.0,
+              "Programming Language Primitives. Programming languages provide a convenient set of primitives so programmers do not have to program only with the six Turing commands. Once a language has a set of primitives, expressions can be built by combining them, and these expressions evaluate to a value with meaning in the language"
+            ],
+            [
+              "para",
+              1400.0,
+              "Syntax and Static Semantics. After forming syntactically valid expressions, the next concern is static semantics, which determines whether the meaning is coherent. For example, in English a syntactically valid phrase follows noun\u2011verb\u2011noun, while in Python a syntactically valid expression might be an operator followed by another operator"
+            ],
+            [
+              "para",
+              1480.0,
+              "Static semantics vs meaning. An expression can be syntactically correct and satisfy static semantics even though it lacks a clear meaning, such as adding a word to a number. In programming languages static semantics checks that operators have appropriate operand types, but it does not guarantee that the operation makes sense in the real world. This mirrors natural language, where a phrase can be grammatically correct yet ambiguous or meaningless, for example the phrase \u201cflying planes can be dangerous\u201d has multiple interpretations"
+            ]
+          ],
+          "question": {
+            "q": "How many primitives did Turing identify as sufficient for any computation?",
+            "answer": "Six."
+          },
+          "end": 1500.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 2,
+          "generator": "llm",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "Course Goals. The course has three main goals: understanding concepts, developing programming skills, and learning problem\u2011solving through problem sets. Practice is the underlying requirement for all three"
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "llm",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "Course Structure. The class is divided into three main sections: learning how to program, understanding control flow, and writing good code. The first section covers how to represent knowledge with data structures and deciding what objects to create. The second focuses on control flow, where programs make decisions and jump between statements"
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "llm",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "Readable code matters. Writing readable and well\u2011organized code prevents the program from becoming a tangled mess that is hard to understand later"
+            ],
+            [
+              "u4e1",
+              null,
+              "What a computer does. A computer fundamentally performs massive numbers of calculations and stores the results in memory. Modern machines can execute on the order of a billion operations per second and have hundreds of gigabytes of storage available"
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "llm",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "Primitive Operations. Computers perform two kinds of calculations: low\u2011level operations built into the language such as addition, subtraction, and multiplication, and higher\u2011level operations composed from these primitives. A programmer can combine primitive types to define new calculations that the computer will execute as well"
+            ],
+            [
+              "u5e1",
+              null,
+              "Declarative Knowledge. The first type of knowledge a computer holds is declarative knowledge, which consists of statements of fact"
+            ]
+          ]
+        },
+        {
+          "update": 6,
+          "generator": "llm",
+          "elements": [
+            [
+              "u6e0",
+              null,
+              "Imperative knowledge is the recipe, the how\u2011to, or the sequence of steps that a machine must follow to achieve a goal. It contrasts with declarative knowledge, which is simply a statement of fact. In the example, the machine must be told the steps to make someone win a Google Cardboard before class ends."
+            ]
+          ]
+        },
+        {
+          "update": 7,
+          "generator": "llm",
+          "elements": [
+            [
+              "u7e0",
+              null,
+              "Random Selection. He imports the random package and calls random.randint(16,272) to generate a number between 16 and 272. The chosen number, 75, is then used to locate the corresponding responder on the sheet"
+            ]
+          ]
+        },
+        {
+          "update": 8,
+          "generator": "llm",
+          "elements": [
+            [
+              "u8e0",
+              null,
+              "Declarative vs Imperative. Declarative knowledge states that the square root of a number x is y such that y\u00b7y = x, which is a factual statement. Imperative knowledge, by contrast, provides a procedure that a computer can follow to compute the square root"
+            ]
+          ]
+        },
+        {
+          "update": 9,
+          "generator": "llm",
+          "elements": [
+            [
+              "u9e0",
+              null,
+              "Newton's Method. We compute g\u00b7g and compare it to x; if not close enough we refine the guess. The refinement uses the average of g and x/g, which becomes the new guess. This loop repeats until the guess is sufficiently close"
+            ],
+            [
+              "u9e1",
+              null,
+              "Imperative Recipe. The imperative recipe consists of a sequence of steps, control decisions about closeness, repeated execution, and a stopping condition. These four parts together form the flow of control for computing the square root"
+            ]
+          ]
+        },
+        {
+          "update": 10,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 11,
+          "generator": "llm",
+          "elements": [
+            [
+              "u11e0",
+              null,
+              "Stored program computers can hold a sequence of instructions that the CPU executes, allowing the same hardware to perform different tasks by changing the instruction sequence. The CPU is the core where decisions are made and operations are performed, while peripherals handle input and output."
+            ],
+            [
+              "u11e1",
+              null,
+              "Basic Architecture. The basic computer architecture consists of four main parts: memory, input/output, the arithmetic\u2011logic unit (ALU), and the control unit. Memory stores both data and the instruction sequence. The ALU performs primitive operations such as addition and subtraction. The control unit orchestrates the execution of instructions"
+            ]
+          ]
+        },
+        {
+          "update": 12,
+          "generator": "llm",
+          "elements": [
+            [
+              "u12e0",
+              null,
+              "Control unit and program counter. The control unit houses the program counter, which holds the address of the next instruction to execute. When a sequence of instructions is loaded, the program counter starts at the first instruction and supplies that instruction to the ALU. After the ALU completes its operation, the program counter increments by one to point to the next instruction in the sequence"
+            ],
+            [
+              "u12e1",
+              null,
+              "Test and branching. A test instruction compares two values and returns a Boolean result. Depending on whether the result is true or false, the program counter may either advance to the next instruction or jump to a different address, such as the beginning of the program"
+            ]
+          ]
+        },
+        {
+          "update": 13,
+          "generator": "llm",
+          "elements": [
+            [
+              "u13e0",
+              null,
+              "Control Flow and Primitives. The basic operations a stored\u2011program computer can perform are addition, subtraction, logic operations, tests (equal, less than, etc.), and data movement such as loading and storing. The interpreter decides whether to proceed to the next instruction, skip, or repeat based on these operations. Alan Turing proved that any computation can be achieved with just six primitives: move left, move right, read right, scan, and do nothing, applied to a tape"
+            ],
+            [
+              "u13e1",
+              null,
+              "Example (Turing's Six Primitives): Turing's model uses a tape and a head that can move left or right, read the symbol under the head, scan the tape, or do nothing, and these six actions suffice to simulate any algorithm. Steps: move left; move right; read right; scan; do nothing."
+            ]
+          ]
+        },
+        {
+          "update": 14,
+          "generator": "llm",
+          "elements": [
+            [
+              "u14e0",
+              null,
+              "Programming Primitives. Programming languages provide a convenient set of primitives so you do not have to program only with the six Turing commands. Once you have a set of primitives for a language, you can start creating expressions that combine those primitives. These expressions evaluate to a value and have meaning in the language"
+            ],
+            [
+              "u14e1",
+              null,
+              "Language Parallel. In English, the primitive constructs are words; in Python, primitives include floats, booleans, numbers, and strings. Expressions in Python are combinations of these primitives and produce values"
+            ]
+          ]
+        },
+        {
+          "update": 15,
+          "generator": "llm",
+          "elements": [
+            [
+              "u15e0",
+              null,
+              "Syntax and Semantics. Primitive constructs such as addition and subtraction form the building blocks of expressions. In English, a syntactically valid phrase follows the pattern noun\u2011verb\u2011noun, e.g., \"cat hugs boy\". Similarly, in Python a syntactically valid expression might be an operator followed by another operator, but a word followed by a number is not valid. Once a phrase or expression is syntactically correct, the next concern is its static semantics, which determines whether the meaning is coherent, such as \"I am\" versus \"I am Hungary\""
+            ],
+            [
+              "u15e1",
+              null,
+              "Example (English vs Python Syntax): An English phrase \"cat hugs boy\" is syntactically valid, whereas \"cat dog boy\" is not. In Python, \"+ +\" is syntactically valid, but \"cat 5\" is not."
+            ]
+          ]
+        },
+        {
+          "update": 16,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u16e0",
+              null,
+              "a word added to the number, to a number. are syntactically correct and static semantically correct. And in English, you can actually have more than one meaning to an entire phrase, okay?"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "alerts_by_type": {
+    "LOW_ASR_SCORE": 18,
+    "SILENCE": 19
+  },
+  "counts": {
+    "transcriptions": 302,
+    "window_summaries": 100,
+    "final_notes": 43,
+    "alerts": 37,
+    "dlq": 0
+  }
+}

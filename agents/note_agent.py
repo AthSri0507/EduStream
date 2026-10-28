@@ -92,6 +92,7 @@ class NoteAgent:
         self.groupers: dict[int, Grouper] = {}
         self.flush_seen: dict[str, float] = {}
         self.last_update_at: dict[str, float] = {}
+        self.strong_free_at = 0.0      # the next pass waits for this (passes one minute apart across lectures)
         self.consumer: KafkaConsumer | None = None
         self.producer = None
 
@@ -165,13 +166,22 @@ class NoteAgent:
             if reason:
                 self.emit(grouper.take(), reason)
         still_held = {g.held.video_id for g in self.groupers.values() if g.held is not None}
-        for vid in sorted(open_lectures):
+        # The most overdue lecture first; one pass per minute across lectures (dry run 28 Oct: two lectures due at
+        # the same moment sent the second one's passes to the small model).
+        # Rehearsal 28 Oct: by "most overdue, then name" a lecture whose attempts kept failing took every turn and
+        # Python L1 never got one; now the lecture that has waited longest since its last attempt goes first.
+        turn = sorted(open_lectures, key=lambda v: (self.memories[v].last_attempt_at,
+                                                    self.memories[v].consolidated_to - self.memories[v].media_end, v))
+        for vid in turn:
             memory = self.memories[vid]
             # A pass runs while the next update is being collected (live run 28 Oct: waiting for "nothing held"
             # delayed the first pass by 3 minutes); only the lecture's end waits for its last update.
             ended = vid not in still_held and self._ended(memory, ends.get(vid), now)
             plan = consolidation.due(memory, ended)
-            if plan is not None and now - memory.last_live_at >= consolidation.GAP_S and now >= memory.retry_at:
+            if plan is not None and plan.ending and memory.ending_since is None:
+                memory.ending_since = now                    # the grace runs from the end, not from a first turn
+            if (plan is not None and now - memory.last_live_at >= consolidation.GAP_S and now >= memory.retry_at
+                    and now >= self.strong_free_at):
                 self.consolidate(memory, plan, now)
 
     def _ended(self, memory: Memory, end: LectureEnd | None, now: float) -> bool:
@@ -234,6 +244,7 @@ class NoteAgent:
     def consolidate(self, memory: Memory, plan: consolidation.Plan, now: float) -> None:
         if plan.ending and memory.ending_since is None:
             memory.ending_since = now
+        memory.last_attempt_at = now
         chunks = memory.chunks(plan.end)
         if not chunks:                                       # nothing transcribed in the stretch: nothing to write
             self._publish_pass(memory, plan, consolidation.fallback(memory, plan, ["no_transcript"]), None, 0.0)
@@ -243,6 +254,8 @@ class NoteAgent:
         user = consolidation.user_prompt(memory, chunks, consolidation.drafts_for(memory, plan))
         result = self.client.complete_json(system, user, max_tokens=consolidation.MAX_TOKENS, timeout_s=60,
                                            wait_s=STRONG_WAIT_S, first_only=True)
+        if result.ok or any(reason not in ("local_budget", "provider_blocked") for _, reason in result.attempts or []):
+            self.strong_free_at = now + consolidation.PASS_SPACING_S   # a request reached the strong model
         if not result.ok and len(self.client.chain) > 1 and result.reason not in consolidation.OFF_REASONS:
             later = self.client.complete_json(system, user, max_tokens=consolidation.MAX_TOKENS, timeout_s=60,
                                               wait_s=REST_WAIT_S)

@@ -42,3 +42,14 @@ def test_s1_conflicts():
     active = [{"video_id": "other", "partition": 0}]
     assert s1_conflicts({"python_l1": 0}, active)                            # partition busy
     assert s1_conflicts({"algorithms_ku_l1": 1}, active) == []
+
+
+def test_a_local_file_needs_to_exist_and_a_contract_safe_video_id(tmp_path):
+    from producer.lecture_source import file_problem
+    media = tmp_path / "8th February Hypothesis Testing.mkv"
+    media.write_bytes(b"x")
+    assert file_problem(media, "hypothesis_testing_0208", ["python_l1"]) is None
+    assert "no such file" in file_problem(tmp_path / "missing.mkv", "x", [])
+    for bad in (None, "", "8th February", "a/b", "x" * 65):
+        assert "--video-id" in file_problem(media, bad, [])
+    assert "already" in file_problem(media, "python_l1", ["python_l1"])

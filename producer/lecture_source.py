@@ -13,7 +13,9 @@ Implements docs/ARCHITECTURE.md A1-A6 and §6.2:
 Usage (repo root, broker running):
     .venv\\Scripts\\python -m producer.lecture_source --demo
     .venv\\Scripts\\python -m producer.lecture_source --lecture ocw6001_l01=python_l1 --limit-seconds 600
+    .venv\\Scripts\\python -m producer.lecture_source --file "lecture.mkv" --video-id stats_0208 --title "Statistics"
 Options: --speedup X, --stall-at N --stall-seconds S (fault tests), --no-align, --dry-run, --force
+--file plays any local audio/video file (the part of M6d's upload that needs no intake check).
 """
 
 from __future__ import annotations
@@ -21,6 +23,7 @@ from __future__ import annotations
 import argparse
 import base64
 import csv
+import re
 import json
 import math
 import sys
@@ -249,10 +252,24 @@ def manifest() -> dict[str, dict]:
         return {row["item_id"]: row for row in csv.DictReader(handle)}
 
 
+def file_problem(path: Path, video_id: str | None, taken: list[str]) -> str | None:
+    """--file needs an existing file and a video_id the contracts accept (transcript.v1: [A-Za-z0-9_.-]{1,64})."""
+    if not path.is_file():
+        return f"no such file: {path}"
+    if not video_id or not re.fullmatch(r"[A-Za-z0-9_.-]{1,64}", video_id):
+        return "--file needs --video-id made of letters, digits, '_', '.' or '-' (at most 64)"
+    if video_id in taken:
+        return f"video_id {video_id} is already in this run"
+    return None
+
+
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--demo", action="store_true", help="the 3 demo lectures with their M2 video_ids")
     parser.add_argument("--lecture", action="append", default=[], metavar="ITEM_ID=VIDEO_ID")
+    parser.add_argument("--file", type=Path, default=None, help="a local audio/video file to play as a lecture")
+    parser.add_argument("--video-id", default=None, help="with --file: its video_id (letters, digits, _ . -)")
+    parser.add_argument("--title", default=None, help="with --file: the title shown on the dashboard")
     parser.add_argument("--limit-seconds", type=float, default=None, help="media seconds per lecture (dev split: 600)")
     parser.add_argument("--speedup", type=float, default=None, help="override SPEEDUP (window semantics change!)")
     parser.add_argument("--stall-at", type=int, default=None, help="inject a stall before this chunk (test I-3)")
@@ -279,12 +296,19 @@ def main(argv=None) -> int:
     for spec in args.lecture:
         item_id, _, video_id = spec.partition("=")
         pairs[item_id] = video_id or item_id
-    if not pairs:
-        print("Nothing to play: use --demo or --lecture ITEM_ID=VIDEO_ID")
+    if not pairs and args.file is None:
+        print("Nothing to play: use --demo, --lecture ITEM_ID=VIDEO_ID or --file PATH --video-id ID")
         return 2
-    items = manifest()
+    items = manifest() if pairs else {}
     lectures = [Lecture(item_id, video_id, items[item_id]["display_name"], ROOT / "data" / items[item_id]["media_file"],
                         partition_for(video_id, settings.partitions)) for item_id, video_id in pairs.items()]
+    if args.file is not None:
+        problem = file_problem(args.file, args.video_id, [lec.video_id for lec in lectures])
+        if problem:
+            print(f"Refusing to start: {problem}")
+            return 2
+        lectures.append(Lecture("file", args.video_id, (args.title or args.file.stem)[:120], args.file.resolve(),
+                                partition_for(args.video_id, settings.partitions)))
 
     now_ms = int(time.time() * 1000)
     conflicts = s1_conflicts({lec.video_id: lec.partition for lec in lectures}, active_lectures(now_ms))

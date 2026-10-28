@@ -161,7 +161,7 @@ class FakeLLM:
         if r in ("fail", "off"):
             return SimpleNamespace(ok=False, reason="all_failed" if r == "fail" else "disabled", model=None,
                                    data=None, attempts=[])
-        return SimpleNamespace(ok=True, data=r, model="openai/gpt-oss-120b", attempts=[])
+        return SimpleNamespace(ok=True, data=r, model="openai/gpt-oss-120b", attempts=[], reason=None)
 
 
 def agent_with(memory, client, end=None):
@@ -193,7 +193,7 @@ def test_a_failed_pass_is_deferred_and_retried_and_the_drafts_stay_live():
     assert agent.producer.sent == [] and m.retry_at == 1000.0 + C.RETRY_S and len(m.drafts) == 4
     agent.timers(1000.0 + C.RETRY_S - 1)
     assert len(agent.client.calls) == 2                          # not retried before retry_at
-    agent.timers(1000.0 + C.RETRY_S)
+    agent.timers(1000.0 + max(C.RETRY_S, C.PASS_SPACING_S))      # the strong model's minute was used
     assert [p["generator"] for p in agent.producer.sent] == ["llm"]
 
 
@@ -239,7 +239,7 @@ def test_after_the_lecture_end_no_pass_is_deferred_even_one_that_is_not_the_last
     agent.timers(1001.0)
     assert agent.producer.sent == [] and m.retry_at == 1001.0 + C.RETRY_S / 2      # retried for a while first ...
     agent.timers(1001.0 + C.END_GRACE_S)
-    agent.timers(1002.0 + C.END_GRACE_S)
+    agent.timers(1001.0 + C.END_GRACE_S + C.PASS_SPACING_S)        # the next pass a minute later
     assert [(p["media_start"], p["media_end"], p["generator"], p["final"]) for p in agent.producer.sent] == [
         (0.0, 540.0, "fallback", False), (540.0, 810.0, "fallback", True)]          # ... then never deferred
     assert m.finished
@@ -259,3 +259,46 @@ def test_a_stale_lock_whose_pid_was_reused_does_not_keep_the_agent_out(tmp_path)
         assert not note_agent.acquire_lock(lock)
     finally:
         other.kill()
+
+
+def test_passes_of_two_lectures_due_together_run_a_minute_apart_most_overdue_first():
+    """Dry run 28 Oct: both lectures reached 6 minutes at once; the second one's passes went to the small model."""
+    a, b = lecture(5), lecture(4)                                  # a: 7.5 min unconsolidated, b: 6 min
+    b.video_id = "hypothesis_testing_0208"
+    agent = agent_with(a, FakeLLM(REPLY, REPLY))
+    agent.memories[b.video_id] = b
+    clock = [1000.0]
+    agent.timers(1000.0)
+    assert [p["video_id"] for p in agent.producer.sent] == ["python_l1"]          # the most overdue first
+    clock[0] = 1000.0 + C.PASS_SPACING_S - 1
+    agent.timers(clock[0])
+    assert len(agent.producer.sent) == 1                                         # the strong model's minute
+    clock[0] = 1000.0 + C.PASS_SPACING_S
+    agent.timers(clock[0])
+    assert [p["video_id"] for p in agent.producer.sent] == ["python_l1", "hypothesis_testing_0208"]
+    assert all(c["first_only"] for c in agent.client.calls)                      # both asked the strong model
+
+
+def test_three_lectures_ending_while_the_llm_is_blocked_all_finish_none_starves():
+    """Rehearsal 28 Oct: the daily limit blocked both models; two lectures got their fallback, Python L1 never got
+    a turn (failing lectures retook every turn, and its grace only started at a first attempt)."""
+    class Blocked(FakeLLM):
+        def complete_json(self, system, user, **kw):
+            self.calls.append(kw)
+            return SimpleNamespace(ok=False, reason="all_failed", model=None, data=None,
+                                   attempts=[("openai/gpt-oss-120b", "provider_blocked")])
+    names = ["algorithms_demaine_l2", "algorithms_ku_l1", "python_l1"]
+    lectures = []
+    for name in names:
+        m = lecture(3)
+        m.video_id = name
+        lectures.append(m)
+    agent = agent_with(lectures[0], Blocked(), LectureEnd(last_chunk_id=26, flush_seen_at=1000.0))
+    agent._lecture_ends = lambda vids: {v: LectureEnd(last_chunk_id=26, flush_seen_at=1000.0) for v in vids}
+    for m in lectures[1:]:
+        agent.memories[m.video_id] = m
+    for now in range(1001, 1001 + C.END_GRACE_S + 60, 5):              # the 5 s timer
+        agent.timers(float(now))
+    finals = sorted(p["video_id"] for p in agent.producer.sent if p["final"])
+    assert finals == names and all(p["generator"] == "fallback" for p in agent.producer.sent)
+    assert agent.strong_free_at == 0.0                                 # blocked locally: no minute was used

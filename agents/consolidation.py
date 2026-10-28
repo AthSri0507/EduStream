@@ -31,6 +31,8 @@ FORCE_S = 720                    # after 12 minutes nothing is handed over ("clo
 MAX_PASS_S = 540                 # one pass covers at most 9 minutes: the request must fit the per-minute limit
 MIN_TOPIC_S = 120                # shorter topics join a neighbour (prototype run 3)
 GAP_S = 45                       # a pass waits this long after the lecture's last live call (§11.10 fix 1)
+PASS_SPACING_S = 61              # passes of different lectures one minute apart: each (~5,000 tokens with its
+                                 # max_tokens) needs the strong model's minute to itself (dry run 28 Oct)
 RETRY_S = 60                     # a deferred pass is tried again after this
 GIVE_UP_S = 1080                 # 18 minutes without a successful pass: publish the oldest drafts as they are
 END_GRACE_S = 180                # after the lecture's end a failed pass is retried this long, then the drafts stand in

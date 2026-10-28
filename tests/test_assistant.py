@@ -135,13 +135,17 @@ def test_a_verified_answer_takes_its_time_from_the_quote(conn):
 def test_an_invented_quote_is_moved_to_background_never_shown_as_the_lecture(conn):
     llm = FakeLLM(plan={"intent": "explain_recent"}, answer={"lecture": [
         {"text": "Computers use transistors.", "quote": "transistors are tiny electronic switches", "t": "07:10"}]})
-    ans = A.run_turn(conn, llm, "didn't get that", [], pos())
+    ans = A.run_turn(conn, llm, "didn't get that", [], pos(), outside=True)
     assert ans.items == [] and ans.background == ["Computers use transistors."]
     assert "unverified_moved_to_background" in ans.flags
+    llm.calls.clear()
+    ans = A.run_turn(conn, llm, "didn't get that", [], pos())                  # lecture only: not shown at all
+    assert ans.items == [] and ans.background == [] and "unverified_removed_lecture_only" in ans.flags
+    assert "Switch on" in ans.note and not ans.outside
 
 
 def test_answers_are_cut_to_the_budget_at_item_boundaries(conn):
-    long = "word " * 60
+    long = "A computer performs calculations and has to store them in computer memory. " * 5   # 60 said words
     llm = FakeLLM(plan={"intent": "define", "depth": "brief", "refers_to": {"term": "computer memory"}},
                   answer={"lecture": [{"text": long, "quote": "Store them in computer memory"}] * 4})
     ans = A.run_turn(conn, llm, "what is computer memory? briefly", [], pos())
@@ -181,17 +185,24 @@ def test_a_live_lecture_never_shows_what_comes_later(conn):
     llm = FakeLLM(plan={"intent": "define", "refers_to": {"term": "imperative knowledge"}},
                   answer={"lecture": [{"text": "It is a recipe.", "quote": "a recipe or the how-to", "t": "09:30"}],
                           "background": "In general: knowing how to do something, step by step."})
-    ans = A.run_turn(conn, llm, "what is imperative knowledge?", [], pos(ref=445.0))
+    ans = A.run_turn(conn, llm, "what is imperative knowledge?", [], pos(ref=445.0), outside=True)
     assert ans.note == "This hasn't come up in the lecture yet." and ans.items == []    # nothing "from the lecture"
-    assert ans.background[0].startswith("In general")                                # a labelled hint only
+    assert ans.background[0].startswith("In general")                                # labelled general knowledge
     assert [k for k, _ in llm.calls] == ["understand", "answer"]
     assert "Lecture text:\n(none)" in llm.calls[-1][1]                                   # the LLM saw no lecture text
+    llm.calls.clear()
+    ans = A.run_turn(conn, llm, "what is imperative knowledge?", [], pos(ref=445.0))   # lecture only
+    assert [k for k, _ in llm.calls] == ["understand"] and ans.background == []        # no answer call at all
+    assert ans.note.startswith("“imperative knowledge” hasn't come up in the lecture yet")
 
 
-def test_off_topic_questions_get_a_short_background_answer(conn):
+def test_off_topic_questions_are_answered_only_with_general_knowledge_on(conn):
     llm = FakeLLM(plan={"intent": "other"}, answer={"lecture": [], "background": "Argentina. Back to the lecture?"})
+    ans = A.run_turn(conn, llm, "who won the world cup in 2022?", [], pos(), outside=True)
+    assert ans.items == [] and ans.background == ["Argentina. Back to the lecture?"] and ans.outside
+    llm.calls.clear()
     ans = A.run_turn(conn, llm, "who won the world cup in 2022?", [], pos())
-    assert ans.items == [] and ans.background == ["Argentina. Back to the lecture?"]
+    assert ans.note == A.LECTURE_ONLY_OTHER and [k for k, _ in llm.calls] == ["understand"]
 
 
 def test_quiz_questions_point_at_real_moments(conn):
@@ -226,7 +237,7 @@ def test_didnt_get_that_is_about_the_lecture_not_the_previous_answer(conn):
 
 def test_an_answer_with_only_background_also_shows_what_was_said(conn):
     llm = FakeLLM(plan={"intent": "summarise"}, answer={"lecture": [], "background": "Some general remark."})
-    ans = A.run_turn(conn, llm, "summarise the last 2 minutes", [], pos())
+    ans = A.run_turn(conn, llm, "summarise the last 2 minutes", [], pos(), outside=True)
     assert "no_lecture_items" in ans.flags and ans.evidence
 
 
@@ -249,7 +260,7 @@ def test_an_unverifiable_claim_about_the_lecturer_is_removed_not_relabelled(conn
     llm = FakeLLM(plan={"intent": "explain_recent"}, answer={"lecture": [
         {"text": "The lecturer says computers dream of electric sheep.", "quote": "electric sheep dream", "t": "07:10"},
         {"text": "Computers are fast.", "quote": "never said anywhere", "t": "07:10"}]})
-    ans = A.run_turn(conn, llm, "didn't get that", [], pos())
+    ans = A.run_turn(conn, llm, "didn't get that", [], pos(), outside=True)
     assert ans.background == ["Computers are fast."] and "unverified_removed" in ans.flags
 
 
@@ -270,7 +281,7 @@ def test_saying_youre_a_beginner_simplifies_the_answer(conn):
 def test_talk_about_transcripts_is_never_shown(conn):
     llm = FakeLLM(plan={"intent": "summarise"}, answer={"lecture": [], "background":
                   "The transcript provided ends at 05:30 and does not include the last lines. Practice matters."})
-    ans = A.run_turn(conn, llm, "summarise the last minute", [], pos())
+    ans = A.run_turn(conn, llm, "summarise the last minute", [], pos(), outside=True)
     assert ans.background == ["Practice matters."] and "meta_talk_removed" in ans.flags
 
 
@@ -317,3 +328,41 @@ def test_summarise_without_a_range_means_the_whole_lecture_so_far():
     plan = A.understand(FakeLLM(plan={"intent": "summarise", "refers_to": {"span": None}}), "summarise the lecture",
                         [], pos(), "")
     assert plan.span == [0.0, 445.0]
+
+
+def test_the_two_modes_ask_the_model_differently_and_background_never_pushes_out_the_lecture(conn):
+    plan = A.Plan(intent="ask", question="what is a z-score?")
+    assert '"background" must be ""' in A.answer_prompt(plan, "unknown", [], False)
+    assert "answer it fully in \"background\"" in A.answer_prompt(plan, "unknown", [], True)
+    evidence = [{"t": 400.0, "end": 410.0, "text": "Store them in computer memory, so the computer remembers."}]
+    reply = {"lecture": [{"text": "The computer stores them in memory.", "quote": "Store them in computer memory",
+                          "t": "06:40"}],
+             "background": " ".join(f"Sentence number {i} adds some general knowledge here." for i in range(40))}
+    items, background, _, flags = A.verify(reply, plan, evidence, outside=True)
+    assert len(items) == 1 and "background_trimmed" in flags                     # the lecture item stays
+    assert len(background[0].split()) <= A.budget_for(plan)                     # about half the answer
+    items, background, _, flags = A.verify(reply, plan, evidence, outside=False)
+    assert len(items) == 1 and background == [] and "background_dropped_lecture_only" in flags
+
+
+def test_lecture_only_checks_the_lecture_before_calling_a_question_off_topic(conn):
+    """Dry run 28 Oct: a question the lecture covers was planned as "other" and refused in lecture-only mode."""
+    llm = FakeLLM(plan={"intent": "other"}, answer={"lecture": [
+        {"text": "A computer stores results in memory.", "quote": "Store them in computer memory", "t": "06:40"}]})
+    ans = A.run_turn(conn, llm, "make a table of what a computer does with calculations and memory", [], pos())
+    assert ans.plan.intent == "ask" and ans.evidence and ans.note is None
+    assert [k for k, _ in llm.calls] == ["understand", "answer"] and len(ans.items) == 1
+
+
+def test_a_real_quote_does_not_carry_a_claim_the_lecturer_did_not_make(conn):
+    """Dry run 28 Oct: "F distribution is used in variance ratio tests" cited a line that only listed F."""
+    plan = A.Plan(intent="ask", question="what distributions are there?")
+    evidence = [{"t": 830.0, "end": 840.0, "text": "it can involve normal distributions, t distributions, F and chi squared"}]
+    reply = {"lecture": [
+        {"text": "Tests can involve normal, t, F and chi-squared distributions.", "quote": "normal distributions, t distributions"},
+        {"text": "The F distribution is used in variance ratio tests.", "quote": "F and chi squared"}]}
+    items, background, _, flags = A.verify(reply, plan, evidence, outside=False)
+    assert [i["text"] for i in items] == ["Tests can involve normal, t, F and chi-squared distributions."]
+    assert background == [] and any(f.startswith("claim_unsupported") for f in flags)
+    items, background, _, _ = A.verify(reply, plan, evidence, outside=True)
+    assert len(items) == 1 and background == ["The F distribution is used in variance ratio tests."]   # labelled

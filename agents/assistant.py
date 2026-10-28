@@ -9,6 +9,12 @@
   4. verify      code checks every quote against the evidence (exact match) and takes the [mm:ss] from it;
                  a statement whose quote is not found is moved to "background" (labelled, never hidden).
 
+Two modes, chosen by the student with a switch above the chat (28 Oct):
+  * lecture only (default): no background at all; a statement whose quote is not found is dropped; a question
+    the lecture does not touch, or a term never said, gets a plain note from code, without an LLM call.
+  * lecture + general knowledge (`outside=True`): what the lecturer said comes first, then general knowledge,
+    always labelled as not from the lecture (up to about half the answer; all of it when the lecture is silent).
+
 If the LLM is off or fails, the user still gets the plan (the chip) and the evidence itself. Statistics
 questions ("data") never use the LLM. No word-by-word streaming: the answer is shown only after step 4.
 """
@@ -18,10 +24,11 @@ from __future__ import annotations
 import json
 import re
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 
 from agents import lecture_tools as tools
 from agents import retrieval
+from agents.study_notes import grounded
 from agents.text import content_words, find_quote, mmss, parse_t
 
 INTENTS = ("explain_recent", "summarise", "define", "ask", "quiz", "data", "other")
@@ -78,6 +85,7 @@ class Answer:
     note: str | None = None                            # e.g. "not covered yet", "nothing found"
     flags: list = field(default_factory=list)
     generator: str = "evidence"                        # "llm" or "evidence" (fallback / data)
+    outside: bool = False                              # answered with general knowledge allowed (the switch)
     model: str | None = None
     latency_s: float = 0.0
 
@@ -317,10 +325,7 @@ line (no "...", no changes), and "t": that line's [mm:ss]. Use the lecturer's ow
 Use what the lecture text contains even if it covers only part of the requested time; never complain that it is
 incomplete, and never mention "evidence", "transcript" or "lines" to the student.
 For a question, use only lines that actually answer it; ignore lines that merely share words with it.
-"background" is ONLY for general knowledge the lecturer did not give (it is shown labelled as not from the
-lecture); never put something the lecturer said into "background". Leave it empty when it is not needed. If the
-lecture text does not touch the question at all, say in one sentence in "background" that the lecture has not
-covered it (yet).
+{knowledge}
 
 Length: at most {budget} words in total. Start with the most useful sentence; do not pad.
 Style: {style}. Level: {level}.
@@ -344,7 +349,17 @@ def budget_for(plan: Plan) -> int:
     return int(base * DEPTH.get(plan.depth, 1.0))
 
 
-def answer_prompt(plan: Plan, level: str, explained: list[str]) -> str:
+KNOWLEDGE = {
+    False: """Answer ONLY from the lecture text: the student asked for the lecture alone. "background" must be "".
+If the lecture text does not answer the question, return no "lecture" items.""",
+    True: """After what the lecturer said, add general knowledge that helps the student in "background" (it is shown
+labelled as not from the lecture): explanations, definitions or examples the lecturer did not give, at most about
+half of the answer. Never put something the lecturer said into "background". If the lecture text does not touch
+the question at all, answer it fully in "background".""",
+}
+
+
+def answer_prompt(plan: Plan, level: str, explained: list[str], outside: bool = False) -> str:
     extra = []
     if plan.intent == "explain_recent":
         extra.append("Explain what was just said: first what the lecturer said, then what it means.")
@@ -355,12 +370,13 @@ def answer_prompt(plan: Plan, level: str, explained: list[str]) -> str:
     if plan.intent == "quiz":
         extra.append("Write 3 to 5 questions that test understanding of the evidence, each with a short answer.")
     if plan.intent == "other":
-        extra.append("The question is not about this lecture: answer in one short 'background' sentence and suggest "
-                     "returning to the lecture. Leave 'lecture' empty.")
+        extra.append("The question is not about this lecture: answer it briefly in 'background'. Leave 'lecture' "
+                     "empty.")
     if explained:
         extra.append("Already explained in this conversation (refer to them, do not re-explain): " + ", ".join(explained))
     return ANSWER_PROMPT.format(budget=budget_for(plan), style=STYLE.get(plan.style, "clear"), level=level,
-                                extra="\n".join(extra), schema=SCHEMA_QUIZ if plan.intent == "quiz" else SCHEMA_DEFAULT)
+                                knowledge=KNOWLEDGE[outside], extra="\n".join(extra),
+                                schema=SCHEMA_QUIZ if plan.intent == "quiz" else SCHEMA_DEFAULT)
 
 
 def answer_user(plan: Plan, pos: Position, evidence: list[dict], turns: list[dict], previous: str | None) -> str:
@@ -382,8 +398,14 @@ def answer_user(plan: Plan, pos: Position, evidence: list[dict], turns: list[dic
 
 
 # ----------------------------------------------------------------------------------------------- 4. verify
-def verify(reply: dict, plan: Plan, evidence: list[dict]) -> tuple[list, list, list, list]:
-    """Quotes must occur in the evidence; times come from the quote's line; the budget is enforced."""
+# A statement shown as "from the lecture" must have at least half of its distinct content words said around its
+# quote (the notes' sentence check, agents/study_notes.py). Dry run 28 Oct: "F distribution is used in variance
+# ratio tests" carried a real quote, but the lecturer had only listed F among the distributions.
+CLAIM_SUPPORT_MIN, CLAIM_LINES = 0.5, 2
+
+def verify(reply: dict, plan: Plan, evidence: list[dict], outside: bool = False) -> tuple[list, list, list, list]:
+    """Quotes must occur in the evidence; times come from the quote's line; the budget is enforced. Lecture only:
+    nothing that cannot be shown in the lecture is kept (no background, unverified statements dropped)."""
     flags, items, background, questions = [], [], [], []
     texts = [e["text"] for e in evidence]
     for it in reply.get("lecture") if isinstance(reply.get("lecture"), list) else []:
@@ -392,11 +414,20 @@ def verify(reply: dict, plan: Plan, evidence: list[dict]) -> tuple[list, list, l
         text = str(it["text"]).strip()[:500]
         span = find_quote(str(it.get("quote") or ""), texts)
         if span is None:
-            if LECTURER_CLAIM.search(text):                   # claims to be the lecture but can't be shown: drop
+            if not outside:                                   # lecture only: what can't be shown isn't said
+                flags.append("unverified_removed_lecture_only")
+            elif LECTURER_CLAIM.search(text):                 # claims to be the lecture but can't be shown: drop
                 flags.append("unverified_removed")
             else:                                             # honest: shown, but labelled not-from-lecture
                 background.append(text)
                 flags.append("unverified_moved_to_background")
+            continue
+        near = " ".join(texts[max(0, span[0] - CLAIM_LINES): span[1] + CLAIM_LINES + 1])
+        score = grounded(text, near)
+        if score < CLAIM_SUPPORT_MIN:                         # a real quote under a claim the lecturer didn't make
+            flags.append(f"claim_unsupported({score:.2f})")
+            if outside and not LECTURER_CLAIM.search(text):
+                background.append(text)
             continue
         t = evidence[span[0]]["t"]
         claimed = parse_t(it.get("t"))
@@ -405,7 +436,10 @@ def verify(reply: dict, plan: Plan, evidence: list[dict]) -> tuple[list, list, l
         items.append({"text": text, "quote": str(it["quote"]).strip(), "t": t})
     bg = reply.get("background")
     if isinstance(bg, str) and bg.strip():
-        background.insert(0, bg.strip()[:600])
+        if outside:
+            background.insert(0, bg.strip()[:1200])
+        else:
+            flags.append("background_dropped_lecture_only")
     kept = []
     for text in background:                                  # no talk about transcripts or "evidence"
         sentences = [x for x in re.split(r"(?<=[.!?])\s+", text) if x.strip() and not META.search(x)]
@@ -421,18 +455,32 @@ def verify(reply: dict, plan: Plan, evidence: list[dict]) -> tuple[list, list, l
             questions.append({"q": str(q["q"]).strip()[:300], "answer": str(q.get("answer") or "").strip()[:300],
                               "t": near["t"] if near and abs(near["t"] - t) <= 60 else None})
     budget = budget_for(plan)
-    words = lambda: sum(len(i["text"].split()) for i in items) + sum(len(b.split()) for b in background)  # noqa: E731
+    words = lambda: sum(len(i["text"].split()) for i in items)  # noqa: E731  (the lecture never yields to background)
     while words() > 1.6 * budget and len(items) > 1:          # cut whole items, never mid-sentence
         items.pop()
         flags.append("trimmed_to_budget")
+    room = int(1.6 * budget) if not items else max(40, budget // 2 + budget // 4)   # background: about half, or all
+    kept, used = [], 0
+    for sentence in (x for b in background for x in re.split(r"(?<=[.!?])\s+", b) if x.strip()):
+        if used + len(sentence.split()) > room and kept:
+            flags.append("background_trimmed")
+            break
+        kept.append(sentence)
+        used += len(sentence.split())
+    background = [" ".join(kept)] if kept else []
     return items, background, questions, flags
 
 
 # ----------------------------------------------------------------------------------------------- one turn
+SWITCH_HINT = "Switch on “Use general knowledge” to get an answer beyond the lecture."
+LECTURE_ONLY_OTHER = "That isn't about this lecture, and I'm answering from the lecture only. " + SWITCH_HINT
+
+
 def run_turn(conn, client, msg: str, turns: list[dict], pos: Position, level: str = "unknown",
              explained: list[str] | None = None, span_s: float | None = None, plan: Plan | None = None,
-             vconn=None, embedder=None) -> Answer:
-    """One assistant turn. `plan` may be given (buttons such as More/Simpler re-use the last plan)."""
+             vconn=None, embedder=None, outside: bool = False) -> Answer:
+    """One assistant turn. `plan` may be given (buttons such as More/Simpler re-use the last plan).
+    outside: general knowledge allowed (the switch above the chat); off = from the lecture only."""
     started = time.perf_counter()
     if plan is None:
         recent = tools.transcript(conn, pos.video_id, max(0.0, pos.ref - 90), pos.ref, before=0)
@@ -444,27 +492,45 @@ def run_turn(conn, client, msg: str, turns: list[dict], pos: Position, level: st
         plan = understand(client, msg, turns, pos, context, span_s)
         plan = resolve_section(plan, msg, outline, pos)
     evidence, stats, note = fetch(conn, plan, pos, vconn, embedder)
-    answer = Answer(plan=plan, evidence=evidence, stats=stats, note=note)
+    if plan.intent == "other" and not outside:
+        # Lecture only, and the plan says "not about this lecture": check the lecture before refusing. Dry run
+        # 28 Oct: "create a table of different types of distributions" was planned as "other" once and as a lecture
+        # question once, while the lecture discusses them at 13:50.
+        probe = replace(plan, intent="ask")
+        found, _, _ = fetch(conn, probe, pos, vconn, embedder)
+        if found:
+            plan, evidence, note = probe, found, None
+    answer = Answer(plan=plan, evidence=evidence, stats=stats, note=note, outside=outside)
     if plan.intent == "data":
         answer.latency_s = round(time.perf_counter() - started, 2)
         return answer                                         # statistics: computed, never written by the LLM
     previous = next((t["text"] for t in reversed(turns) if t["role"] == "assistant"), None)
     not_covered = plan.intent == "define" and bool(plan.term) and not evidence
-    if not evidence and plan.intent != "other" and not plan.previous_answer and not not_covered:
+    general = outside and not evidence and plan.intent in ("ask", "define")   # the lecture is silent: answer anyway
+    if not outside and (plan.intent == "other" or not_covered):  # lecture only: nothing to answer from, no LLM call
+        answer.note = (LECTURE_ONLY_OTHER if plan.intent == "other"
+                       else f"“{plan.term}” hasn't come up in the lecture{' yet' if pos.live else ''}. "
+                            + SWITCH_HINT)
         answer.latency_s = round(time.perf_counter() - started, 2)
         return answer
-    prompt = answer_prompt(plan, level, explained or [])
-    if not_covered:                  # a term never said: one labelled background line, nothing "from the lecture"
-        prompt += ("\nThe term has NOT been used in the lecture" + (" yet" if pos.live else "")
-                   + ". Leave 'lecture' empty and give a one-sentence general hint in 'background'.")
+    if not evidence and plan.intent != "other" and not plan.previous_answer and not not_covered and not general:
+        answer.latency_s = round(time.perf_counter() - started, 2)
+        return answer
+    prompt = answer_prompt(plan, level, explained or [], outside)
+    if not_covered or general:       # a term never said: general knowledge only, nothing "from the lecture"
+        prompt += ("\nThis has NOT come up in the lecture" + (" yet" if pos.live else "")
+                   + ". Leave 'lecture' empty and answer from general knowledge in 'background'.")
     result = client.complete_json(prompt,
                                   answer_user(plan, pos, evidence, turns, previous),
                                   max_tokens=max(800, min(3000, 300 + 3 * budget_for(plan)))) if client else None
     if result is not None and result.ok:
-        answer.items, answer.background, answer.questions, answer.flags = verify(result.data, plan, evidence)
+        answer.items, answer.background, answer.questions, answer.flags = verify(result.data, plan, evidence,
+                                                                                 outside)
         answer.generator, answer.model = "llm", result.model
         if not (answer.items or answer.background or answer.questions):
             answer.generator, answer.flags = "evidence", answer.flags + ["llm_answer_empty"]
+            if not outside and not answer.note:
+                answer.note = "The lecture doesn't answer this. " + SWITCH_HINT
         elif not answer.items and evidence and plan.intent in ("explain_recent", "summarise"):
             answer.flags.append("no_lecture_items")           # the dashboard also shows what was said
     else:

@@ -1,0 +1,597 @@
+{
+  "checks": [
+    {
+      "name": "all records match the JSON Schemas",
+      "ok": true,
+      "detail": "221 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_demaine_l2: complete",
+      "ok": true,
+      "detail": "48/48 chunks across 16 windows"
+    },
+    {
+      "name": "algorithms_demaine_l2: each window emitted once",
+      "ok": true,
+      "detail": "16 distinct windows, 16 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_demaine_l2: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10049 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_demaine_l2: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "6/6 updates, 6 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: every window in exactly one update",
+      "ok": true,
+      "detail": "16 windows in updates, 16 windows emitted"
+    },
+    {
+      "name": "algorithms_demaine_l2: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "2 passes, 2 records: 0-360 fallback, 360-480 fallback"
+    },
+    {
+      "name": "algorithms_demaine_l2: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 480 s, last cut 480 s"
+    },
+    {
+      "name": "algorithms_demaine_l2: topics numbered 1..N",
+      "ok": true,
+      "detail": "2 topics"
+    },
+    {
+      "name": "algorithms_ku_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_ku_l1: complete",
+      "ok": true,
+      "detail": "48/48 chunks across 16 windows"
+    },
+    {
+      "name": "algorithms_ku_l1: each window emitted once",
+      "ok": true,
+      "detail": "16 distinct windows, 16 records"
+    },
+    {
+      "name": "algorithms_ku_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_ku_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10042 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_ku_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "6/6 updates, 6 records"
+    },
+    {
+      "name": "algorithms_ku_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "16 windows in updates, 16 windows emitted"
+    },
+    {
+      "name": "algorithms_ku_l1: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "2 passes, 2 records: 0-360 fallback, 360-480 fallback"
+    },
+    {
+      "name": "algorithms_ku_l1: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 480 s, last cut 480 s"
+    },
+    {
+      "name": "algorithms_ku_l1: topics numbered 1..N",
+      "ok": true,
+      "detail": "2 topics"
+    },
+    {
+      "name": "python_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "python_l1: complete",
+      "ok": true,
+      "detail": "48/48 chunks across 16 windows"
+    },
+    {
+      "name": "python_l1: each window emitted once",
+      "ok": true,
+      "detail": "16 distinct windows, 16 records"
+    },
+    {
+      "name": "python_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "python_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10034 ms after the flush's event time"
+    },
+    {
+      "name": "python_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "6/6 updates, 6 records"
+    },
+    {
+      "name": "python_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "16 windows in updates, 16 windows emitted"
+    },
+    {
+      "name": "python_l1: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "2 passes, 2 records: 0-360 fallback, 360-480 fallback"
+    },
+    {
+      "name": "python_l1: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 480 s, last cut 480 s"
+    },
+    {
+      "name": "python_l1: topics numbered 1..N",
+      "ok": true,
+      "detail": "2 topics"
+    },
+    {
+      "name": "no LATE_DROP alerts",
+      "ok": true,
+      "detail": "0 LATE_DROP"
+    },
+    {
+      "name": "DLQ as expected",
+      "ok": true,
+      "detail": "0 DLQ record(s), expected 0"
+    },
+    {
+      "name": "db: chunks == distinct transcripts",
+      "ok": true,
+      "detail": "144 in SQLite, 144 in Kafka"
+    },
+    {
+      "name": "db: windows == topic windows (keys and content)",
+      "ok": true,
+      "detail": "48 in SQLite, 48 distinct in Kafka"
+    },
+    {
+      "name": "db: live updates == topic updates, with all their drafts",
+      "ok": true,
+      "detail": "18 updates and 18 drafts in SQLite, 18 distinct updates in Kafka"
+    },
+    {
+      "name": "db: passes == topic passes, with all their topics and elements",
+      "ok": true,
+      "detail": "6 passes, 6 topics, 18 elements in SQLite"
+    },
+    {
+      "name": "db: no draft left in the search index of a finished lecture",
+      "ok": true,
+      "detail": "0 draft rows"
+    },
+    {
+      "name": "db: alerts == distinct topic alerts",
+      "ok": true,
+      "detail": "2 in SQLite"
+    }
+  ],
+  "lectures": {
+    "algorithms_demaine_l2": {
+      "partition": 2,
+      "chunks_sent": 48,
+      "windows": 16,
+      "last_window_emitted_after_flush_ms": 10049,
+      "updates": {
+        "extractive": 6
+      },
+      "passes": {
+        "fallback": 2
+      }
+    },
+    "algorithms_ku_l1": {
+      "partition": 1,
+      "chunks_sent": 48,
+      "windows": 16,
+      "last_window_emitted_after_flush_ms": 10042,
+      "updates": {
+        "extractive": 6
+      },
+      "passes": {
+        "fallback": 2
+      }
+    },
+    "python_l1": {
+      "partition": 0,
+      "chunks_sent": 48,
+      "windows": 16,
+      "last_window_emitted_after_flush_ms": 10034,
+      "updates": {
+        "extractive": 6
+      },
+      "passes": {
+        "fallback": 2
+      }
+    }
+  },
+  "notebooks": {
+    "algorithms_demaine_l2": {
+      "topics": {
+        "1": {
+          "title": "Part 1",
+          "elements": [
+            [
+              "para",
+              30.0,
+              "There's lots of algorithms in each data structure. if you're a programmer or an ADT, if you're an ancient algorithms person like me, versus a data structure. And in the context of data structures, we're trying to store some data."
+            ],
+            [
+              "para",
+              90.0,
+              "OK, what data you can store, whereas the data structure will give you an actual representation and tell you. What makes it interesting is having operations on that data. And the data structure actually gives you algorithms."
+            ],
+            [
+              "para",
+              190.0,
+              "Algorithmic solutions to the problem, and this is the analogous notion for data structures, where we want to maintain a data, maintain some data according to various operations. So the same problem can be solved by many different data structures and we're going to see that and different data structures are going to have different advantages They might support some operations faster than others and depending on what you actually use those data structures for, you choose the right data structure."
+            ],
+            [
+              "para",
+              270.0,
+              "And this is the first item, the second item, the last item. On this sequence data structure, at the end, I'll mention the interface for sets, but we're going to be actually solving sequences today. The number of items doesn't change, though the actual items might."
+            ]
+          ],
+          "question": null,
+          "end": 360.0
+        },
+        "2": {
+          "title": "Part 2",
+          "elements": [
+            [
+              "para",
+              370.0,
+              "Build is how you get started to build a data structure in this interface. make a new data structure of size and a new static sequence of size n that has those items in that order. I want to be able to output x0 through xn minus 1 in the sequence order, in that specified order that they were built in."
+            ],
+            [
+              "para",
+              450.0,
+              "change xi to a given new item. But what is the obvious data structure that solves this problem? I prefer to call it an array, but to each their own we're going to use list list could mean"
+            ]
+          ],
+          "question": null,
+          "end": 480.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u0e0",
+              null,
+              "There's lots of algorithms in each data structure. if you're a programmer or an ADT, if you're an ancient algorithms person like me, versus a data structure. And in the context of data structures, we're trying to store some data."
+            ]
+          ]
+        },
+        {
+          "update": 1,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u1e0",
+              null,
+              "OK, what data you can store, whereas the data structure will give you an actual representation and tell you. What makes it interesting is having operations on that data. And the data structure actually gives you algorithms."
+            ]
+          ]
+        },
+        {
+          "update": 2,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "Algorithmic solutions to the problem, and this is the analogous notion for data structures, where we want to maintain a data, maintain some data according to various operations. So the same problem can be solved by many different data structures and we're going to see that and different data structures are going to have different advantages They might support some operations faster than others and depending on what you actually use those data structures for, you choose the right data structure."
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "And this is the first item, the second item, the last item. On this sequence data structure, at the end, I'll mention the interface for sets, but we're going to be actually solving sequences today. The number of items doesn't change, though the actual items might."
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "Build is how you get started to build a data structure in this interface. make a new data structure of size and a new static sequence of size n that has those items in that order. I want to be able to output x0 through xn minus 1 in the sequence order, in that specified order that they were built in."
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "change xi to a given new item. But what is the obvious data structure that solves this problem? I prefer to call it an array, but to each their own we're going to use list list could mean"
+            ]
+          ]
+        }
+      ]
+    },
+    "algorithms_ku_l1": {
+      "topics": {
+        "1": {
+          "title": "Part 1",
+          "elements": [
+            [
+              "para",
+              20.0,
+              "this class in Introduction to Algorithms with two other instructors here, faculty in the department, Eric Domen and Justin Solomon. teaching the first lecture, and we'll have each of them teach one of the next two lectures, and then we'll go from there. algorithms, really what the course is about is teaching you to solve computational problems."
+            ],
+            [
+              "para",
+              130.0,
+              "And you'll find that over the course of this class, you'll be doing a lot more writing than you do in a lot of your other courses. problem is important, but really the thing that you're getting out of this class and other theory classes that you're not getting in other classes in this... department is that we really concentrate on being able to prove that the things you're doing are correct and better than other things and being able to communicate those ideas to others."
+            ],
+            [
+              "para",
+              240.0,
+              "And maybe, I don't know, maybe I have more of them than I do inputs. But these are the possible outputs to my problem. And what a problem is a binary relation between these inputs and outputs."
+            ],
+            [
+              "para",
+              280.0,
+              "So, uh, maybe this guy maps to that output, and maybe this guy maps to, I don't know, two or three outputs, right? Now generally, if I have a problem, a computational problem, I'm not going to specify the problem output, I can check whether that output is correct or not."
+            ]
+          ],
+          "question": null,
+          "end": 360.0
+        },
+        "2": {
+          "title": "Part 2",
+          "elements": [
+            [
+              "para",
+              370.0,
+              "All right, well, probably if there's more than a two two two two two two two two two two two two two two two two two Two of you must have the same birthday, right? two of you would be born in the same year, on the same day, in the same hour."
+            ],
+            [
+              "para",
+              450.0,
+              "whether two of you have the same birth time, let's say. OK, so in general, in this class, we're not going to concentrate on input such as I could do a lot of different things, but what we do in this class, this is for a fixed classroom of you, I want to make out."
+            ]
+          ],
+          "question": null,
+          "end": 480.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u0e0",
+              null,
+              "this class in Introduction to Algorithms with two other instructors here, faculty in the department, Eric Domen and Justin Solomon. teaching the first lecture, and we'll have each of them teach one of the next two lectures, and then we'll go from there. algorithms, really what the course is about is teaching you to solve computational problems."
+            ]
+          ]
+        },
+        {
+          "update": 1,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u1e0",
+              null,
+              "And you'll find that over the course of this class, you'll be doing a lot more writing than you do in a lot of your other courses. problem is important, but really the thing that you're getting out of this class and other theory classes that you're not getting in other classes in this... department is that we really concentrate on being able to prove that the things you're doing are correct and better than other things and being able to communicate those ideas to others."
+            ]
+          ]
+        },
+        {
+          "update": 2,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "And maybe, I don't know, maybe I have more of them than I do inputs. But these are the possible outputs to my problem. And what a problem is a binary relation between these inputs and outputs."
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "So, uh, maybe this guy maps to that output, and maybe this guy maps to, I don't know, two or three outputs, right? Now generally, if I have a problem, a computational problem, I'm not going to specify the problem output, I can check whether that output is correct or not."
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "All right, well, probably if there's more than a two two two two two two two two two two two two two two two two two Two of you must have the same birthday, right? two of you would be born in the same year, on the same day, in the same hour."
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "whether two of you have the same birth time, let's say. OK, so in general, in this class, we're not going to concentrate on input such as I could do a lot of different things, but what we do in this class, this is for a fixed classroom of you, I want to make out."
+            ]
+          ]
+        }
+      ]
+    },
+    "python_l1": {
+      "topics": {
+        "1": {
+          "title": "Part 1",
+          "elements": [
+            [
+              "para",
+              40.0,
+              "We're finally in 26, 100, six triple one, made it. So good afternoon and welcome to the very first class of 6.001 And also 600 this semester so my name is Anna Bell first name Anna, last name Belle."
+            ],
+            [
+              "para",
+              90.0,
+              "We're going to talk a little bit about mathematical operations. When I was first starting the program, you know what helped me get through my first, very first programming course. talking about something that, you know, suddenly I remembered, oh I saw that word in the p-set and I didn't know what it was, well hey now I know what it is, right."
+            ],
+            [
+              "para",
+              180.0,
+              "You're not going to absorb programming, but watching me write programs, because i already know how to program, right? And I think also one of the Big things is if you're new to programming, you're kind of Afraid that you're going to break your computer. The class will teach you something through lectures, examples."
+            ],
+            [
+              "para",
+              300.0,
+              "And then as you're writing programs, you need to, programs Aren't just linear. So, when you write code, you want to write it such that, you know, you're in a big company, other people will read it, other people will use it, so it has to be readable and understandable by others. But next year, maybe you'll take another course and you'll want to look back at some of the problem sets you wrote in this class."
+            ]
+          ],
+          "question": null,
+          "end": 360.0
+        },
+        "2": {
+          "title": "Part 2",
+          "elements": [
+            [
+              "para",
+              370.0,
+              "And the last section is going to deal with, so the first two are actually part of the programming in Introduction to Programming and Computing. And the last one deals mostly with the computer science part in introduction to programming and computer science in Python. Once you've learned how to write programs in python, how do you compare programs in python?"
+            ],
+            [
+              "para",
+              450.0,
+              "So these are the very low level types of calculations. Calculation types, you as a programmer can put these types Together and then define your own calculations. Okay, and you create nuke times types of calculations."
+            ]
+          ],
+          "question": null,
+          "end": 480.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u0e0",
+              null,
+              "We're finally in 26, 100, six triple one, made it. So good afternoon and welcome to the very first class of 6.001 And also 600 this semester so my name is Anna Bell first name Anna, last name Belle."
+            ]
+          ]
+        },
+        {
+          "update": 1,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u1e0",
+              null,
+              "We're going to talk a little bit about mathematical operations. When I was first starting the program, you know what helped me get through my first, very first programming course. talking about something that, you know, suddenly I remembered, oh I saw that word in the p-set and I didn't know what it was, well hey now I know what it is, right."
+            ]
+          ]
+        },
+        {
+          "update": 2,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "You're not going to absorb programming, but watching me write programs, because i already know how to program, right? And I think also one of the Big things is if you're new to programming, you're kind of Afraid that you're going to break your computer. The class will teach you something through lectures, examples."
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "And then as you're writing programs, you need to, programs Aren't just linear. So, when you write code, you want to write it such that, you know, you're in a big company, other people will read it, other people will use it, so it has to be readable and understandable by others. But next year, maybe you'll take another course and you'll want to look back at some of the problem sets you wrote in this class."
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "And the last section is going to deal with, so the first two are actually part of the programming in Introduction to Programming and Computing. And the last one deals mostly with the computer science part in introduction to programming and computer science in Python. Once you've learned how to write programs in python, how do you compare programs in python?"
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "So these are the very low level types of calculations. Calculation types, you as a programmer can put these types Together and then define your own calculations. Okay, and you create nuke times types of calculations."
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "alerts_by_type": {
+    "LOW_ASR_SCORE": 2
+  },
+  "counts": {
+    "transcriptions": 147,
+    "window_summaries": 48,
+    "final_notes": 24,
+    "alerts": 2,
+    "dlq": 0
+  }
+}

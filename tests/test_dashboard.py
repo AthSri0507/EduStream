@@ -80,6 +80,7 @@ def test_the_assistant_answers_from_the_evidence_when_the_llm_is_off(tmp_path, m
     at = AppTest.from_file(APP, default_timeout=60).run()
     assert not at.exception, at.exception
     assert not at.button                                  # a plain chat: no buttons (decision 15 Oct)
+    assert at.toggle(key="a_outside").value is False      # answers from the lecture only unless switched on
     at.chat_input(key="a_input").set_value("I didn't get the last 10 seconds").run()
     for _ in range(20):                                    # the turn runs in a background thread
         time.sleep(0.25)
@@ -107,3 +108,15 @@ def test_the_data_tab_runs_a_read_only_query(tmp_path, monkeypatch):
     at.text_area[0].set_value("DELETE FROM chunks").run()
     at.button(key="data_run").click().run()
     assert at.error and "Query refused" in at.error[0].value
+
+
+def test_the_notebook_offers_the_three_downloads(tmp_path, monkeypatch):
+    path = tmp_path / "edustream.db"
+    conn = connect_writer(path)
+    apply_batch(conn, run_records() + notebook_records(), now=1_792_051_300_000, window_ms=WINDOW_MS)
+    conn.close()
+    monkeypatch.setenv("EDU_DB", str(path))
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    assert not at.exception, at.exception
+    labels = [b.proto.label for b in at.get("download_button")]
+    assert labels == ["Markdown", "Word", "PDF"]
