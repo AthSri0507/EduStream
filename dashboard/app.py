@@ -104,7 +104,13 @@ def notebook_view(video_id: str) -> None:
             for _, term in terms.iterrows():
                 note = " *(background)*" if term["source"] == "background" else ""
                 st.markdown(f"**{term['term']}**{note}: {term['definition']} `[{mmss(term['t'])}]`")
-    if not nb["tail"].empty:
+    if nb["finished"] and nb["finished"]["questions"]:
+        with st.expander(f"Review questions ({len(nb['finished']['questions'])})"):
+            for q in nb["finished"]["questions"]:
+                st.markdown(f"**{q['question']}**  `[{mmss(q['t'])}]`")
+                if q.get("answer"):
+                    st.caption(q["answer"])
+    if not nb["tail"].empty and not nb["finished"]:
         with st.container(border=True):
             st.caption(f"Live tail: said after {mmss(nb['covered_s'])}, not in the notebook yet")
             st.write(" ".join(nb["tail"]["text"].tolist()[-12:]))

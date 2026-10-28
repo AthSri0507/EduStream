@@ -87,7 +87,7 @@ class Settings:
     def topic_partitions(self) -> dict[str, int]:
         return {TOPIC_AUDIO: self.partitions, TOPIC_TRANSCRIPTS: self.partitions,
                 TOPIC_WINDOWS: self.partitions, TOPIC_NOTES: self.partitions,
-                TOPIC_ALERTS: self.partitions, TOPIC_DLQ: 1}
+                TOPIC_LECTURE_NOTES: self.partitions, TOPIC_ALERTS: self.partitions, TOPIC_DLQ: 1}
 
     def problems(self) -> list[str]:
         """Invariant violations; an empty list means the configuration is usable."""

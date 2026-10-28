@@ -22,7 +22,7 @@ from dataclasses import asdict, dataclass, field
 
 from agents import lecture_tools as tools
 from agents import retrieval
-from agents.text import find_quote, mmss, parse_t
+from agents.text import content_words, find_quote, mmss, parse_t
 
 INTENTS = ("explain_recent", "summarise", "define", "ask", "quiz", "data", "other")
 DEFAULT_SPAN_S = 30
@@ -205,6 +205,8 @@ def guard(plan: Plan, msg: str, has_turns: bool, pos: Position, span_s: float | 
         plan.span = certain
     if plan.intent == "explain_recent" and plan.span is None:
         plan.span = [max(0.0, pos.ref - (span_s or DEFAULT_SPAN_S)), pos.ref]
+    if plan.intent == "summarise" and plan.span is None and not plan.previous_answer:
+        plan.span = [0.0, pos.ref]                            # "summarise the lecture": everything so far
     if plan.intent == "explain_recent" and span_s and RECENT.search(msg) and not LAST_N.search(msg) and not follow_up:
         plan.span = [max(0.0, pos.ref - span_s), pos.ref]     # the user's chosen span (10/30/60/120 s)
     if plan.intent not in INTENTS:
@@ -239,6 +241,34 @@ def understand(client, msg: str, turns: list[dict], pos: Position, context: str,
     return guard(plan, msg, bool(turns), pos, span_s)
 
 
+SECTION_N = re.compile(r"\b(?:section|part)\s+(\d{1,2})\b", re.I)
+THIS_SECTION = re.compile(r"\b(this|current|the last|previous) (section|part|topic)\b", re.I)
+
+
+def resolve_section(plan: Plan, msg: str, outline: list[dict], pos: Position) -> Plan:
+    """ "Summarise section 3", "this section", or a section's title -> that section's time span (code, not LLM)."""
+    if not outline or plan.intent not in ("summarise", "explain_recent", "ask", "quiz"):
+        return plan
+    starts = [(s["id"], float(s["t"] or 0.0), s["title"]) for s in outline]
+    end_of = lambda i: starts[i + 1][1] if i + 1 < len(starts) else max(pos.covered_s, starts[i][1])  # noqa: E731
+    chosen = None
+    m = SECTION_N.search(msg)
+    if m:
+        chosen = next((i for i, s in enumerate(starts) if s[0] == int(m.group(1))), None)
+    elif THIS_SECTION.search(msg):
+        before = [i for i, s in enumerate(starts) if s[1] <= pos.ref]
+        if before:
+            chosen = before[-1] - (1 if re.search(r"\b(last|previous)\b", msg, re.I) and len(before) > 1 else 0)
+    else:
+        words = set(content_words(msg))
+        best = max(((len(words & set(content_words(t))), i) for i, (_, _, t) in enumerate(starts)), default=(0, None))
+        if best[0] >= 2:                                      # at least two of the title's words in the message
+            chosen = best[1]
+    if chosen is not None:
+        plan.span = [starts[chosen][1], end_of(chosen)]
+    return plan
+
+
 # ----------------------------------------------------------------------------------------------- 2. fetch
 def fetch(conn, plan: Plan, pos: Position, vconn=None, embedder=None) -> tuple[list[dict], dict | None, str | None]:
     """Evidence lines (time-ordered, de-duplicated), stats for "data", and a note when there is nothing."""
@@ -252,9 +282,8 @@ def fetch(conn, plan: Plan, pos: Position, vconn=None, embedder=None) -> tuple[l
         return [], None, None
     if plan.span is not None and plan.intent in ("explain_recent", "summarise", "ask", "quiz"):
         lines = tools.transcript(conn, vid, plan.span[0], plan.span[1])
-        if len(lines) > tools.MAX_LINES:                       # long range: the notebook stands in for it
-            lines = [{"t": p["t"], "end": p["t"] + 10, "text": p["text"]}
-                     for p in tools.notebook_points(conn, vid, plan.span[0], plan.span[1])]
+        if len(lines) > tools.MAX_LINES:                       # long range: the notebook stands in for it,
+            lines = tools.notebook_digest(conn, vid, plan.span[0], plan.span[1])   # trimmed evenly per section
     if plan.intent == "define" and plan.term:
         for g in tools.glossary(conn, vid, plan.term):
             lines.append({"t": g["t"], "end": g["t"] + 10, "text": f"Glossary: {g['term']}: {g['definition']}"})
@@ -305,7 +334,14 @@ STYLE = {"simpler": "simpler than usual: short sentences, an everyday analogy is
 
 
 def budget_for(plan: Plan) -> int:
-    return int(BUDGET_WORDS.get(plan.intent, 100) * DEPTH.get(plan.depth, 1.0))
+    """Words the answer may use. A summary grows with the time it covers (the notebook is the condensed lecture
+    and the assistant is the only summariser, so "summarise the lecture" must scale): about 120 words for 5 min,
+    260 for 30 min, up to 600 for an hour or more; "in detail" doubles it."""
+    base = BUDGET_WORDS.get(plan.intent, 100)
+    if plan.intent == "summarise" and plan.span is not None:
+        minutes = max(0.0, plan.span[1] - plan.span[0]) / 60
+        base = max(base, min(600, int(80 + 6 * minutes)))
+    return int(base * DEPTH.get(plan.depth, 1.0))
 
 
 def answer_prompt(plan: Plan, level: str, explained: list[str]) -> str:
@@ -406,6 +442,7 @@ def run_turn(conn, client, msg: str, turns: list[dict], pos: Position, level: st
                    + ("\n".join(f"{s['id']}. {s['title']} (from {int(s['t'] or 0)} s)" for s in outline) or "(none yet)")
                    + "\n\nLast 90 s of transcript:\n" + "\n".join(f"[{int(r['t'])} s] {r['text']}" for r in recent))
         plan = understand(client, msg, turns, pos, context, span_s)
+        plan = resolve_section(plan, msg, outline, pos)
     evidence, stats, note = fetch(conn, plan, pos, vconn, embedder)
     answer = Answer(plan=plan, evidence=evidence, stats=stats, note=note)
     if plan.intent == "data":
@@ -422,7 +459,7 @@ def run_turn(conn, client, msg: str, turns: list[dict], pos: Position, level: st
                    + ". Leave 'lecture' empty and give a one-sentence general hint in 'background'.")
     result = client.complete_json(prompt,
                                   answer_user(plan, pos, evidence, turns, previous),
-                                  max_tokens=max(800, min(2000, 300 + 4 * budget_for(plan)))) if client else None
+                                  max_tokens=max(800, min(3000, 300 + 3 * budget_for(plan)))) if client else None
     if result is not None and result.ok:
         answer.items, answer.background, answer.questions, answer.flags = verify(result.data, plan, evidence)
         answer.generator, answer.model = "llm", result.model

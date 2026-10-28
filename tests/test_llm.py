@@ -81,9 +81,9 @@ def test_the_local_budget_skips_a_model_before_the_provider_would_refuse(env):
     env.setattr(llm.requests, "post", post)
     env.setenv("LLM_NOTES_TPM_SHARE", "0.5")                      # 4,000 tokens/min for this process
     client = llm.Client("notes")
-    for i in range(4):
-        client.complete_json("s", f"u{i}", max_tokens=1000)      # each call records 1,200 tokens
-    assert calls == ["openai/gpt-oss-120b"] * 3 + ["openai/gpt-oss-20b"]
+    for i in range(5):
+        client.complete_json("s", f"u{i}", max_tokens=1000)      # each records 1,200 tokens; estimate ~250
+    assert calls == ["openai/gpt-oss-120b"] * 4 + ["openai/gpt-oss-20b"]   # 4,800 used: the 5th won't fit
 
 
 def test_budget_window_rolls_over():
@@ -100,3 +100,17 @@ def test_the_cache_answers_repeats_without_a_call(env, tmp_path):
     client = llm.Client("notes")
     first, second = client.complete_json("s", "u"), client.complete_json("s", "u")
     assert first.ok and second.cached and json.dumps(second.data) == '{"ok": true}' and len(calls) == 1
+
+
+def test_a_call_blocked_only_by_the_local_budget_waits_for_it(env):
+    post, calls = fake_post({})
+    env.setattr(llm.requests, "post", post)
+    client = llm.Client("notes")
+    for t in client.chain:
+        client.budget.record(t.model, client.budget.limit, now=llm.time.time() - 58.5)   # frees in ~1.5 s
+    started = llm.time.time()
+    assert client.complete_json("s", "u", wait_s=5).ok
+    assert 1.0 <= llm.time.time() - started < 5 and calls == ["openai/gpt-oss-120b"]
+    for t in client.chain:
+        client.budget.record(t.model, client.budget.limit)
+    assert client.complete_json("s", "u2").reason == "all_failed"                    # no waiting by default

@@ -276,3 +276,40 @@ def test_a_part_not_said_yet_gets_a_plain_note_without_the_llm(conn):
     ans = A.run_turn(conn, llm, "summarise the last 10 seconds", [], p)
     assert ans.note == "Nothing has been said in that part of the lecture yet."
     assert [k for k, _ in llm.calls] == ["understand"]
+
+
+# ------------------------------------------------------------------------------ summaries are the assistant's job now
+def outline_fixture():
+    return [{"id": 1, "title": "Course overview and how to succeed", "t": 30.0},
+            {"id": 2, "title": "What does a computer do?", "t": 420.0},
+            {"id": 3, "title": "Declarative and imperative knowledge", "t": 520.0}]
+
+
+@pytest.mark.parametrize("msg, span", [
+    ("summarise section 2", [420.0, 520.0]),
+    ("summarise this section", [420.0, 520.0]),                  # now = 07:25, inside section 2
+    ("summarise the previous section", [30.0, 420.0]),
+    ("summarise the part about declarative and imperative knowledge", [520.0, 600.0]),
+])
+def test_sections_are_resolved_to_their_time_span(msg, span):
+    plan = A.resolve_section(A.Plan(intent="summarise", question=msg), msg, outline_fixture(), pos())
+    assert plan.span == span
+
+
+def test_a_summary_grows_with_the_time_it_covers():
+    words = lambda minutes, depth="normal": A.budget_for(A.Plan(intent="summarise", span=[0.0, minutes * 60],  # noqa: E731
+                                                               depth=depth))
+    assert (words(5), words(30), words(120)) == (120, 260, 600)
+    assert words(120, "detailed") == 1200
+    assert A.budget_for(A.Plan(intent="define")) == 50                     # other intents unchanged
+
+
+def test_a_long_range_keeps_every_section_evenly(conn):
+    lines = A.tools.notebook_digest(conn, "python_l1", 0, 1e9, limit=10)
+    assert lines[0]["text"].startswith("Section 1:") and len(lines) <= 10
+
+
+def test_summarise_without_a_range_means_the_whole_lecture_so_far():
+    plan = A.understand(FakeLLM(plan={"intent": "summarise", "refers_to": {"span": None}}), "summarise the lecture",
+                        [], pos(), "")
+    assert plan.span == [0.0, 445.0]

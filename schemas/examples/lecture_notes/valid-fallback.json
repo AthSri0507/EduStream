@@ -1,0 +1,32 @@
+{
+  "schema": "lecture_notes.v1",
+  "video_id": "python_l1",
+  "outline": [
+    {
+      "section_id": 1,
+      "title": "How to succeed in 6.0001",
+      "gist": "",
+      "weak_points": []
+    },
+    {
+      "section_id": 2,
+      "title": "What a computer does",
+      "gist": "",
+      "weak_points": []
+    }
+  ],
+  "glossary": [
+    {
+      "term": "declarative knowledge",
+      "definition": "Statements of fact.",
+      "t": 520.0
+    }
+  ],
+  "questions": [],
+  "generator": "extractive",
+  "model": null,
+  "agent_ms": 2400.0,
+  "quality_flags": [],
+  "ended_by": "idle",
+  "created_ts": 1792053000000
+}

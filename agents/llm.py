@@ -133,7 +133,10 @@ class Client:
             c.execute("INSERT OR REPLACE INTO cache VALUES (?, ?)", (key, json.dumps(result.__dict__)))
 
     # ---------------------------------------------------------------- the call
-    def complete_json(self, system: str, user: str, max_tokens: int = 1500, timeout_s: float = TIMEOUT_S) -> Result:
+    def complete_json(self, system: str, user: str, max_tokens: int = 1500, timeout_s: float = TIMEOUT_S,
+                      wait_s: float = 0.0) -> Result:
+        """wait_s: if every model is blocked only by this process's own token budget, wait up to this long for it
+        to free up before giving up (M6b live finding: three lectures ending together exhausted it in one tick)."""
         if not self.enabled:
             return Result(False, reason="disabled")
         if self.force_fail:
@@ -144,7 +147,11 @@ class Client:
         cached = self._cache_get(key)
         if cached is not None:
             return cached
-        estimate = (len(system) + len(user)) // 4 + max_tokens // 2
+        estimate = (len(system) + len(user)) // 4 + max_tokens // 4
+        deadline = time.time() + wait_s
+        while wait_s > 0 and not any(self.budget.allows(t.model, estimate) for t in self.chain) \
+                and time.time() < deadline:
+            time.sleep(1.0)
         attempts = []
         for t in self.chain:
             if not self.budget.allows(t.model, estimate):

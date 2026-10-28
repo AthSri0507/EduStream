@@ -7,7 +7,8 @@
   * Memory (sections, points, terms, updates sent) is rebuilt from final_notes itself on EVERY partition
     assignment, so a restart or rebalance never repeats an LLM call or creates a duplicate update.
   * A lock file (run/locks/note-agent.lock) keeps a second instance from starting.
-  * End of a lecture: lectures.flushed_ts / last_chunk_id from SQLite (read-only), checked every 5 s.
+  * End of a lecture: lectures.flushed_ts / last_chunk_id from SQLite (read-only), checked every 5 s; then the
+    end-of-lecture pass writes lecture_notes.v1 (final titles, glossary, questions; no summary) once (M6b).
   * Produce failures exit with EXIT_PRODUCE_FAILED; scripts/run_component.ps1 restarts the process.
 
     .venv\\Scripts\\python -m agents.note_agent
@@ -25,10 +26,11 @@ from kafka.errors import CommitFailedError
 from kafka.structs import OffsetAndMetadata
 
 from agents import llm
-from agents.notebook import (SYSTEM_PROMPT, Grouper, Held, LectureEnd, Memory, Window, build_update,
-                             extractive_delta, llm_delta, user_prompt)
+from agents.notebook import (SYSTEM_PROMPT, Grouper, Held, LectureEnd, Memory, Window,
+                             build_lecture_notes, build_update, end_prompt, end_user_prompt, extractive_delta,
+                             lecture_fallback, lecture_from_reply, llm_delta, user_prompt)
 from common import schemas
-from common.config import GROUP_NOTES, RUN_DIR, TOPIC_NOTES, TOPIC_WINDOWS, load
+from common.config import GROUP_NOTES, RUN_DIR, TOPIC_LECTURE_NOTES, TOPIC_NOTES, TOPIC_WINDOWS, load
 from common.kafka_utils import (EXIT_PRODUCE_FAILED, ProduceFailed, make_consumer, make_producer, poll_one,
                                 send_and_wait, send_to_dlq)
 from common.log import JsonLog
@@ -36,6 +38,7 @@ from storage.db import connect_readonly, db_path
 
 LOCK = RUN_DIR / "locks" / "note-agent.lock"
 TIMER_EVERY_S = 5
+END_IDLE_S = 30                 # flushed, but the last chunk's window never came: finish anyway
 EXIT_ALREADY_RUNNING = 2
 
 
@@ -77,6 +80,7 @@ class NoteAgent:
         self.memories: dict[str, Memory] = {}
         self.groupers: dict[int, Grouper] = {}
         self.flush_seen: dict[str, float] = {}
+        self.last_update_at: dict[str, float] = {}
         self.consumer: KafkaConsumer | None = None
         self.producer = None
 
@@ -93,7 +97,7 @@ class NoteAgent:
             return
         reader = KafkaConsumer(bootstrap_servers=self.settings.kafka_bootstrap, client_id="note-agent-rebuild",
                                group_id=None, enable_auto_commit=False, isolation_level="read_committed")
-        tps = [TopicPartition(TOPIC_NOTES, p) for p in partitions]
+        tps = [TopicPartition(t, p) for t in (TOPIC_NOTES, TOPIC_LECTURE_NOTES) for p in partitions]
         try:
             reader.assign(tps)
             reader.seek_to_beginning(*tps)
@@ -103,11 +107,16 @@ class NoteAgent:
             while any(reader.position(tp) < ends[tp] for tp in tps):
                 for batch in reader.poll(timeout_ms=1000).values():
                     for r in batch:
+                        name = "lecture_notes.v1" if r.topic == TOPIC_LECTURE_NOTES else "notes.v2"
                         try:
-                            p = schemas.decode(r.value, "notes.v2")
+                            p = schemas.decode(r.value, name)
                         except schemas.ContractError:
                             continue                       # notes.v1 or junk: not part of any notebook
-                        seen.setdefault(p["video_id"], Memory(p["video_id"])).apply(p)
+                        memory = seen.setdefault(p["video_id"], Memory(p["video_id"]))
+                        if r.topic == TOPIC_LECTURE_NOTES:
+                            memory.lecture_notes_done = True     # never finish a lecture twice
+                        else:
+                            memory.apply(p, partition=r.partition)
                         count += 1
             self.memories.update(seen)
             self.log.info("memory_rebuilt", partitions=partitions, records=count, lectures=sorted(seen))
@@ -133,13 +142,27 @@ class NoteAgent:
             self.emit(held, reason)
 
     def timers(self, now: float) -> None:
-        ends = self._lecture_ends({g.held.video_id for g in self.groupers.values() if g.held is not None})
+        held = {g.held.video_id for g in self.groupers.values() if g.held is not None}
+        open_lectures = {v for v, m in self.memories.items() if m.sections and not m.lecture_notes_done}
+        ends = self._lecture_ends(held | open_lectures)
         for partition, grouper in self.groupers.items():
             if grouper.held is None:
                 continue
             reason = grouper.due(now, self.settings.note_max_hold_s, ends.get(grouper.held.video_id))
             if reason:
                 self.emit(grouper.take(), reason)
+        still_held = {g.held.video_id for g in self.groupers.values() if g.held is not None}
+        for vid in sorted(open_lectures - still_held):
+            end = ends.get(vid)
+            if end is None:
+                continue
+            memory = self.memories[vid]
+            # The notebook has caught up with the flush, or nothing has arrived for END_IDLE_S (the last
+            # chunk's window may never come, e.g. its chunk went to the DLQ).
+            if memory.media_end >= (end.last_chunk_id + 1) * self.settings.chunk_seconds - 0.5:
+                self.finish(memory, "last_window")
+            elif now - max(end.flush_seen_at, self.last_update_at.get(vid, 0.0)) >= END_IDLE_S:
+                self.finish(memory, "idle")
 
     def _lecture_ends(self, video_ids: set[str]) -> dict[str, LectureEnd]:
         if not video_ids or not db_path().exists():
@@ -168,7 +191,7 @@ class NoteAgent:
             return
         chunks = held.chunks()
         started = time.perf_counter()
-        result = self.client.complete_json(SYSTEM_PROMPT, user_prompt(memory, chunks))
+        result = self.client.complete_json(SYSTEM_PROMPT, user_prompt(memory, chunks), wait_s=20)
         if result.ok:
             delta = llm_delta(memory, result.data, chunks, held.update_index)
         else:
@@ -178,12 +201,37 @@ class NoteAgent:
         payload = build_update(memory, held, delta, result.model, (time.perf_counter() - started) * 1000)
         send_and_wait(self.producer, TOPIC_NOTES, schemas.encode("notes.v2", payload), key=held.video_id,
                       partition=held.partition)
-        memory.apply(payload)
+        memory.apply(payload, partition=held.partition)
+        self.last_update_at[held.video_id] = time.time()
         self.commit(held.partition, held.last_offset)
         self.log.info("update", video_id=held.video_id, update=held.update_index, windows=len(held.windows),
                       reason=reason, generator=payload["generator"], model=payload["model"],
                       points=len(payload["points"]), terms=len(payload["terms"]),
                       section=payload["section"]["id"], flags=len(payload["quality_flags"]),
+                      agent_ms=payload["agent_ms"])
+
+    # ------------------------------------------------------------------ end of a lecture (M6b, §8.1.5)
+    def finish(self, memory: Memory, ended_by: str) -> None:
+        """One more call over the whole notebook: final titles, glossary, review questions, weak points."""
+        if memory.lecture_notes_done or not memory.sections:
+            return
+        started = time.perf_counter()
+        prompt, kept = end_user_prompt(memory)
+        result = self.client.complete_json(end_prompt(memory), prompt, max_tokens=2500, wait_s=90)   # not urgent
+        if result.ok:
+            fields = lecture_from_reply(memory, result.data)
+        else:
+            fields = lecture_fallback(memory, [f"llm_unavailable:{result.reason}"])
+        if kept < len(memory.points):
+            fields["quality_flags"].append(f"prompt_trimmed:{kept}/{len(memory.points)}_points")
+        payload = build_lecture_notes(memory, fields, result.model, (time.perf_counter() - started) * 1000, ended_by)
+        send_and_wait(self.producer, TOPIC_LECTURE_NOTES, schemas.encode("lecture_notes.v1", payload),
+                      key=memory.video_id, partition=memory.partition)
+        memory.lecture_notes_done = True
+        self.log.info("lecture_finished", video_id=memory.video_id, ended_by=ended_by,
+                      generator=payload["generator"], model=payload["model"], sections=len(payload["outline"]),
+                      glossary=len(payload["glossary"]), questions=len(payload["questions"]),
+                      flags=payload["quality_flags"],
                       agent_ms=payload["agent_ms"])
 
     # ------------------------------------------------------------------ commits

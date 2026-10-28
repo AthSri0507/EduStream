@@ -89,6 +89,14 @@ CREATE TABLE IF NOT EXISTS terms (
   PRIMARY KEY (video_id, term)
 );
 
+-- End-of-lecture pass (M6b): one row per finished lecture, first writer wins. Storing it also sets the final
+-- section titles and the weak-point flags in the same transaction (the only updates to notebook rows).
+-- No summary column: the notebook is the summary; the assistant summarises on request (decision 28 Oct).
+CREATE TABLE IF NOT EXISTS lecture_notes (
+  video_id TEXT PRIMARY KEY, outline TEXT, glossary TEXT, questions TEXT,
+  generator TEXT, model TEXT, quality_flags TEXT, ended_by TEXT, agent_ms REAL, created_ts INTEGER, sink_ts INTEGER
+);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS notebook_fts USING fts5(
   video_id UNINDEXED, update_index UNINDEXED, t UNINDEXED, kind UNINDEXED, body
 );

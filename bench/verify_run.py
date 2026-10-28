@@ -27,11 +27,11 @@ from collections import Counter, defaultdict
 from kafka import KafkaConsumer, TopicPartition
 
 from common import schemas
-from common.config import (ROOT, RUN_DIR, TOPIC_ALERTS, TOPIC_DLQ, TOPIC_NOTES, TOPIC_TRANSCRIPTS, TOPIC_WINDOWS,
-                           load)
+from common.config import (ROOT, RUN_DIR, TOPIC_ALERTS, TOPIC_DLQ, TOPIC_LECTURE_NOTES, TOPIC_NOTES,
+                           TOPIC_TRANSCRIPTS, TOPIC_WINDOWS, load)
 
 SCHEMA_OF = {TOPIC_TRANSCRIPTS: "transcript.v1", TOPIC_WINDOWS: "window.v1", TOPIC_NOTES: "notes.v2",
-             TOPIC_ALERTS: "alert.v1", TOPIC_DLQ: "dlq.v1"}
+             TOPIC_LECTURE_NOTES: "lecture_notes.v1", TOPIC_ALERTS: "alert.v1", TOPIC_DLQ: "dlq.v1"}
 
 
 def read_topic(bootstrap: str, topic: str) -> list:
@@ -111,6 +111,10 @@ def main(argv=None) -> int:
         check(f"{vid}: every window in exactly one update",
               set(in_updates) == {w["window_start"] for w in ws} and all(n == 1 for n in in_updates.values()),
               f"{len(in_updates)} windows in updates, {len(ws)} windows emitted")
+        finals = [n for n in payloads[TOPIC_LECTURE_NOTES] if n["video_id"] == vid]
+        check(f"{vid}: finished once (end-of-lecture pass)", len(finals) == 1,
+              f"{len(finals)} lecture_notes record(s)" + (f", ended by {finals[0]['ended_by']}, "
+                                                          f"{finals[0]['generator']}" if finals else ""))
         generators = Counter(u["generator"] for u in ups)
         summary[vid]["updates"] = dict(generators)
         notebooks[vid] = [{"update": u["update_index"], "section": [u["section"]["id"], u["section"]["title"]],
@@ -141,6 +145,9 @@ def main(argv=None) -> int:
         check("db: notebook updates == topic updates, with all their points",
               db_updates == set(first) and n_points == sum(len(u["points"]) for u in first.values()),
               f"{len(db_updates)} updates and {n_points} points in SQLite, {len(first)} distinct updates in Kafka")
+        db_finals = {r[0] for r in db.execute("SELECT video_id FROM lecture_notes")}
+        check("db: lecture_notes == topic lecture_notes", db_finals == {n["video_id"] for n in payloads[TOPIC_LECTURE_NOTES]},
+              f"{len(db_finals)} in SQLite")
         topic_alerts = {a["alert_id"] for a in payloads[TOPIC_ALERTS]}
         db_alerts = {r[0] for r in db.execute("SELECT alert_id FROM alerts")}
         check("db: alerts == distinct topic alerts", db_alerts == topic_alerts, f"{len(db_alerts)} in SQLite")

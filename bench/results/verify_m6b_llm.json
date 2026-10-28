@@ -1,0 +1,522 @@
+{
+  "checks": [
+    {
+      "name": "all records match the JSON Schemas",
+      "ok": true,
+      "detail": "140 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_demaine_l2: complete",
+      "ok": true,
+      "detail": "30/30 chunks across 10 windows"
+    },
+    {
+      "name": "algorithms_demaine_l2: each window emitted once",
+      "ok": true,
+      "detail": "10 distinct windows, 10 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_demaine_l2: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10050 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_demaine_l2: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "4/4 updates, 4 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: every window in exactly one update",
+      "ok": true,
+      "detail": "10 windows in updates, 10 windows emitted"
+    },
+    {
+      "name": "algorithms_demaine_l2: finished once (end-of-lecture pass)",
+      "ok": true,
+      "detail": "1 lecture_notes record(s), ended by last_window, llm"
+    },
+    {
+      "name": "algorithms_ku_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_ku_l1: complete",
+      "ok": true,
+      "detail": "30/30 chunks across 10 windows"
+    },
+    {
+      "name": "algorithms_ku_l1: each window emitted once",
+      "ok": true,
+      "detail": "10 distinct windows, 10 records"
+    },
+    {
+      "name": "algorithms_ku_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_ku_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10045 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_ku_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "4/4 updates, 4 records"
+    },
+    {
+      "name": "algorithms_ku_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "10 windows in updates, 10 windows emitted"
+    },
+    {
+      "name": "algorithms_ku_l1: finished once (end-of-lecture pass)",
+      "ok": true,
+      "detail": "1 lecture_notes record(s), ended by last_window, llm"
+    },
+    {
+      "name": "python_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "python_l1: complete",
+      "ok": true,
+      "detail": "30/30 chunks across 10 windows"
+    },
+    {
+      "name": "python_l1: each window emitted once",
+      "ok": true,
+      "detail": "10 distinct windows, 10 records"
+    },
+    {
+      "name": "python_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "python_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10040 ms after the flush's event time"
+    },
+    {
+      "name": "python_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "4/4 updates, 4 records"
+    },
+    {
+      "name": "python_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "10 windows in updates, 10 windows emitted"
+    },
+    {
+      "name": "python_l1: finished once (end-of-lecture pass)",
+      "ok": true,
+      "detail": "1 lecture_notes record(s), ended by last_window, llm"
+    },
+    {
+      "name": "no LATE_DROP alerts",
+      "ok": true,
+      "detail": "0 LATE_DROP"
+    },
+    {
+      "name": "DLQ as expected",
+      "ok": true,
+      "detail": "0 DLQ record(s), expected 0"
+    },
+    {
+      "name": "db: chunks == distinct transcripts",
+      "ok": true,
+      "detail": "90 in SQLite, 90 in Kafka"
+    },
+    {
+      "name": "db: windows == topic windows (keys and content)",
+      "ok": true,
+      "detail": "30 in SQLite, 30 distinct in Kafka"
+    },
+    {
+      "name": "db: notebook updates == topic updates, with all their points",
+      "ok": true,
+      "detail": "12 updates and 32 points in SQLite, 12 distinct updates in Kafka"
+    },
+    {
+      "name": "db: lecture_notes == topic lecture_notes",
+      "ok": true,
+      "detail": "3 in SQLite"
+    },
+    {
+      "name": "db: alerts == distinct topic alerts",
+      "ok": true,
+      "detail": "2 in SQLite"
+    }
+  ],
+  "lectures": {
+    "algorithms_demaine_l2": {
+      "partition": 2,
+      "chunks_sent": 30,
+      "windows": 10,
+      "last_window_emitted_after_flush_ms": 10050,
+      "updates": {
+        "llm": 4
+      }
+    },
+    "algorithms_ku_l1": {
+      "partition": 1,
+      "chunks_sent": 30,
+      "windows": 10,
+      "last_window_emitted_after_flush_ms": 10045,
+      "updates": {
+        "llm": 4
+      }
+    },
+    "python_l1": {
+      "partition": 0,
+      "chunks_sent": 30,
+      "windows": 10,
+      "last_window_emitted_after_flush_ms": 10040,
+      "updates": {
+        "llm": 4
+      }
+    }
+  },
+  "notebooks": {
+    "algorithms_demaine_l2": [
+      {
+        "update": 0,
+        "section": [
+          1,
+          "Introduction & Interfaces"
+        ],
+        "points": [
+          [
+            1,
+            70.0,
+            "A data structure provides the *how*: the concrete implementation that fulfills the interface\u2019s specification."
+          ],
+          [
+            1,
+            80.0,
+            "The interface can be viewed as a specification of desired behavior, while the data structure is the actual storage mechanism."
+          ]
+        ],
+        "terms": [
+          "interface",
+          "API",
+          "ADT",
+          "data structure"
+        ],
+        "generator": "llm"
+      },
+      {
+        "update": 1,
+        "section": [
+          1,
+          "Introduction & Interfaces"
+        ],
+        "points": [
+          [
+            1,
+            120.0,
+            "The interface specifies which operations are supported and what they mean, while the data structure provides concrete algorithms to implement those operations."
+          ],
+          [
+            1,
+            140.0,
+            "Algorithms are the methods a data structure uses to support the operations defined by the interface."
+          ],
+          [
+            1,
+            160.0,
+            "The course will concentrate on two primary interfaces and their special cases, emphasizing the separation of what to do from how to do it."
+          ]
+        ],
+        "terms": [
+          "algorithm"
+        ],
+        "generator": "llm"
+      },
+      {
+        "update": 2,
+        "section": [
+          1,
+          "Introduction & Interfaces"
+        ],
+        "points": [
+          [
+            1,
+            190.0,
+            "A problem statement can have many algorithmic solutions; similarly, a data\u2011structure problem can be solved by different structures that implement the same operations."
+          ],
+          [
+            1,
+            200.0,
+            "Different data structures may support the same operations but with different performance characteristics, so the choice depends on which operations are critical for your use case."
+          ],
+          [
+            1,
+            220.0,
+            "We will focus on two fundamental abstract data types: the set and the sequence, each with its own typical operations and use\u2011cases."
+          ],
+          [
+            1,
+            250.0,
+            "If we need the elements kept in sorted order and searchable by a value (the *key*), the data structure must support ordering and efficient lookup."
+          ]
+        ],
+        "terms": [
+          "set",
+          "sequence",
+          "key"
+        ],
+        "generator": "llm"
+      },
+      {
+        "update": 3,
+        "section": [
+          1,
+          "Introduction & Interfaces"
+        ],
+        "points": [
+          [
+            1,
+            270.0,
+            "Python list can store elements and preserves insertion order."
+          ],
+          [
+            1,
+            270.0,
+            "The list will maintain the order: first, second, last items."
+          ],
+          [
+            1,
+            280.0,
+            "We will focus on the sequence data structure for now, with set interface mentioned later."
+          ],
+          [
+            1,
+            290.0,
+            "The lecture notes mention that structures will bounce back and forth between these concepts, which are closely related and abstract."
+          ]
+        ],
+        "terms": [],
+        "generator": "llm"
+      }
+    ],
+    "algorithms_ku_l1": [
+      {
+        "update": 0,
+        "section": [
+          1,
+          "Course Overview"
+        ],
+        "points": [
+          [
+            1,
+            10.0,
+            "Intro to Algorithms is taught by Jason Ku together with faculty Eric Domen and Justin Solomon."
+          ]
+        ],
+        "terms": [],
+        "generator": "llm"
+      },
+      {
+        "update": 1,
+        "section": [
+          1,
+          "Course Overview"
+        ],
+        "points": [
+          [
+            1,
+            100.0,
+            "The course emphasizes not just solving problems but also proving that your solution is correct and efficient."
+          ],
+          [
+            1,
+            130.0,
+            "The class will involve a lot of writing to convey algorithmic ideas clearly to others."
+          ]
+        ],
+        "terms": [],
+        "generator": "llm"
+      },
+      {
+        "update": 2,
+        "section": [
+          1,
+          "Course Overview"
+        ],
+        "points": [
+          [
+            1,
+            250.0,
+            "A computational problem is a binary relation between a set of inputs and a set of outputs."
+          ],
+          [
+            1,
+            260.0,
+            "For each input, the problem specifies which outputs are correct; there may be more than one correct output."
+          ]
+        ],
+        "terms": [
+          "computational problem"
+        ],
+        "generator": "llm"
+      },
+      {
+        "update": 3,
+        "section": [
+          1,
+          "Course Overview"
+        ],
+        "points": [
+          [
+            1,
+            270.0,
+            "The lecturer illustrates a computational problem as a mapping from inputs to outputs, where an input may map to multiple outputs."
+          ],
+          [
+            1,
+            290.0,
+            "The mapping can be visualized as a graph, with edges representing the binary relation between inputs and outputs."
+          ]
+        ],
+        "terms": [],
+        "generator": "llm"
+      }
+    ],
+    "python_l1": [
+      {
+        "update": 0,
+        "section": [
+          1,
+          "Introduction & Course Overview"
+        ],
+        "points": [
+          [
+            1,
+            50.0,
+            "This is the first class of 6.001 and 6.600 this semester, taught by Anna Bell with later lectures by Prof. Eric Grimson."
+          ],
+          [
+            1,
+            80.0,
+            "The lecture will later cover basic administrative info and a high\u2011level discussion of what computation is\u2014i.e., what computers do."
+          ]
+        ],
+        "terms": [
+          "computation"
+        ],
+        "generator": "llm"
+      },
+      {
+        "update": 1,
+        "section": [
+          1,
+          "Introduction & Course Overview"
+        ],
+        "points": [
+          [
+            1,
+            90.0,
+            "We'll dive into Python basics, starting with mathematical operations and then Python types."
+          ],
+          [
+            1,
+            100.0,
+            "All lecture slides and code examples will be uploaded before class; students are encouraged to download them in advance."
+          ],
+          [
+            1,
+            110.0,
+            "Class exercises are embedded in the slides; taking notes on the code is recommended for future reference."
+          ],
+          [
+            1,
+            130.0,
+            "The course moves quickly, so students should adopt strategies early to succeed."
+          ],
+          [
+            1,
+            170.0,
+            "Practice is essential for new programmers; regular coding improves skill just like math or reading."
+          ]
+        ],
+        "terms": [],
+        "generator": "llm"
+      },
+      {
+        "update": 2,
+        "section": [
+          1,
+          "Introduction & Course Overview"
+        ],
+        "points": [
+          [
+            1,
+            180.0,
+            "Practice is essential; you must type code and experiment regularly."
+          ],
+          [
+            1,
+            190.0,
+            "Don\u2019t fear breaking your computer\u2014just restart it after trying commands in Anaconda."
+          ],
+          [
+            1,
+            220.0,
+            "The course focuses on three outcomes: conceptual knowledge, programming skills, and problem\u2011solving ability."
+          ]
+        ],
+        "terms": [
+          "road map",
+          "programming skills"
+        ],
+        "generator": "llm"
+      },
+      {
+        "update": 3,
+        "section": [
+          1,
+          "Introduction & Course Overview"
+        ],
+        "points": [
+          [
+            1,
+            280.0,
+            "The course content is divided into three main sections."
+          ],
+          [
+            1,
+            290.0,
+            "The first section focuses on learning how to program, including choosing objects to create."
+          ]
+        ],
+        "terms": [],
+        "generator": "llm"
+      }
+    ]
+  },
+  "alerts_by_type": {
+    "LOW_ASR_SCORE": 2
+  },
+  "counts": {
+    "transcriptions": 93,
+    "window_summaries": 30,
+    "final_notes": 12,
+    "lecture_notes": 3,
+    "alerts": 2,
+    "dlq": 0
+  }
+}

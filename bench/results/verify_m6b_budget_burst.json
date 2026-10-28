@@ -1,0 +1,549 @@
+{
+  "checks": [
+    {
+      "name": "all records match the JSON Schemas",
+      "ok": true,
+      "detail": "140 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_demaine_l2: complete",
+      "ok": true,
+      "detail": "30/30 chunks across 10 windows"
+    },
+    {
+      "name": "algorithms_demaine_l2: each window emitted once",
+      "ok": true,
+      "detail": "10 distinct windows, 10 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_demaine_l2: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10034 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_demaine_l2: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "4/4 updates, 4 records"
+    },
+    {
+      "name": "algorithms_demaine_l2: every window in exactly one update",
+      "ok": true,
+      "detail": "10 windows in updates, 10 windows emitted"
+    },
+    {
+      "name": "algorithms_demaine_l2: finished once (end-of-lecture pass)",
+      "ok": true,
+      "detail": "1 lecture_notes record(s), ended by last_window, extractive"
+    },
+    {
+      "name": "algorithms_ku_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_ku_l1: complete",
+      "ok": true,
+      "detail": "30/30 chunks across 10 windows"
+    },
+    {
+      "name": "algorithms_ku_l1: each window emitted once",
+      "ok": true,
+      "detail": "10 distinct windows, 10 records"
+    },
+    {
+      "name": "algorithms_ku_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_ku_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10031 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_ku_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "4/4 updates, 4 records"
+    },
+    {
+      "name": "algorithms_ku_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "10 windows in updates, 10 windows emitted"
+    },
+    {
+      "name": "algorithms_ku_l1: finished once (end-of-lecture pass)",
+      "ok": true,
+      "detail": "1 lecture_notes record(s), ended by last_window, extractive"
+    },
+    {
+      "name": "python_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "python_l1: complete",
+      "ok": true,
+      "detail": "30/30 chunks across 10 windows"
+    },
+    {
+      "name": "python_l1: each window emitted once",
+      "ok": true,
+      "detail": "10 distinct windows, 10 records"
+    },
+    {
+      "name": "python_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "python_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10026 ms after the flush's event time"
+    },
+    {
+      "name": "python_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "4/4 updates, 4 records"
+    },
+    {
+      "name": "python_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "10 windows in updates, 10 windows emitted"
+    },
+    {
+      "name": "python_l1: finished once (end-of-lecture pass)",
+      "ok": true,
+      "detail": "1 lecture_notes record(s), ended by last_window, extractive"
+    },
+    {
+      "name": "no LATE_DROP alerts",
+      "ok": true,
+      "detail": "0 LATE_DROP"
+    },
+    {
+      "name": "DLQ as expected",
+      "ok": true,
+      "detail": "0 DLQ record(s), expected 0"
+    },
+    {
+      "name": "db: chunks == distinct transcripts",
+      "ok": true,
+      "detail": "90 in SQLite, 90 in Kafka"
+    },
+    {
+      "name": "db: windows == topic windows (keys and content)",
+      "ok": true,
+      "detail": "30 in SQLite, 30 distinct in Kafka"
+    },
+    {
+      "name": "db: notebook updates == topic updates, with all their points",
+      "ok": true,
+      "detail": "12 updates and 37 points in SQLite, 12 distinct updates in Kafka"
+    },
+    {
+      "name": "db: lecture_notes == topic lecture_notes",
+      "ok": true,
+      "detail": "3 in SQLite"
+    },
+    {
+      "name": "db: alerts == distinct topic alerts",
+      "ok": true,
+      "detail": "2 in SQLite"
+    }
+  ],
+  "lectures": {
+    "algorithms_demaine_l2": {
+      "partition": 2,
+      "chunks_sent": 30,
+      "windows": 10,
+      "last_window_emitted_after_flush_ms": 10034,
+      "updates": {
+        "llm": 4
+      }
+    },
+    "algorithms_ku_l1": {
+      "partition": 1,
+      "chunks_sent": 30,
+      "windows": 10,
+      "last_window_emitted_after_flush_ms": 10031,
+      "updates": {
+        "llm": 3,
+        "extractive": 1
+      }
+    },
+    "python_l1": {
+      "partition": 0,
+      "chunks_sent": 30,
+      "windows": 10,
+      "last_window_emitted_after_flush_ms": 10026,
+      "updates": {
+        "llm": 4
+      }
+    }
+  },
+  "notebooks": {
+    "algorithms_demaine_l2": [
+      {
+        "update": 0,
+        "section": [
+          1,
+          "Interfaces vs Data Structures"
+        ],
+        "points": [
+          [
+            1,
+            70.0,
+            "A data structure provides the concrete implementation that fulfills the interface\u2019s specification."
+          ]
+        ],
+        "terms": [
+          "interface",
+          "ADT",
+          "data structure"
+        ],
+        "generator": "llm"
+      },
+      {
+        "update": 1,
+        "section": [
+          1,
+          "Interfaces vs Data Structures"
+        ],
+        "points": [
+          [
+            1,
+            90.0,
+            "A data structure provides the concrete representation of the stored data, turning the abstract specification into an actual layout."
+          ],
+          [
+            1,
+            110.0,
+            "Storing data alone is trivial \u2013 you can just dump it into a file \u2013 but the interesting part is defining operations on that data."
+          ],
+          [
+            1,
+            120.0,
+            "An interface lists the operations that are supported and describes what each operation does."
+          ],
+          [
+            1,
+            140.0,
+            "The data structure supplies the algorithms that implement those operations efficiently."
+          ],
+          [
+            1,
+            160.0,
+            "The course will concentrate on two primary interfaces and their special cases, emphasizing the separation of what to do from how to do it."
+          ]
+        ],
+        "terms": [
+          "algorithm"
+        ],
+        "generator": "llm"
+      },
+      {
+        "update": 2,
+        "section": [
+          1,
+          "Interfaces vs Data Structures"
+        ],
+        "points": [
+          [
+            1,
+            200.0,
+            "The same problem can be solved by many different data structures, each offering distinct trade\u2011offs."
+          ],
+          [
+            1,
+            200.0,
+            "Different data structures have different advantages; some operations are faster on one than on another."
+          ],
+          [
+            1,
+            200.0,
+            "Thus you choose a data structure based on which operations you need to be fast."
+          ],
+          [
+            1,
+            210.0,
+            "The two primary abstract data types we\u2019ll study are the set and the sequence."
+          ]
+        ],
+        "terms": [
+          "set",
+          "sequence"
+        ],
+        "generator": "llm"
+      },
+      {
+        "update": 3,
+        "section": [
+          1,
+          "Interfaces vs Data Structures"
+        ],
+        "points": [
+          [
+            1,
+            270.0,
+            "Python lists can store a sequence and preserve order, with items indexed as first, second, last."
+          ],
+          [
+            1,
+            280.0,
+            "We will focus on the sequence data structure today, and later mention the set interface."
+          ],
+          [
+            1,
+            290.0,
+            "Sequences and sets are closely related abstractly, but we will concentrate on sequences in the next lectures."
+          ]
+        ],
+        "terms": [],
+        "generator": "llm"
+      }
+    ],
+    "algorithms_ku_l1": [
+      {
+        "update": 0,
+        "section": [
+          1,
+          "Course Overview"
+        ],
+        "points": [
+          [
+            1,
+            10.0,
+            "The class is Introduction to Algorithms, taught by Jason Ku with co\u2011instructors Eric Domen and Justin Solomon."
+          ],
+          [
+            1,
+            40.0,
+            "Jason will give the first lecture; the other two instructors will each give the next lecture."
+          ],
+          [
+            1,
+            60.0,
+            "The course focuses on algorithms and on solving computational problems."
+          ]
+        ],
+        "terms": [],
+        "generator": "llm"
+      },
+      {
+        "update": 1,
+        "section": [
+          1,
+          "Course Overview"
+        ],
+        "points": [
+          [
+            1,
+            120.0,
+            "Communication of ideas, not just code, is repeatedly stressed."
+          ],
+          [
+            1,
+            160.0,
+            "The class aims to prove solutions are correct and better, and to convey that to others."
+          ]
+        ],
+        "terms": [
+          "efficiency",
+          "communication"
+        ],
+        "generator": "llm"
+      },
+      {
+        "update": 2,
+        "section": [
+          1,
+          "Course Overview"
+        ],
+        "points": [
+          [
+            1,
+            250.0,
+            "A computational problem is a binary relation between a set of inputs and a set of outputs, where for each input we specify which outputs are correct."
+          ],
+          [
+            1,
+            200.0,
+            "The lecturer emphasizes that a computational problem is not just a trivial question but something you want to compute, possibly abstractly."
+          ],
+          [
+            1,
+            240.0,
+            "Inputs are the possible data the algorithm can receive; outputs are the possible results the algorithm can produce."
+          ]
+        ],
+        "terms": [
+          "computational problem",
+          "algorithm"
+        ],
+        "generator": "llm"
+      },
+      {
+        "update": 3,
+        "section": [
+          1,
+          "Course Overview"
+        ],
+        "points": [
+          [
+            1,
+            270.0,
+            "give me the index in an array containing the value 5, there could be multiple 5s in that array."
+          ],
+          [
+            1,
+            280.0,
+            "So, uh, maybe this guy maps to that output, and maybe this guy maps to, I don't know, two or three outputs, right?"
+          ],
+          [
+            1,
+            290.0,
+            "I don't know here's a you're some kind of mapping Here these edges represent the binary relation It is kind of a graph"
+          ]
+        ],
+        "terms": [],
+        "generator": "extractive"
+      }
+    ],
+    "python_l1": [
+      {
+        "update": 0,
+        "section": [
+          1,
+          "Introduction"
+        ],
+        "points": [
+          [
+            1,
+            40.0,
+            "Lecture is being recorded for OCW; students should sit away from the front to avoid showing the back of their heads on video."
+          ],
+          [
+            1,
+            50.0,
+            "First class of 6.001 and 6.600 this semester; lecturer is Anna Bell from EECS."
+          ],
+          [
+            1,
+            70.0,
+            "Today's agenda: brief administrative/course information followed by a high\u2011level discussion of what computation is."
+          ]
+        ],
+        "terms": [],
+        "generator": "llm"
+      },
+      {
+        "update": 1,
+        "section": [
+          1,
+          "Introduction"
+        ],
+        "points": [
+          [
+            1,
+            90.0,
+            "We'll dive into Python basics, covering mathematical operations you can do with Python."
+          ],
+          [
+            1,
+            100.0,
+            "All slides containing code will be posted before lecture; download them in advance."
+          ],
+          [
+            1,
+            110.0,
+            "Class exercises will be on the slides; have the slides open while working through them."
+          ],
+          [
+            1,
+            120.0,
+            "Take notes on the code shown in class for future reference."
+          ],
+          [
+            1,
+            150.0,
+            "Read problem sets (P\u2011sets) as soon as they appear so terminology sinks in and you can connect lecture material to them."
+          ]
+        ],
+        "terms": [
+          "P set"
+        ],
+        "generator": "llm"
+      },
+      {
+        "update": 2,
+        "section": [
+          1,
+          "Introduction"
+        ],
+        "points": [
+          [
+            1,
+            200.0,
+            "Don't be afraid to just type some stuff in and see what it does."
+          ],
+          [
+            1,
+            220.0,
+            "Three big things we want you to get out of this course: knowledge of concepts, programming skills, and problem\u2011solving via P\u2011sets."
+          ],
+          [
+            1,
+            230.0,
+            "First goal: acquire knowledge of concepts, the theoretical foundation common to any class."
+          ],
+          [
+            1,
+            240.0,
+            "Second goal: develop programming skills through hands\u2011on coding."
+          ]
+        ],
+        "terms": [],
+        "generator": "llm"
+      },
+      {
+        "update": 3,
+        "section": [
+          2,
+          "Learning How to Program"
+        ],
+        "points": [
+          [
+            2,
+            290.0,
+            "Learning how to program involves figuring out what objects to create."
+          ]
+        ],
+        "terms": [
+          "objects"
+        ],
+        "generator": "llm"
+      }
+    ]
+  },
+  "alerts_by_type": {
+    "LOW_ASR_SCORE": 2
+  },
+  "counts": {
+    "transcriptions": 93,
+    "window_summaries": 30,
+    "final_notes": 12,
+    "lecture_notes": 3,
+    "alerts": 2,
+    "dlq": 0
+  }
+}

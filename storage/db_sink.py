@@ -27,15 +27,16 @@ from kafka.errors import CommitFailedError
 from kafka.structs import OffsetAndMetadata
 
 from common import schemas
-from common.config import (TOPIC_ALERTS, TOPIC_DLQ, TOPIC_NOTES, TOPIC_TRANSCRIPTS, TOPIC_WINDOWS, load)
+from common.config import (TOPIC_ALERTS, TOPIC_DLQ, TOPIC_LECTURE_NOTES, TOPIC_NOTES, TOPIC_TRANSCRIPTS,
+                           TOPIC_WINDOWS, load)
 from common.kafka_utils import EXIT_PRODUCE_FAILED, make_consumer, raw_preview
 from common.log import JsonLog
 from storage.db import connect_writer
 
 GROUP = "db-sink"
-TOPICS = [TOPIC_TRANSCRIPTS, TOPIC_WINDOWS, TOPIC_NOTES, TOPIC_ALERTS, TOPIC_DLQ]
+TOPICS = [TOPIC_TRANSCRIPTS, TOPIC_WINDOWS, TOPIC_NOTES, TOPIC_LECTURE_NOTES, TOPIC_ALERTS, TOPIC_DLQ]
 SCHEMA_OF = {TOPIC_TRANSCRIPTS: "transcript.v1", TOPIC_WINDOWS: "window.v1", TOPIC_NOTES: "notes.v1",
-             TOPIC_ALERTS: "alert.v1", TOPIC_DLQ: "dlq.v1"}
+             TOPIC_LECTURE_NOTES: "lecture_notes.v1", TOPIC_ALERTS: "alert.v1", TOPIC_DLQ: "dlq.v1"}
 SQLITE_RETRIES = 5
 EXIT_SQLITE_FAILED = 4
 
@@ -93,6 +94,26 @@ def _apply_notebook_update(conn: sqlite3.Connection, p: dict, now: int) -> str:
                          term["t"])).rowcount == 1:
             conn.execute("INSERT INTO notebook_fts VALUES (?,?,?,?,?)",
                          (p["video_id"], p["update_index"], term["t"], "term", f"{term['term']}: {term['definition']}"))
+    return "stored"
+
+
+def _apply_lecture_notes(conn: sqlite3.Connection, p: dict, now: int) -> str:
+    """lecture_notes.v1 (M6b): first writer wins; also final titles and weak points, in the same transaction."""
+    cur = conn.execute(
+        "INSERT INTO lecture_notes(video_id, outline, glossary, questions, generator, model, quality_flags, ended_by,"
+        " agent_ms, created_ts, sink_ts) VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING",
+        (p["video_id"], json.dumps(p["outline"]), json.dumps(p["glossary"]), json.dumps(p["questions"]),
+         p["generator"], p.get("model"), json.dumps(p.get("quality_flags", [])), p.get("ended_by"), p.get("agent_ms"),
+         p["created_ts"], now))
+    if cur.rowcount != 1:
+        return "duplicate"
+    for o in p["outline"]:
+        conn.execute("UPDATE sections SET final_title = ? WHERE video_id = ? AND section_id = ?",
+                     (o["title"], p["video_id"], o["section_id"]))
+        for pid in o["weak_points"]:
+            u, s = pid[1:].split("p")
+            conn.execute("UPDATE points SET weak = 1 WHERE video_id = ? AND update_index = ? AND seq = ?",
+                         (p["video_id"], int(u), int(s)))
     return "stored"
 
 
@@ -157,6 +178,9 @@ def apply_record(conn: sqlite3.Connection, topic: str, value: bytes | None, part
 
     if topic == TOPIC_NOTES and p["schema"] == "notes.v2":
         return _apply_notebook_update(conn, p, now)
+
+    if topic == TOPIC_LECTURE_NOTES:
+        return _apply_lecture_notes(conn, p, now)
 
     if topic == TOPIC_NOTES:
         cur = conn.execute(

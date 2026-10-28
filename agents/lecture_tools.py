@@ -41,8 +41,32 @@ def outline(conn: sqlite3.Connection, video_id: str) -> list[dict]:
 
 
 def notebook_points(conn: sqlite3.Connection, video_id: str, start: float = 0.0, end: float = 1e9) -> list[dict]:
-    return [{"t": r[0], "text": r[1], "kind": r[2]} for r in conn.execute(
-        "SELECT t, text, kind FROM points WHERE video_id = ? AND t >= ? AND t <= ? ORDER BY t", (video_id, start, end))]
+    return [{"t": r[0], "text": r[1], "kind": r[2], "section_id": r[3]} for r in conn.execute(
+        "SELECT t, text, kind, section_id FROM points WHERE video_id = ? AND t >= ? AND t <= ? ORDER BY t",
+        (video_id, start, end))]
+
+
+MAX_NOTEBOOK_LINES = 120          # about 3,000 words: long ranges are trimmed evenly across their sections
+
+
+def notebook_digest(conn: sqlite3.Connection, video_id: str, start: float, end: float,
+                    limit: int = MAX_NOTEBOOK_LINES) -> list[dict]:
+    """A long range of the lecture as notebook lines with section headings, trimmed EVENLY across sections (a
+    2-hour summary must cover every section, not just the first ones). Lines: {t, end, text}."""
+    points = notebook_points(conn, video_id, start, end)
+    titles = {s["id"]: s for s in outline(conn, video_id)}
+    by_section: dict = {}
+    for p in points:
+        by_section.setdefault(p["section_id"], []).append(p)
+    per_section = max(1, (limit - len(by_section)) // max(1, len(by_section)))
+    lines = []
+    for sid, pts in by_section.items():
+        sec = titles.get(sid, {"title": f"Section {sid}"})
+        lines.append({"t": pts[0]["t"], "end": pts[0]["t"], "text": f"Section {sid}: {sec['title']}"})
+        step = max(1, len(pts) / per_section)
+        lines += [{"t": p["t"], "end": p["t"] + 10, "text": p["text"]}
+                  for p in (pts[int(i * step)] for i in range(min(per_section, len(pts))))]
+    return lines
 
 
 def glossary(conn: sqlite3.Connection, video_id: str, term: str) -> list[dict]:

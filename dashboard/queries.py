@@ -76,8 +76,10 @@ def notebook(conn: sqlite3.Connection, video_id: str) -> dict:
     tail = pd.read_sql_query(
         "SELECT chunk_id, start_time, text FROM chunks WHERE video_id = ? AND start_time >= ?"
         " ORDER BY chunk_id", conn, params=(video_id, covered[0] or 0.0))
+    row = conn.execute("SELECT questions, generator FROM lecture_notes WHERE video_id = ?", (video_id,)).fetchone()
+    finished = {"questions": json.loads(row[0]), "generator": row[1]} if row else None
     return {"sections": sections, "points": points, "terms": terms, "tail": tail,
-            "covered_s": covered[0] or 0.0, "updates": covered[1]}
+            "covered_s": covered[0] or 0.0, "updates": covered[1], "finished": finished}
 
 
 def window_stats(conn: sqlite3.Connection) -> pd.DataFrame:

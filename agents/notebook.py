@@ -155,12 +155,17 @@ class Memory:
         self.sent: set[int] = set()
         self.sent_windows: set[int] = set()
         self.last_sent = -1
+        self.partition: int | None = None          # where its records live (same number in every topic)
+        self.media_end = 0.0                       # how far the notebook reaches (media seconds)
+        self.lecture_notes_done = False            # the end-of-lecture pass has been produced (M6b)
 
     @property
     def current(self) -> dict | None:
         return self.sections[max(self.sections)] if self.sections else None
 
-    def apply(self, p: dict) -> None:
+    def apply(self, p: dict, partition: int | None = None) -> None:
+        if partition is not None:
+            self.partition = partition
         if p["update_index"] in self.sent:
             return                                  # duplicate record (at-least-once): first one wins
         sec = p["section"]
@@ -168,7 +173,8 @@ class Memory:
             self.sections[sec["id"]] = {"id": sec["id"], "title": sec["title"], "first_update": p["update_index"],
                                         "updates": 0}
         self.sections[sec["id"]]["updates"] += 1
-        self.points += [dict(pt) for pt in p["points"]]
+        self.points += [{**pt, "id": f"u{p['update_index']}p{seq}"} for seq, pt in enumerate(p["points"])]
+        self.media_end = max(self.media_end, float(p.get("media_end") or 0.0))
         for t in p["terms"]:
             self.terms.setdefault(t["term"].lower(), dict(t))
         self.sent.add(p["update_index"])
@@ -341,3 +347,121 @@ def build_update(memory: Memory, held: Held, delta: dict, model: str | None, age
     if session_start is not None:
         payload["session_start"] = session_start
     return payload
+
+
+# ----------------------------------------------------------------------------------------------- end of lecture (M6b)
+# No lecture summary (your decision, 28 Oct): the notebook already is the condensed lecture, and the assistant
+# summarises any part on request. The end pass only fixes what live note-taking can't: titles written with 90 s
+# of context, a scattered glossary, review questions, weak points.
+END_PROMPT = """You finish the notebook of a university lecture that has just ended. You receive the whole notebook
+(section titles, timestamped points with ids, terms). Write ONLY from the notebook; add no new facts.
+
+Return ONLY a JSON object:
+{"outline": [{"section_id": 1, "title": "a clear final title for the section", "gist": "one sentence",
+              "weak_points": ["ids of points that are vague, wrong or housekeeping"]}],
+ "glossary": [{"term": "...", "definition": "one sentence, as used in the lecture"}],
+ "questions": [{"question": "...", "answer": "short answer from the notebook", "section_id": 1}]}
+
+Rules:
+- One outline entry for every section, using the given section_id; titles at most 80 characters.
+- Glossary: only terms that appear in the notebook; merge duplicates.
+- Exactly {n_questions} review questions that test understanding, spread over the sections, each tied to the
+  section it comes from."""
+
+
+def questions_wanted(memory: Memory) -> int:
+    """About one review question per 15 minutes of lecture, 3 to 8."""
+    return max(3, min(8, round(memory.media_end / 900)))
+
+
+def end_prompt(memory: Memory) -> str:
+    return END_PROMPT.replace("{n_questions}", str(questions_wanted(memory)))
+
+END_PROMPT_CHARS = 16_000         # about 4,000 tokens: a single request must fit the free per-minute limit (§8.0)
+
+
+def end_user_prompt(memory: Memory, cap_chars: int = END_PROMPT_CHARS) -> tuple[str, int]:
+    """The notebook as text, trimmed to fit: fewer points per section for long lectures. (text, points kept)."""
+    sections = list(memory.sections.values())
+    by_section = {s["id"]: [pt for pt in memory.points if pt["section_id"] == s["id"]] for s in sections}
+    terms = "; ".join(f"{t['term']}: {t['definition']}" for t in memory.terms.values())
+    for per_section in (1000, 12, 8, 5, 3, 2, 1):
+        lines = []
+        for sec in sections:
+            lines.append(f"Section {sec['id']}: {sec['title']}")
+            lines += [f"  {pt['id']} [{mmss(pt['t'])}] {pt['text']}" for pt in by_section[sec["id"]][:per_section]]
+        text = "\n".join(lines) + ("\nTerms: " + terms if terms else "")
+        if len(text) <= cap_chars:
+            break
+    return text[:cap_chars], sum(min(len(v), per_section) for v in by_section.values())
+
+
+def _section_start(memory: Memory, sid: int) -> float:
+    ts = [pt["t"] for pt in memory.points if pt["section_id"] == sid]
+    return min(ts) if ts else 0.0
+
+
+def lecture_fallback(memory: Memory, flags: list | None = None) -> dict:
+    """No LLM: outline from the section titles, glossary from the collected terms; no questions."""
+    return {"generator": "extractive", "quality_flags": list(flags or []), "questions": [],
+            "outline": [{"section_id": s["id"], "title": s["title"][:80], "gist": "", "weak_points": []}
+                        for s in memory.sections.values()],
+            "glossary": [{"term": t["term"], "definition": t["definition"][:300], "t": float(t["t"])}
+                         for t in memory.terms.values()]}
+
+
+def lecture_from_reply(memory: Memory, reply: dict) -> dict:
+    """Validate the end pass (§8.1.5): known section ids only, every section present, glossary terms that occur
+    in the notebook, weak points that exist, at most 5 questions tied to real sections."""
+    flags: list[str] = []
+    point_ids = {pt["id"] for pt in memory.points}
+    given: dict[int, dict] = {}
+    for o in reply.get("outline") if isinstance(reply.get("outline"), list) else []:
+        if isinstance(o, dict) and o.get("section_id") in memory.sections and o["section_id"] not in given:
+            weak = [w for w in o.get("weak_points") or [] if isinstance(w, str) and w in point_ids]
+            title = str(o.get("title") or "").strip()[:80] or memory.sections[o["section_id"]]["title"][:80]
+            given[o["section_id"]] = {"section_id": o["section_id"], "title": title,
+                                      "gist": str(o.get("gist") or "").strip()[:300], "weak_points": weak}
+        elif isinstance(o, dict):
+            flags.append("unknown_section_dropped")
+    outline = []
+    for sid, sec in memory.sections.items():
+        if sid not in given:
+            flags.append("section_missing_kept_live_title")
+        outline.append(given.get(sid) or {"section_id": sid, "title": sec["title"][:80], "gist": "", "weak_points": []})
+    notebook_text = norm(" ".join(pt["text"] for pt in memory.points) + " " + " ".join(memory.terms))
+    glossary, seen = [], set()
+    for g in reply.get("glossary") if isinstance(reply.get("glossary"), list) else []:
+        if not isinstance(g, dict) or not str(g.get("term") or "").strip():
+            continue
+        term = str(g["term"]).strip()[:80]
+        key = term.lower()
+        if key in seen:
+            continue
+        known = memory.terms.get(key)
+        if known is None and norm(term) not in notebook_text:
+            flags.append("glossary_term_not_in_notebook")
+            continue
+        seen.add(key)
+        t = float(known["t"]) if known else next((pt["t"] for pt in memory.points if norm(term) in norm(pt["text"])), 0.0)
+        glossary.append({"term": term, "definition": str(g.get("definition") or "").strip()[:300], "t": t})
+    for key, t in memory.terms.items():                       # a collected term is never lost
+        if key not in seen:
+            glossary.append({"term": t["term"], "definition": t["definition"][:300], "t": float(t["t"])})
+    questions = []
+    for q in reply.get("questions") if isinstance(reply.get("questions"), list) else []:
+        if isinstance(q, dict) and str(q.get("question") or "").strip() and q.get("section_id") in memory.sections:
+            questions.append({"question": str(q["question"]).strip()[:300], "answer": str(q.get("answer") or "").strip()[:400],
+                              "section_id": q["section_id"], "t": _section_start(memory, q["section_id"])})
+    wanted = questions_wanted(memory)
+    if len(questions) > wanted:
+        flags.append("questions_trimmed")
+    return {"outline": outline, "glossary": glossary, "questions": questions[:wanted], "generator": "llm",
+            "quality_flags": flags}
+
+
+def build_lecture_notes(memory: Memory, fields: dict, model: str | None, agent_ms: float, ended_by: str,
+                        now_ms: int | None = None) -> dict:
+    return {"schema": "lecture_notes.v1", "video_id": memory.video_id, **fields,
+            "model": model if fields["generator"] == "llm" else None, "agent_ms": round(agent_ms, 1),
+            "ended_by": ended_by, "created_ts": now_ms if now_ms is not None else int(time.time() * 1000)}

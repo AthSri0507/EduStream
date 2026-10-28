@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lecture_notes.v1",
+  "title": "End-of-lecture pass: final section titles, glossary, review questions, weak points (topic lecture_notes, rev 6, ARCHITECTURE §8.1.5). No summary: the notebook is the summary; the assistant summarises on request.",
+  "type": "object",
+  "required": [
+    "schema",
+    "video_id",
+    "outline",
+    "glossary",
+    "questions",
+    "generator",
+    "created_ts"
+  ],
+  "properties": {
+    "schema": {
+      "const": "lecture_notes.v1"
+    },
+    "video_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]{1,64}$"
+    },
+    "outline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "section_id",
+          "title",
+          "gist",
+          "weak_points"
+        ],
+        "properties": {
+          "section_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "final title, seeing the whole lecture"
+          },
+          "gist": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "weak_points": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^u[0-9]+p[0-9]+$"
+            },
+            "description": "points (update u, position p) flagged as weak; their text is never changed"
+          }
+        }
+      }
+    },
+    "glossary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "term",
+          "definition",
+          "t"
+        ],
+        "properties": {
+          "term": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "definition": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "t": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": [
+          "question",
+          "section_id",
+          "t"
+        ],
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "answer": {
+            "type": "string",
+            "maxLength": 400
+          },
+          "section_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "t": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "generator": {
+      "enum": [
+        "llm",
+        "extractive"
+      ]
+    },
+    "model": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "agent_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ended_by": {
+      "enum": [
+        "last_window",
+        "idle"
+      ]
+    },
+    "created_ts": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}
