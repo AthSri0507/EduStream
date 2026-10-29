@@ -1,0 +1,15 @@
+{
+  "schema": "addition.v1",
+  "video_id": "hypothesis_testing_0208",
+  "addition_id": "0f3c2a9d8b7e4c1aa5d6e7f8091a2b3c",
+  "action": "add",
+  "span": [
+    540.0,
+    650.0
+  ],
+  "question": "summarise type 1 and type 2 errors as a table",
+  "outside": true,
+  "model": "openai/gpt-oss-20b",
+  "topic_override": null,
+  "created_ts": 1793260000000
+}

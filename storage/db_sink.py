@@ -28,15 +28,16 @@ from kafka.structs import OffsetAndMetadata
 
 from common import schemas
 from agents.study_notes import text_of
-from common.config import TOPIC_ALERTS, TOPIC_DLQ, TOPIC_NOTES, TOPIC_TRANSCRIPTS, TOPIC_WINDOWS, load
+from common.config import (TOPIC_ALERTS, TOPIC_DLQ, TOPIC_NOTES, TOPIC_TRANSCRIPTS, TOPIC_USER_NOTES, TOPIC_WINDOWS,
+                           load)
 from common.kafka_utils import EXIT_PRODUCE_FAILED, make_consumer, raw_preview
 from common.log import JsonLog
 from storage.db import connect_writer
 
 GROUP = "db-sink"
-TOPICS = [TOPIC_TRANSCRIPTS, TOPIC_WINDOWS, TOPIC_NOTES, TOPIC_ALERTS, TOPIC_DLQ]
+TOPICS = [TOPIC_TRANSCRIPTS, TOPIC_WINDOWS, TOPIC_NOTES, TOPIC_USER_NOTES, TOPIC_ALERTS, TOPIC_DLQ]
 SCHEMA_OF = {TOPIC_TRANSCRIPTS: "transcript.v1", TOPIC_WINDOWS: "window.v1", TOPIC_NOTES: "notes.v1",
-             TOPIC_ALERTS: "alert.v1", TOPIC_DLQ: "dlq.v1"}
+             TOPIC_USER_NOTES: "addition.v1", TOPIC_ALERTS: "alert.v1", TOPIC_DLQ: "dlq.v1"}
 NOTES_SCHEMAS = ("notes.v3", "consolidation.v1", "notes.v2")      # by the payload's own name; notes.v1 otherwise
 RETIRED = ("notes.v2",)              # the rev 6 notebook before NOTEBOOK_DESIGN §11: no tables any more, skipped
 SQLITE_RETRIES = 5
@@ -134,6 +135,21 @@ def _apply_pass(conn: sqlite3.Connection, p: dict, now: int) -> str:
     return "stored"
 
 
+def _apply_addition(conn: sqlite3.Connection, p: dict, now: int) -> str:
+    """addition.v1: an addition is stored once (first writer wins); a removal only marks it."""
+    if p["action"] == "remove":
+        cur = conn.execute("UPDATE additions SET removed = 1 WHERE addition_id = ? AND video_id = ? AND removed = 0",
+                           (p["addition_id"], p["video_id"]))
+        return "stored" if cur.rowcount == 1 else "duplicate"
+    span = p.get("span") or [None, None]
+    cur = conn.execute(
+        "INSERT INTO additions VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,?) ON CONFLICT DO NOTHING",
+        (p["video_id"], p["addition_id"], p["figure"]["shape"], p["figure"].get("title", ""),
+         json.dumps(p["figure"], ensure_ascii=False), span[0], span[1], p.get("question"), p.get("topic_override"),
+         int(bool(p.get("outside"))), p.get("model"), p["created_ts"], now))
+    return "stored" if cur.rowcount == 1 else "duplicate"
+
+
 def apply_record(conn: sqlite3.Connection, topic: str, value: bytes | None, partition: int, offset: int,
                  key: bytes | None, now: int, window_ms: int) -> str:
     """Store one record. Returns what happened: 'stored', 'duplicate' or 'invalid'."""
@@ -198,6 +214,9 @@ def apply_record(conn: sqlite3.Connection, topic: str, value: bytes | None, part
 
     if topic == TOPIC_NOTES and p["schema"] == "consolidation.v1":
         return _apply_pass(conn, p, now)
+
+    if topic == TOPIC_USER_NOTES:
+        return _apply_addition(conn, p, now)
 
     if topic == TOPIC_NOTES and p["schema"] in RETIRED:
         return "skipped"

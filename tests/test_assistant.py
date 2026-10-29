@@ -20,11 +20,12 @@ class FakeLLM:
     """Answers the understand step with `plan` and the answer step with `answer`; records the prompts."""
 
     def __init__(self, plan=None, answer=None, ok=True):
-        self.plan, self.answer, self.ok, self.calls = plan, answer, ok, []
+        self.plan, self.answer, self.ok, self.calls, self.kwargs = plan, answer, ok, [], []
 
-    def complete_json(self, system, user, max_tokens=0):
+    def complete_json(self, system, user, max_tokens=0, **kw):
         kind = "understand" if system.startswith("You are the request-understanding") else "answer"
         self.calls.append((kind, user))
+        self.kwargs.append((kind, kw))
         data = self.plan if kind == "understand" else self.answer
         if not self.ok or data is None:
             return SimpleNamespace(ok=False, reason="disabled", data=None, model=None)
@@ -349,7 +350,7 @@ def test_lecture_only_checks_the_lecture_before_calling_a_question_off_topic(con
     """Dry run 28 Oct: a question the lecture covers was planned as "other" and refused in lecture-only mode."""
     llm = FakeLLM(plan={"intent": "other"}, answer={"lecture": [
         {"text": "A computer stores results in memory.", "quote": "Store them in computer memory", "t": "06:40"}]})
-    ans = A.run_turn(conn, llm, "make a table of what a computer does with calculations and memory", [], pos())
+    ans = A.run_turn(conn, llm, "tell me what a computer does with calculations and memory", [], pos())
     assert ans.plan.intent == "ask" and ans.evidence and ans.note is None
     assert [k for k, _ in llm.calls] == ["understand", "answer"] and len(ans.items) == 1
 
@@ -368,62 +369,64 @@ def test_a_real_quote_does_not_carry_a_claim_the_lecturer_did_not_make(conn):
     assert len(items) == 1 and background == ["The F distribution is used in variance ratio tests."]   # labelled
 
 
-# ---------------------------------------------------------------- tables (NOTEBOOK_DESIGN §13, chat part)
-TABLE_REPLY = {"lecture": [], "background": "", "table": {
-    "caption": "Where a computer keeps things", "columns": ["Thing", "What it does", "Time", "Speed"],
+# ---------------------------------------------------------------- figures (NOTEBOOK_DESIGN §13), end to end
+TABLE_REPLY = {"lecture": [], "background": "", "figure": {
+    "shape": "table", "title": "Where a computer keeps things", "columns": ["Thing", "What it does", "Time", "Speed"],
     "rows": [{"cells": ["Memory", "stores the results of calculations", "07:10", "slow compared to a register"],
               "quote": "Store them in computer memory"},
              {"cells": ["Registers", "tiny cells inside the processor", "", "one cycle"], "quote": None}]}}
 
 
 def test_a_table_request_is_decided_by_code_and_every_cell_is_checked(conn):
-    assert A.TABLE.search("make a table of type 1 and type 2 errors") and not A.TABLE.search("my timetable")
     llm = FakeLLM(plan={"intent": "ask"}, answer=TABLE_REPLY)
     msg = "make a table of where a computer keeps its results"
     ans = A.run_turn(conn, llm, msg, [], pos(), outside=True)
-    assert ans.plan.shape == "table" and ans.table["columns"] == ["Thing", "What it does", "Speed"]   # no "Time"
-    memory, registers = ans.table["rows"]
+    assert ans.plan.shape == "table" and ans.figure["columns"] == ["Thing", "What it does", "Speed"]   # no "Time"
+    memory, registers = ans.figure["rows"]
     assert memory["t"] == 430.0 and memory["added"] == [False, False, True]                # said / said / not said
     assert registers["t"] is None and registers["added"] == [True, True, True]
-    assert "table_meta_columns_dropped" in ans.flags and "table_cells_added" in ans.flags
+    assert "table_meta_columns_dropped" in ans.flags and "figure_items_added" in ans.flags
     ans = A.run_turn(conn, llm, msg, [], pos())                                              # lecture only
-    assert ans.table["columns"] == ["Thing", "What it does"]                                 # "Speed": nothing said
-    assert [r["cells"] for r in ans.table["rows"]] == [["Memory", "stores the results of calculations"]]
+    assert ans.figure["columns"] == ["Thing", "What it does"]                                # "Speed": nothing said
+    assert [r["cells"] for r in ans.figure["rows"]] == [["Memory", "stores the results of calculations"]]
     assert {"table_columns_dropped_lecture_only", "table_row_dropped_lecture_only"} <= set(ans.flags)
 
 
-def test_the_table_rule_is_in_the_prompt_only_when_a_table_was_asked_for():
+def test_the_figure_rule_is_in_the_prompt_only_when_one_was_asked_for():
     plan = A.Plan(intent="ask", question="x", shape="table")
-    assert "leave a cell empty rather than adding anything else" in A.answer_prompt(plan, "unknown", [], False)
-    assert "IN THE TABLE: add one or two columns" in A.answer_prompt(plan, "unknown", [], True)
-    assert "never add time, quote or source columns" in A.answer_prompt(plan, "unknown", [], True)
-    assert "\"table\"" not in A.answer_prompt(A.Plan(intent="ask", question="x"), "unknown", [], True)
+    assert "leave something out rather than adding anything else" in A.answer_prompt(plan, "unknown", [], False)
+    assert "Add what the lecture did not say" in A.answer_prompt(plan, "unknown", [], True)
+    assert '"figure": {"shape": "table"' in A.answer_prompt(plan, "unknown", [], True)
+    assert '"figure"' not in A.answer_prompt(A.Plan(intent="ask", question="x"), "unknown", [], True)
 
 
 def test_a_table_with_nothing_from_the_lecture_is_no_table_in_lecture_only_mode(conn):
-    only_general = {"lecture": [], "background": "", "table": {"caption": "", "columns": ["A", "B"],
+    only_general = {"lecture": [], "background": "", "figure": {"shape": "table", "columns": ["A", "B"],
                     "rows": [{"cells": ["Registers", "tiny storage inside the processor"], "quote": None}]}}
     ans = A.run_turn(conn, FakeLLM(plan={"intent": "ask"}, answer=only_general),
                      "table of processor storage please", [], pos())
-    assert ans.table is None and "table_empty" in ans.flags and "Switch on" in ans.note
+    assert ans.figure is None and "table_empty" in ans.flags and "Switch on" in ans.note
 
 
-def test_the_chat_draws_the_table_with_marks_and_sources_and_escapes_model_text():
-    from dashboard.assistant_panel import table_html
-    page = table_html({"caption": "Errors <script>x</script>", "columns": ["Type", "Meaning", "Probability"],
-                       "rows": [{"cells": ["Type I", "reject a true H0 <b>x</b>", "α"], "added": [False, False, True],
-                                 "t": 600.0},
-                                {"cells": ["Type II", "fail to reject a false H0", "β"], "added": [False, False, True],
-                                 "t": None}]})
-    assert "<script>" not in page and "&lt;b&gt;x&lt;/b&gt;" in page and "Errors &lt;script&gt;" in page
-    assert "<th>Type</th><th>Meaning</th><th>Probability</th><th>Source</th>" in page
-    assert '<td class="add">α †</td><td class="src">10:00</td>' in page and '<td class="src">—</td>' in page
-    assert "† 2 of 6 cells are general knowledge, not from the lecture." in page and "overflow-x:auto" in page
+def test_a_worked_solution_asks_the_strong_model_and_needs_the_switch_when_it_goes_beyond_the_lecture(conn):
+    steps = {"lecture": [], "background": "", "figure": {"shape": "steps", "title": "Store a result", "steps": [
+        {"text": "The computer performs the calculation", "quote": "It performs these calculations"},
+        {"text": "It stores the result in computer memory", "quote": "Store them in computer memory"},
+        {"text": "A cache line is then flushed to RAM", "quote": None}]}}
+    llm = FakeLLM(plan={"intent": "ask"}, answer=steps)
+    ans = A.run_turn(conn, llm, "walk me through how a computer keeps a result", [], pos())
+    assert ans.plan.shape == "steps" and ans.figure is None and "doesn't give every step" in ans.note
+    ans = A.run_turn(conn, llm, "walk me through how a computer keeps a result", [], pos(), outside=True)
+    assert [s["added"] for s in ans.figure["steps"]] == [False, False, True]
+    assert all(kw.get("prefer") == A.STRONG_MODEL for kind, kw in llm.kwargs if kind == "answer")
 
 
-def test_a_cell_is_said_whatever_way_whisper_wrote_its_number():
-    """Real check 29 Oct: "Type II" was marked as not from the lecture because Whisper wrote "Type 2"."""
-    assert A.cell_said("Type II", "Type 2 fail to reject H naught when false.")
-    assert A.cell_said("Type I", "which you typically call the type one error")
-    assert not A.cell_said("one cycle", "it chose one number")                  # a short cell must be said in full
-    assert not A.cell_said("α", "alpha is the level of significance")           # a symbol alone: not "said"
+def test_a_figure_the_model_did_not_return_is_said_plainly_and_figures_ask_the_strong_model(conn):
+    """Live check 29 Oct: a table request came back as a plain summary; nothing told the student."""
+    llm = FakeLLM(plan={"intent": "summarise"}, answer={"lecture": [], "background": ""})
+    ans = A.run_turn(conn, llm, "make a table of what a computer does", [], pos(), outside=True)
+    assert ans.figure is None and ans.note == "I couldn't build the table this time. Please ask again."
+    assert [kw.get("prefer") for kind, kw in llm.kwargs if kind == "answer"] == [A.STRONG_MODEL]
+    plan = A.Plan(intent="summarise", question="x", shape="timeline")
+    prompt = A.answer_prompt(plan, "unknown", [], False)
+    assert prompt.index('MUST contain "figure"') < prompt.index("Summarise as short items")

@@ -7,6 +7,7 @@ import sqlite3
 
 import pandas as pd
 
+from agents import additions as adds
 from agents.study_notes import fold_draft
 
 LECTURES_SQL = """
@@ -100,9 +101,36 @@ def notebook(conn: sqlite3.Connection, video_id: str, update_s: float = 90.0) ->
         status = f"⏳ writing notes for {_mmss(reach)}–{_mmss(reach + update_s)} …"
     else:
         status = f"Listening · next notes after {_mmss(reach + update_s)}"
+    live_additions, beyond = place_additions(conn, video_id, topics, since, finished)
     return {"topics": topics, "drafts": drafts, "latest_k": latest, "since": since, "reach": reach,
             "said_until": said_until, "now_text": " ".join(tail), "glossary": glossary, "info": info,
-            "updates": updates, "finished": finished, "status": status}
+            "updates": updates, "finished": finished, "status": status, "live_additions": live_additions,
+            "beyond": beyond}
+
+
+def place_additions(conn: sqlite3.Connection, video_id: str, topics: list[dict], since: float,
+                    finished: bool) -> tuple[list[dict], list[dict]]:
+    """The student's additions (NOTEBOOK_DESIGN §13.6), placed now: into topic["additions"] (each with "after", the
+    element it follows, or None for the end of the topic), under the live notes, or "Beyond the lecture"."""
+    for t in topics:
+        t["additions"] = []
+    try:
+        rows = conn.execute("SELECT addition_id, figure, span_start, span_end, question, topic_override, outside"
+                            " FROM additions WHERE video_id = ? AND removed = 0 ORDER BY created_ts",
+                            (video_id,)).fetchall()
+    except sqlite3.OperationalError:                       # a database from before §13
+        return [], []
+    live, beyond = [], []
+    by_n = {t["n"]: t for t in topics}
+    for r in rows:
+        item = {"addition_id": r[0], "figure": json.loads(r[1]), "span": [r[2], r[3]] if r[2] is not None else None,
+                "question": r[4] or "", "topic_override": r[5], "outside": bool(r[6])}
+        placement = adds.place(item, topics, since, finished)
+        if placement["where"] == "topic":
+            by_n[placement["topic_n"]]["additions"].append({**item, "after": placement["after"]})
+        else:
+            (live if placement["where"] == "live" else beyond).append(item)
+    return live, beyond
 
 
 def _mmss(seconds: float) -> str:

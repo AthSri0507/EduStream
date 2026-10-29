@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "addition.v1",
+  "title": "A student's addition to the notes: a figure from the Lecture Assistant, or its removal (topic user_notes, NOTEBOOK_DESIGN §13)",
+  "type": "object",
+  "required": ["schema", "video_id", "addition_id", "action", "created_ts"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "addition.v1"},
+    "video_id": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,64}$"},
+    "addition_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "action": {"enum": ["add", "remove"]},
+    "figure": {
+      "type": "object",
+      "description": "agents/figures.py: shape, title and the shape's items, each with \"added\" (not from the lecture)",
+      "required": ["shape", "title"],
+      "properties": {
+        "shape": {"enum": ["table", "steps", "flowchart", "concept_map", "timeline"]},
+        "title": {"type": "string", "maxLength": 120}
+      }
+    },
+    "span": {"type": ["array", "null"], "minItems": 2, "maxItems": 2, "items": {"type": "number", "minimum": 0},
+             "description": "the part of the lecture it is about (media seconds); null: beyond the lecture"},
+    "question": {"type": "string", "maxLength": 300},
+    "outside": {"type": "boolean", "description": "made with general knowledge allowed (the switch)"},
+    "model": {"type": ["string", "null"]},
+    "topic_override": {"type": ["integer", "null"], "minimum": 1, "description": "\"yes, under topic N\""},
+    "created_ts": {"type": "integer", "minimum": 0}
+  },
+  "allOf": [
+    {"if": {"properties": {"action": {"const": "add"}}},
+     "then": {"required": ["figure", "span", "question", "outside", "topic_override"]}}
+  ]
+}

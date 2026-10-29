@@ -1,0 +1,445 @@
+{
+  "checks": [
+    {
+      "name": "all records match the JSON Schemas",
+      "ok": true,
+      "detail": "146 records"
+    },
+    {
+      "name": "algorithms_ku_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_ku_l1: complete",
+      "ok": true,
+      "detail": "48/48 chunks across 16 windows"
+    },
+    {
+      "name": "algorithms_ku_l1: each window emitted once",
+      "ok": true,
+      "detail": "16 distinct windows, 16 records"
+    },
+    {
+      "name": "algorithms_ku_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_ku_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10084 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_ku_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "6/6 updates, 6 records"
+    },
+    {
+      "name": "algorithms_ku_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "16 windows in updates, 16 windows emitted"
+    },
+    {
+      "name": "algorithms_ku_l1: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "2 passes, 2 records: 0-360 llm, 360-480 llm"
+    },
+    {
+      "name": "algorithms_ku_l1: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 480 s, last cut 480 s"
+    },
+    {
+      "name": "algorithms_ku_l1: topics numbered 1..N",
+      "ok": true,
+      "detail": "3 topics"
+    },
+    {
+      "name": "python_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "python_l1: complete",
+      "ok": true,
+      "detail": "48/48 chunks across 16 windows"
+    },
+    {
+      "name": "python_l1: each window emitted once",
+      "ok": true,
+      "detail": "16 distinct windows, 16 records"
+    },
+    {
+      "name": "python_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "python_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10056 ms after the flush's event time"
+    },
+    {
+      "name": "python_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "6/6 updates, 6 records"
+    },
+    {
+      "name": "python_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "16 windows in updates, 16 windows emitted"
+    },
+    {
+      "name": "python_l1: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "1 passes, 1 records: 0-480 llm"
+    },
+    {
+      "name": "python_l1: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 480 s, last cut 480 s"
+    },
+    {
+      "name": "python_l1: topics numbered 1..N",
+      "ok": true,
+      "detail": "2 topics"
+    },
+    {
+      "name": "no LATE_DROP alerts",
+      "ok": true,
+      "detail": "0 LATE_DROP"
+    },
+    {
+      "name": "DLQ as expected",
+      "ok": true,
+      "detail": "0 DLQ record(s), expected 0"
+    },
+    {
+      "name": "db: chunks == distinct transcripts",
+      "ok": true,
+      "detail": "96 in SQLite, 96 in Kafka"
+    },
+    {
+      "name": "db: windows == topic windows (keys and content)",
+      "ok": true,
+      "detail": "32 in SQLite, 32 distinct in Kafka"
+    },
+    {
+      "name": "db: live updates == topic updates, with all their drafts",
+      "ok": true,
+      "detail": "12 updates and 14 drafts in SQLite, 12 distinct updates in Kafka"
+    },
+    {
+      "name": "db: passes == topic passes, with all their topics and elements",
+      "ok": true,
+      "detail": "3 passes, 5 topics, 13 elements in SQLite"
+    },
+    {
+      "name": "db: no draft left in the search index of a finished lecture",
+      "ok": true,
+      "detail": "0 draft rows"
+    },
+    {
+      "name": "db: alerts == distinct topic alerts",
+      "ok": true,
+      "detail": "1 in SQLite"
+    }
+  ],
+  "lectures": {
+    "algorithms_ku_l1": {
+      "partition": 1,
+      "chunks_sent": 48,
+      "windows": 16,
+      "last_window_emitted_after_flush_ms": 10084,
+      "updates": {
+        "llm": 6
+      },
+      "passes": {
+        "llm": 2
+      }
+    },
+    "python_l1": {
+      "partition": 0,
+      "chunks_sent": 48,
+      "windows": 16,
+      "last_window_emitted_after_flush_ms": 10056,
+      "updates": {
+        "llm": 6
+      },
+      "passes": {
+        "llm": 1
+      }
+    }
+  },
+  "notebooks": {
+    "algorithms_ku_l1": {
+      "topics": {
+        "1": {
+          "title": "Course Goals: Solving, Proving, Communicating",
+          "elements": [
+            [
+              "para",
+              90.0,
+              "Algorithmic problem solving. The course is about solving computational problems, but also about communicating those solutions to others and convincing them that the solution is correct and efficient"
+            ],
+            [
+              "para",
+              100.0,
+              "Proof and efficiency. Students will learn to prove correctness and argue about efficiency, and will write more about these ideas than they code"
+            ]
+          ],
+          "question": {
+            "q": "What three activities does the course emphasize beyond solving problems?",
+            "answer": "Proving correctness, arguing efficiency, and communicating solutions to others"
+          },
+          "end": 150.0
+        },
+        "2": {
+          "title": "Formal Definition of a Computational Problem",
+          "elements": [
+            [
+              "para",
+              250.0,
+              "Problem as binary relation. A computational problem is a binary relation between a set of inputs and a set of possible outputs; for each input the relation specifies which outputs are correct, and there may be multiple correct outputs for a single input"
+            ],
+            [
+              "para",
+              330.0,
+              "Predicate definition. Rather than enumerating every input\u2011output pair, a problem is usually defined by a predicate that can check whether a given output is correct for a given input"
+            ],
+            [
+              "example",
+              350.0,
+              "Example (Index\u20115 check): To verify that an index contains the value 5, the predicate examines the array at that index and compares the element to 5. Steps: Access the array at the given index."
+            ]
+          ],
+          "question": {
+            "q": "How is a computational problem formally defined in the lecture?",
+            "answer": "As a binary relation between inputs and outputs, usually specified by a predicate that checks output correctness"
+          },
+          "end": 360.0
+        },
+        "3": {
+          "title": "Predicate Formulation of the Birthday Problem",
+          "elements": [
+            [
+              "para",
+              360.0,
+              "Predicate formulation. We express the problem as a predicate over the whole class rather than focusing on a particular small instance. The predicate asks whether there exists a pair of students whose birthdays are identical. The pigeonhole principle guarantees such a pair when the number of students exceeds 365, because there are only 365 possible days"
+            ]
+          ],
+          "question": null,
+          "end": 480.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": [
+            [
+              "u0e0",
+              null,
+              "Course Overview. The class is Introduction to Algorithms, taught by three instructors: Jason Ku, Eric Domen, and Justin Solomon. The first lecture is by Jason, followed by the others for the next two lectures, then the schedule continues"
+            ]
+          ]
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": [
+            [
+              "u1e0",
+              null,
+              "Communication and Proof. The course emphasizes communicating algorithmic ideas clearly and proving their correctness and efficiency. Students will write more than they code, learning to convince others that their solutions are correct and better than alternatives"
+            ],
+            [
+              "u1e1",
+              null,
+              "Course Focus. Unlike other classes, this class concentrates on demonstrating correctness and superiority of algorithms to people, not just to computers"
+            ]
+          ]
+        },
+        {
+          "update": 2,
+          "generator": "llm",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "Computational Problem. A computational problem is defined as a binary relation between a set of inputs and a set of possible outputs. For each input, the relation specifies which outputs are considered correct, and there may be multiple correct outputs for a single input"
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "llm",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "Computational Problem. To define a problem, one usually specifies a predicate that can check whether a given output is correct for an input, rather than listing all input-output pairs"
+            ],
+            [
+              "u3e1",
+              null,
+              "Defining via Predicate. Instead of enumerating every input-output pair, we define a problem by a predicate that verifies correctness. For example, to check if an index contains a 5, we examine the array at that index and compare it to 5. This predicate-based definition is the standard way to specify problems"
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "llm",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "Predicate Formulation. We express the problem in terms of predicates, avoiding small instances. The question becomes: does there exist a pair of students with identical birthdays? The pigeonhole principle guarantees a pair if the number of students exceeds 365. Extending the input space to year and hour reduces the likelihood, but the deterministic algorithm still checks for equality"
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "llm",
+          "elements": []
+        }
+      ]
+    },
+    "python_l1": {
+      "topics": {
+        "1": {
+          "title": "Course strategy and roadmap",
+          "elements": [
+            [
+              "para",
+              170.0,
+              "Course strategy. The course moves quickly, so reading problem sets as soon as they are released helps the terminology sink in. Practice is emphasized as the key to mastering programming, much like math or reading, because the more you practice the better you become"
+            ],
+            [
+              "para",
+              220.0,
+              "Course roadmap. The class has three main goals: knowledge of concepts, programming skills, and problem\u2011solving ability. These are delivered through lectures, examples, and problem sets, with practice underlying all of them"
+            ]
+          ],
+          "question": null,
+          "end": 280.0
+        },
+        "2": {
+          "title": "Fundamentals of programming in Python",
+          "elements": [
+            [
+              "para",
+              300.0,
+              "Objects and data structures. Learning how to program starts with deciding which objects to create and how to represent knowledge using data structures. Representing knowledge with data structures is the broad term for choosing appropriate containers for information"
+            ],
+            [
+              "para",
+              300.0,
+              "Control flow. Programs are not merely linear; they include control flow that makes decisions and causes jumps, allowing the program to branch based on conditions"
+            ],
+            [
+              "para",
+              340.0,
+              "Readable code. Writing readable, well\u2011organized, modular code is essential so that others\u2014and your future self\u2014can understand and reuse it, avoiding a messy codebase that is hard to re\u2011understand"
+            ],
+            [
+              "para",
+              420.0,
+              "Computer fundamentals. A computer performs two fundamental actions: it carries out calculations at very high speed\u2014often billions per second\u2014and it stores results in memory, which can be hundreds of gigabytes in modern machines"
+            ],
+            [
+              "para",
+              460.0,
+              "Primitive operations. Python provides built\u2011in arithmetic operators such as addition, subtraction, multiplication, and division"
+            ]
+          ],
+          "question": null,
+          "end": 480.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": [
+            [
+              "u1e0",
+              null,
+              "Python basics. We start with Python basics, covering mathematical operations that can be performed in Python. The slides and in\u2011class exercises will illustrate these operations. Students are encouraged to take notes on the code for future reference"
+            ],
+            [
+              "u1e1",
+              null,
+              "Course strategy. The course is fast\u2011paced, so reading problem sets immediately after release helps terminology sink in. Practice is emphasized as the key to mastering programming, similar to math or reading"
+            ]
+          ]
+        },
+        {
+          "update": 2,
+          "generator": "llm",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "Course Roadmap. The course is structured around three main goals: knowledge of concepts, programming skills, and problem\u2011solving ability. These are taught through lectures, examples, and problem sets"
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "llm",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "Learning how to program involves deciding which objects to create and how to represent knowledge with data structures. Programs are not linear; they include control flow that makes decisions and jumps."
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "llm",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "Readable code. Writing readable code and organizing code is essential to avoid a big mess that makes it hard to understand or re\u2011understand what you were doing"
+            ],
+            [
+              "u4e1",
+              null,
+              "Computer fundamentals. A computer performs calculations and stores them in memory, often handling billions of calculations per second and using hundreds of gigabytes of storage"
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "llm",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "Primitive operations. Python provides built\u2011in arithmetic operators such as addition, subtraction, multiplication, and division. These low\u2011level operations are directly supported by the language and form the foundation for more complex calculations"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "alerts_by_type": {
+    "LOW_ASR_SCORE": 1
+  },
+  "counts": {
+    "transcriptions": 98,
+    "window_summaries": 32,
+    "final_notes": 15,
+    "alerts": 1,
+    "dlq": 0
+  }
+}

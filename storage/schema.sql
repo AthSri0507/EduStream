@@ -115,6 +115,16 @@ CREATE VIRTUAL TABLE IF NOT EXISTS notebook_fts USING fts5(
   video_id UNINDEXED, ref UNINDEXED, t UNINDEXED, kind UNINDEXED, body
 );
 
+-- The student's additions (NOTEBOOK_DESIGN §13, addition.v1 on user_notes): figures from the Lecture Assistant the
+-- student said yes to. First writer wins; a "remove" record only sets removed = 1 (nothing is deleted).
+CREATE TABLE IF NOT EXISTS additions (
+  video_id TEXT, addition_id TEXT PRIMARY KEY, shape TEXT, title TEXT,
+  figure TEXT,                        -- JSON, agents/figures.py
+  span_start REAL, span_end REAL,     -- NULL: beyond the lecture
+  question TEXT, topic_override INTEGER, outside INTEGER, model TEXT,
+  removed INTEGER DEFAULT 0, created_ts INTEGER, sink_ts INTEGER
+);
+
 -- Rev 6 (M6e): what was said, searchable by the Lecture Assistant (BM25). One row per stored chunk.
 CREATE VIRTUAL TABLE IF NOT EXISTS transcript_fts USING fts5(
   video_id UNINDEXED, chunk_id UNINDEXED, start_time UNINDEXED, body

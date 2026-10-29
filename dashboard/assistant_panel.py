@@ -2,7 +2,11 @@
 
 The user types everything ("I didn't get the last 10 seconds", "explain that more simply", "what happened at
 12:30?"); there are no buttons in the chat (your decision, 15 Oct). One switch above it chooses the source (28 Oct):
-the lecture only (default), or the lecture plus general knowledge, always labelled as not from the lecture. Streamlit re-runs the script on every interaction, and
+the lecture only (default), or the lecture plus general knowledge, always labelled as not from the lecture.
+
+A figure (table, worked steps, flowchart, concept map, timeline: NOTEBOOK_DESIGN §13) is followed by an offer, "Add
+this to your notes under …?". The next message is read by code first (agents/additions.py): yes / no / "yes, under
+topic 2". Yes produces an addition.v1 record to user_notes (the sink stores it; the dashboard never writes SQLite). Streamlit re-runs the script on every interaction, and
 a re-run aborts whatever the old run was doing (step 0, bench/STEP0_RESULTS.md §3), so a turn never runs in the
 script: it runs in a background thread that writes into a job dict kept in session_state, and this panel (its
 own fragment, polled every second) shows the job's progress and then the verified answer.
@@ -10,7 +14,6 @@ own fragment, polled every second) shows the job's progress and then the verifie
 
 from __future__ import annotations
 
-import html
 import threading
 import time
 from dataclasses import replace
@@ -20,10 +23,16 @@ import streamlit as st
 from agents import assistant as A
 from agents import embeddings
 from agents import lecture_tools as tools
-from agents import llm
+from agents import additions, llm
 from agents.text import mmss
+from common import schemas
+from common.config import TOPIC_USER_NOTES, load
+from common.kafka_utils import make_producer, send_and_wait
 from common.log import JsonLog
+from common.partitioning import partition_for
+from dashboard import figure_draw
 from storage import indexer
+from dashboard import queries
 from storage.db import connect_readonly
 
 WAIT_FOR_TRANSCRIPT_S = 45          # a moment is transcribed about 12-15 s after it was said
@@ -36,12 +45,19 @@ def _shared() -> dict:
     return {"client": llm.Client("assistant", log=log), "log": log}
 
 
+@st.cache_resource
+def _producer():
+    """One Kafka producer for the dashboard process, made on first use (additions only)."""
+    return make_producer(load(), client_id="dashboard")
+
+
 def _state() -> dict:
     s = st.session_state
     s.setdefault("a_turns", [])         # [{role, text, answer}]
     s.setdefault("a_job", None)         # the running job, if any
     s.setdefault("a_explained", [])
     s.setdefault("a_outside", False)    # the switch: general knowledge allowed
+    s.setdefault("a_offer", None)       # a figure the student may add to the notes (§13.3)
     return s
 
 
@@ -80,6 +96,13 @@ def _run_job(job: dict, video_id: str, msg: str, turns: list, explained: list, o
             finally:
                 if vconn is not None:
                     vconn.close()
+            if answer.figure:                           # where it would go in the notes, for the offer
+                nb = queries.notebook(conn, video_id)
+                span = additions.span_of(answer.plan.span, answer.evidence)
+                draft = {"figure": answer.figure, "span": span, "question": msg, "topic_override": None}
+                placement = additions.place(draft, nb["topics"], nb["since"], nb["finished"])
+                job["offer"] = {**draft, "video_id": video_id, "outside": outside, "model": answer.model,
+                                "text": additions.offer_text(answer.figure, placement, nb["topics"])}
             job.update(done=True, answer=answer)
             shared["log"].info("turn", video_id=video_id, message=msg[:200], plan=answer.plan.chip(),
                                intent=answer.plan.intent, source=answer.plan.source, generator=answer.generator,
@@ -93,11 +116,60 @@ def _run_job(job: dict, video_id: str, msg: str, turns: list, explained: list, o
         shared["log"].error("turn_failed", video_id=video_id, error=repr(exc))
 
 
+def _answer_offer(offer: dict, decision: str, topic: int | None) -> str:
+    """Yes: produce the addition (the sink stores it). The reply says where it went, or why it could not be saved."""
+    if decision == "no":
+        return "OK, not added to your notes."
+    conn = connect_readonly()
+    try:
+        nb = queries.notebook(conn, offer["video_id"])
+    finally:
+        conn.close()
+    known = {t["n"] for t in nb["topics"]}
+    note = ""
+    if topic is not None and topic not in known:
+        note = f" (there is no topic {topic} yet)"
+        topic = None
+    payload = additions.payload_add(offer["video_id"], offer["figure"], offer["span"], offer["question"],
+                                    offer["outside"], offer["model"], topic)
+    try:
+        settings = load()
+        send_and_wait(_producer(), TOPIC_USER_NOTES, schemas.encode("addition.v1", payload), key=offer["video_id"],
+                      partition=partition_for(offer["video_id"], settings.partitions))
+    except Exception as exc:  # noqa: BLE001 - Kafka unreachable (ProduceFailed) or anything else: shown, never fatal
+        _shared()["log"].error("addition_failed", video_id=offer["video_id"], error=repr(exc))
+        return "I couldn't save it: the pipeline isn't reachable right now. It's still here in the chat."
+    placement = additions.place(payload, nb["topics"], nb["since"], nb["finished"])
+    _shared()["log"].info("addition_saved", video_id=offer["video_id"], addition_id=payload["addition_id"],
+                          shape=offer["figure"]["shape"], placement=placement)
+    return f"Added to your notes {additions.describe(placement, nb['topics'])}{note}."
+
+
+def remove_addition(video_id: str, addition_id: str) -> None:
+    """The ✕ on the notebook page: a removal record (the sink marks the addition removed; nothing is deleted)."""
+    try:
+        settings = load()
+        send_and_wait(_producer(), TOPIC_USER_NOTES,
+                      schemas.encode("addition.v1", additions.payload_remove(video_id, addition_id)), key=video_id,
+                      partition=partition_for(video_id, settings.partitions))
+        st.toast("Removed from your notes.")
+    except Exception as exc:  # noqa: BLE001 - Kafka unreachable: shown, never fatal
+        _shared()["log"].error("addition_remove_failed", video_id=video_id, error=repr(exc))
+        st.toast("Couldn't remove it: the pipeline isn't reachable right now.")
+
+
 def submit(video_id: str, msg: str) -> None:
     s = _state()
     msg = (msg or "").strip()
     if not msg or (s["a_job"] is not None and not s["a_job"].get("done")):
         return                                                   # one turn at a time
+    offer = s["a_offer"]
+    reply = additions.read_reply(msg) if offer and offer["video_id"] == video_id else None
+    if reply is not None:                                        # an answer to the offer, read by code (§13.3)
+        s["a_turns"].append({"role": "user", "text": msg})
+        s["a_turns"].append({"role": "assistant", "text": _answer_offer(offer, *reply), "answer": None})
+        s["a_offer"] = None
+        return
     s["a_turns"].append({"role": "user", "text": msg})
     history = [{"role": t["role"], "text": t["text"]} for t in s["a_turns"][:-1]]
     job = {"done": False, "status": "thinking…"}
@@ -106,43 +178,30 @@ def submit(video_id: str, msg: str) -> None:
                      args=(job, video_id, msg, history, list(s["a_explained"]), bool(s["a_outside"]))).start()
 
 
-TABLE_CSS = ("<style>.atab{overflow-x:auto;margin:4px 0 8px}.atab table{border-collapse:collapse;font-size:14px;"
-             "min-width:100%}.atab th,.atab td{border:1px solid rgba(128,128,128,.35);padding:5px 9px;text-align:left;"
-             "vertical-align:top}.atab th{font-weight:600}.atab .src{white-space:nowrap;font-family:monospace;"
-             "font-size:12.5px;opacity:.8}.atab .add{opacity:.75}.atab .cap{font-weight:600;margin-bottom:4px}"
-             ".atab .note{font-style:italic;font-size:13px;opacity:.8;margin-top:4px}</style>")
+def render_figure(figure: dict) -> None:
+    """A figure from the assistant (NOTEBOOK_DESIGN §13): drawings as images, the rest as escaped HTML."""
+    if figure_draw.is_drawing(figure):
+        st.image(figure_draw.draw_png(figure, _theme()), caption=figure_draw.caption(figure))
+    else:
+        st.html(figure_draw.figure_html(figure))
 
 
-def table_html(table: dict) -> str:
-    """The assistant's table (NOTEBOOK_DESIGN §13), as escaped HTML in a box that scrolls sideways (a markdown table
-    was cut off in the narrow chat column). A cell not from the lecture carries "†" (only when the switch is on);
-    the Source column gives the time where the row's subject was discussed."""
-    e = html.escape
-    rows = table["rows"]
-    head = "".join(f"<th>{e(c)}</th>" for c in table["columns"]) + "<th>Source</th>"
-    body = ""
-    for r in rows:
-        cells = "".join(f'<td class="add">{e(c)} †</td>' if added and c else f"<td>{e(c)}</td>"
-                        for c, added in zip(r["cells"], r["added"]))
-        body += f"<tr>{cells}<td class=\"src\">{mmss(r['t']) if r['t'] is not None else '—'}</td></tr>"
-    added = sum(sum(r["added"]) for r in rows)
-    total = sum(len(r["cells"]) for r in rows)
-    note = (f"† {added} of {total} cells are general knowledge, not from the lecture." if added
-            else "Everything in this table is from the lecture.")
-    caption = f'<div class="cap">{e(table["caption"])}</div>' if table.get("caption") else ""
-    return (f'{TABLE_CSS}<div class="atab">{caption}<table><tr>{head}</tr>{body}</table>'
-            f'<div class="note">{e(note)}</div></div>')
+def _theme() -> str:
+    try:
+        return "dark" if st.context.theme.type == "dark" else "light"
+    except Exception:  # noqa: BLE001 - older/unknown theme info
+        return "light"
 
 
 def _render_answer(answer: A.Answer) -> None:
     source = "lecture + general knowledge" if answer.outside else "from the lecture only"
     st.caption(f"{answer.plan.chip()} · {source}")
-    if answer.note and not answer.items:
+    if answer.note and (not answer.items or (answer.plan.shape and not answer.figure)):
         st.write(answer.note)
     for item in answer.items:
         st.markdown(f"{item['text']} `[{mmss(item['t'])}]`", help=f"Said: “{item['quote']}”")
-    if answer.table:
-        st.html(table_html(answer.table))
+    if answer.figure:
+        render_figure(answer.figure)
     for text in answer.background:
         st.markdown(f":gray-background[Beyond the lecture: general knowledge] {text}")
     for q in answer.questions:
@@ -172,6 +231,9 @@ def panel(video_id: str) -> None:
         else:
             answer = job["answer"]
             s["a_turns"].append({"role": "assistant", "text": answer.as_text(), "answer": answer})
+            if job.get("offer"):                                 # the offer replaces an older one
+                s["a_offer"] = job["offer"]
+                s["a_turns"].append({"role": "assistant", "text": job["offer"]["text"], "answer": None})
             if answer.plan.term:
                 s["a_explained"] = (s["a_explained"] + [answer.plan.term])[-20:]
         s["a_job"] = job = None

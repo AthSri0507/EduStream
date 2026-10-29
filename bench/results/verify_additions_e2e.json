@@ -1,0 +1,281 @@
+{
+  "checks": [
+    {
+      "name": "all records match the JSON Schemas",
+      "ok": true,
+      "detail": "75 records"
+    },
+    {
+      "name": "python_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "python_l1: complete",
+      "ok": true,
+      "detail": "48/48 chunks across 16 windows"
+    },
+    {
+      "name": "python_l1: each window emitted once",
+      "ok": true,
+      "detail": "16 distinct windows, 16 records"
+    },
+    {
+      "name": "python_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "python_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10060 ms after the flush's event time"
+    },
+    {
+      "name": "python_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "6/6 updates, 6 records"
+    },
+    {
+      "name": "python_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "16 windows in updates, 16 windows emitted"
+    },
+    {
+      "name": "python_l1: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "2 passes, 2 records: 0-280 llm, 280-480 llm"
+    },
+    {
+      "name": "python_l1: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 480 s, last cut 480 s"
+    },
+    {
+      "name": "python_l1: topics numbered 1..N",
+      "ok": true,
+      "detail": "1 topics"
+    },
+    {
+      "name": "no LATE_DROP alerts",
+      "ok": true,
+      "detail": "0 LATE_DROP"
+    },
+    {
+      "name": "DLQ as expected",
+      "ok": true,
+      "detail": "0 DLQ record(s), expected 0"
+    },
+    {
+      "name": "db: chunks == distinct transcripts",
+      "ok": true,
+      "detail": "48 in SQLite, 48 in Kafka"
+    },
+    {
+      "name": "db: windows == topic windows (keys and content)",
+      "ok": true,
+      "detail": "16 in SQLite, 16 distinct in Kafka"
+    },
+    {
+      "name": "db: live updates == topic updates, with all their drafts",
+      "ok": true,
+      "detail": "6 updates and 10 drafts in SQLite, 6 distinct updates in Kafka"
+    },
+    {
+      "name": "db: passes == topic passes, with all their topics and elements",
+      "ok": true,
+      "detail": "2 passes, 1 topics, 11 elements in SQLite"
+    },
+    {
+      "name": "db: no draft left in the search index of a finished lecture",
+      "ok": true,
+      "detail": "0 draft rows"
+    },
+    {
+      "name": "db: alerts == distinct topic alerts",
+      "ok": true,
+      "detail": "0 in SQLite"
+    }
+  ],
+  "lectures": {
+    "python_l1": {
+      "partition": 0,
+      "chunks_sent": 48,
+      "windows": 16,
+      "last_window_emitted_after_flush_ms": 10060,
+      "updates": {
+        "llm": 6
+      },
+      "passes": {
+        "llm": 2
+      }
+    }
+  },
+  "notebooks": {
+    "python_l1": {
+      "topics": {
+        "1": {
+          "title": "Study strategy and the role of practice",
+          "elements": [
+            [
+              "para",
+              120.0,
+              "Active engagement with material. Taking notes on the code is recommended for future reference"
+            ],
+            [
+              "para",
+              170.0,
+              "Practice as the key to programming. He advised reading problem sets as soon as they appear so terminology sinks in, and using lectures to reinforce unfamiliar words. He also reassured students that running Anaconda and typing commands cannot damage their computer, encouraging them not to be afraid of breaking it"
+            ],
+            [
+              "para",
+              220.0,
+              "Three core outcomes. He noted that these outcomes are reinforced by lectures, examples, and tests, and that practice underlies all of them"
+            ],
+            [
+              "para",
+              260.0,
+              "Importance of practice. Practice is presented as the foundation for achieving all three outcomes; students must type code regularly and work on many problems to succeed"
+            ],
+            [
+              "para",
+              290.0,
+              "Objects and data structures. Learning how to program involves deciding which objects to create and how to represent knowledge with data structures, which is the broad term for organizing information in a program"
+            ],
+            [
+              "para",
+              300.0,
+              "Control flow. Programs are not purely linear; they include control flow that allows decisions and jumps, enabling the program to react to different conditions"
+            ],
+            [
+              "para",
+              330.0,
+              "Readability and modularity. Writing readable code means organizing it so that others in a company or your future self can understand it, which requires modular, well\u2011structured design"
+            ],
+            [
+              "para",
+              360.0,
+              "Long\u2011term maintainability. Readable and well\u2011organized code lets you revisit problem sets later and understand what you were doing, avoiding the difficulty of deciphering a messy codebase"
+            ],
+            [
+              "para",
+              420.0,
+              "Basic computer actions. A computer performs calculations and stores the results in memory; modern machines can execute about a billion calculations per second and have hundreds of gigabytes of storage"
+            ],
+            [
+              "para",
+              450.0,
+              "Primitive vs. user\u2011defined calculations. Computers support two kinds of calculations: built\u2011in primitive operations such as addition, subtraction, and multiplication, and user\u2011defined calculations created by combining these primitives"
+            ],
+            [
+              "para",
+              470.0,
+              "Creating custom calculations. Once a language provides primitive calculation types, a programmer can combine them to define new, custom calculations that extend the language's capabilities"
+            ]
+          ],
+          "question": {
+            "q": "What does the lecturer suggest new programmers should do to become better at coding?",
+            "answer": "Practice regularly, read problem sets early, and follow along with in\u2011class coding exercises."
+          },
+          "end": 480.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": [
+            [
+              "u0e0",
+              null,
+              "Course Intro. The session will cover basic administrative details and an overview of computation, explaining what computers do at a high level"
+            ]
+          ]
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": [
+            [
+              "u1e0",
+              null,
+              "Python Basics. We will start with Python basics, covering mathematical operations that can be performed in Python. The slides and code for these topics will be available before the lecture, so students should download them. In\u2011class exercises will be provided on the slides and are encouraged to be completed during class"
+            ],
+            [
+              "u1e1",
+              null,
+              "Study Strategy. During lectures, recalling terms from the problem sets helps solidify understanding. Practice is emphasized as the key to mastering programming, similar to math or reading"
+            ]
+          ]
+        },
+        {
+          "update": 2,
+          "generator": "llm",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "Practice First. Fear of breaking the computer is unfounded; running Anaconda and typing commands will not harm the system"
+            ],
+            [
+              "u2e1",
+              null,
+              "Course Roadmap. The course is structured around three core outcomes: knowledge of concepts, programming skills, and problem\u2011solving ability. These are reinforced through lectures, examples, and problem sets, with practice underpinning all three"
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "llm",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "Learning to Program. Learning how to program involves deciding which objects to create and how to represent knowledge with data structures. Programs are not linear; they include control flow that allows decisions and jumps"
+            ],
+            [
+              "u3e1",
+              null,
+              "Readable Code. Writing readable code means organizing it so that others in a company or future you can understand it. Code should be modular, well\u2011structured, and easy to read, enabling others to use or revisit it later"
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "llm",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "Computer Function. A computer performs calculations and stores the results in memory. Modern machines can execute on the order of a billion calculations per second. They also have large storage capacities, often measured in hundreds of gigabytes"
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "llm",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "Primitive Calculation Types. Computers perform two kinds of calculations: built\u2011in operations and user\u2011defined operations. Built\u2011in operations are low\u2011level primitives such as addition, subtraction, and multiplication. Once a language supplies these primitives, a programmer can combine them to create more complex, custom calculations"
+            ],
+            [
+              "u5e1",
+              null,
+              "Custom Calculations. By combining primitive types, a programmer can define new calculations, effectively creating a new type of operation that the language does not provide natively"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "alerts_by_type": {},
+  "counts": {
+    "transcriptions": 49,
+    "window_summaries": 16,
+    "final_notes": 8,
+    "user_notes": 2,
+    "alerts": 0,
+    "dlq": 0
+  }
+}

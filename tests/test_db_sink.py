@@ -219,3 +219,21 @@ def test_transcripts_are_indexed_once_for_search(conn):
     rows = conn.execute("SELECT chunk_id FROM transcript_fts ORDER BY chunk_id").fetchall()
     stored = conn.execute("SELECT chunk_id FROM chunks WHERE TRIM(text) <> '' ORDER BY chunk_id").fetchall()
     assert rows == stored and len(rows) >= 1
+
+
+def test_additions_are_stored_once_and_a_removal_only_marks_them(conn):
+    from common.config import TOPIC_USER_NOTES
+    add, remove = fixture("addition/valid-add-table.json"), fixture("addition/valid-remove.json")
+    beyond = fixture("addition/valid-add-beyond-the-lecture.json")
+    beyond["addition_id"] = "1" * 32
+    first = apply_batch(conn, [rec(TOPIC_USER_NOTES, add, 0), rec(TOPIC_USER_NOTES, beyond, 1)], now=1, window_ms=WINDOW_MS)
+    again = apply_batch(conn, [rec(TOPIC_USER_NOTES, add, 0)], now=2, window_ms=WINDOW_MS)
+    assert first == {"stored": 2} and again == {"duplicate": 1}
+    rows = conn.execute("SELECT shape, span_start, span_end, topic_override, outside, removed FROM additions"
+                        " ORDER BY addition_id").fetchall()
+    assert rows == [("table", 540.0, 650.0, None, 1, 0), ("steps", None, None, 2, 1, 0)]
+    assert apply_batch(conn, [rec(TOPIC_USER_NOTES, remove, 2)], now=3, window_ms=WINDOW_MS) == {"stored": 1}
+    assert apply_batch(conn, [rec(TOPIC_USER_NOTES, remove, 2)], now=4, window_ms=WINDOW_MS) == {"duplicate": 1}
+    assert conn.execute("SELECT removed FROM additions WHERE addition_id = ?", (add["addition_id"],)).fetchone() == (1,)
+    bad = fixture("addition/invalid-unknown-shape.json")
+    assert apply_batch(conn, [rec(TOPIC_USER_NOTES, bad, 3)], now=5, window_ms=WINDOW_MS) == {"invalid": 1}

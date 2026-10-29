@@ -30,10 +30,11 @@ from kafka import KafkaConsumer, TopicPartition
 
 from agents.study_notes import text_of
 from common import schemas
-from common.config import ROOT, RUN_DIR, TOPIC_ALERTS, TOPIC_DLQ, TOPIC_NOTES, TOPIC_TRANSCRIPTS, TOPIC_WINDOWS, load
+from common.config import (ROOT, RUN_DIR, TOPIC_ALERTS, TOPIC_DLQ, TOPIC_NOTES, TOPIC_TRANSCRIPTS, TOPIC_USER_NOTES,
+                           TOPIC_WINDOWS, load)
 
 SCHEMA_OF = {TOPIC_TRANSCRIPTS: "transcript.v1", TOPIC_WINDOWS: "window.v1", TOPIC_NOTES: None,
-             TOPIC_ALERTS: "alert.v1", TOPIC_DLQ: "dlq.v1"}
+             TOPIC_USER_NOTES: "addition.v1", TOPIC_ALERTS: "alert.v1", TOPIC_DLQ: "dlq.v1"}
 
 
 def notes_schema(value: bytes) -> str:

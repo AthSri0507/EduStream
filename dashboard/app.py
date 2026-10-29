@@ -98,29 +98,44 @@ def notebook_view(video_id: str, title: str) -> None:
         for i, topic in enumerate(nb["topics"]):
             latest = i == len(nb["topics"]) - 1
             with st.expander(nbh.topic_label(topic), expanded=nb["finished"] or latest):
-                st.html(nbh.wrap(nbh.topic_html(topic), theme))
+                st.html(nbh.wrap(nbh.topic_html(topic, theme), theme))
+                removal_buttons(video_id, topic.get("additions") or [])
         if not nb["finished"]:
-            st.html(nbh.wrap(nbh.live_html(nb), theme))
+            st.html(nbh.wrap(nbh.live_html(nb, theme), theme))
+            removal_buttons(video_id, nb["live_additions"])
+        if nb["beyond"]:
+            with st.expander(f"Beyond the lecture · {len(nb['beyond'])} of your additions", expanded=True):
+                st.html(nbh.wrap(nbh.beyond_html(nb, theme), theme))
+                removal_buttons(video_id, nb["beyond"])
+
+
+def removal_buttons(video_id: str, items: list[dict]) -> None:
+    """✕ under a topic for each of the student's additions in it (NOTEBOOK_DESIGN §13.3): removal is an event too."""
+    for a in items:
+        name = a["figure"].get("title") or "this addition"
+        st.button(f"Remove “{name}” from my notes", key=f"rm_{a['addition_id']}", type="tertiary",
+                  icon=":material/close:", on_click=assistant_panel.remove_addition, args=(video_id, a["addition_id"]))
 
 
 def download_row(video_id: str, title: str) -> None:
     """Markdown, Word and PDF of the notes. Each file is built when its button is clicked (a callable), from the
-    notebook as it is at that moment, not on every 2 s refresh."""
-    def build(fmt: str):
+    notebook as it is at that moment, not on every 2 s refresh; "Include my additions" (§13.7) adds the student's."""
+    def build(fmt: str, include: bool):
         def make() -> bytes:
             conn = connect_readonly(db_path())
             try:
                 nb = queries.notebook(conn, video_id, SETTINGS.note_update_s)
             finally:
                 conn.close()
-            return export.FORMATS[fmt][2](nb, title)
+            return export.FORMATS[fmt][2](nb, title, include)
         return make
 
     with st.container(horizontal=True, vertical_alignment="center"):
+        include = st.session_state.get(f"dl_mine_{video_id}", True)
         for fmt, (ext, mime, _) in export.FORMATS.items():
-            st.download_button(fmt, build(fmt), file_name=f"{export.file_stem(title)}_notes.{ext}", mime=mime,
-                               key=f"dl_{fmt}_{video_id}", on_click="ignore", icon=":material/download:")
-        st.caption("Download the notes")
+            st.download_button(fmt, build(fmt, include), file_name=f"{export.file_stem(title)}_notes.{ext}",
+                               mime=mime, key=f"dl_{fmt}_{video_id}", on_click="ignore", icon=":material/download:")
+        st.checkbox("Include my additions", value=True, key=f"dl_mine_{video_id}")
 
 
 def data_tab() -> None:

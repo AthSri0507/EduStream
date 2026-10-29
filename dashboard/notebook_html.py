@@ -8,10 +8,13 @@ code are set off. The time of each element sits in the margin, the words said th
 
 from __future__ import annotations
 
+import base64
 import html
 import re
 
+from agents.figures import NAME
 from agents.text import mmss
+from dashboard import figure_draw
 
 e = html.escape
 
@@ -55,6 +58,10 @@ font-size:13px;line-height:1.45;white-space:pre}
 .nb .rail dl{margin:6px 0 0}.nb .rail dt{font-weight:600}.nb .rail dd{margin:0 0 8px;color:var(--muted);font-size:13px}
 .nb .rail ul{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:13px}
 .nb .range{color:var(--muted);font-size:13px}
+.nb .addn{border:1px solid var(--accent);border-radius:8px;padding:8px 12px 6px;margin:2px 0 14px}
+.nb .addh{font-size:12.5px;font-weight:700;color:var(--accent);margin-bottom:4px;letter-spacing:.02em}
+.nb .addn img{max-width:100%;height:auto;border-radius:6px}
+.nb .addq{color:var(--muted);font-size:12.5px;margin-top:4px}
 @media (max-width:1000px){.nb .el{grid-template-columns:minmax(0,1fr)}.nb .ts{justify-self:start;order:-1}}
 """
 
@@ -109,8 +116,30 @@ def element_html(el: dict, fresh: int | None = None) -> str:
 FALLBACK_NOTE = "Written without the language model: the live notes as they were."
 
 
-def topic_html(topic: dict) -> str:
-    body = "".join(element_html(x) for x in topic["elements"])
+def addition_html(addition: dict, theme: str = "light") -> str:
+    """A student's addition (NOTEBOOK_DESIGN §13.7), set apart from the lecture's notes: drawings as an image, tables,
+    steps and timelines as HTML (dashboard/figure_draw.py); every model-written text escaped."""
+    figure = addition["figure"]
+    if figure_draw.is_drawing(figure):
+        png = base64.b64encode(figure_draw.draw_png(figure, theme)).decode("ascii")
+        inner = (f'<img alt="{e(figure.get("title") or NAME[figure["shape"]])}" src="data:image/png;base64,{png}">'
+                 f'<div class="addq">{e(figure_draw.caption(figure))}</div>')
+    else:
+        inner = figure_draw.figure_html(figure)
+    span = addition.get("span")
+    when = f" · {mmss(span[0])}–{mmss(span[1])}" if span else ""
+    asked = f'<div class="addq">You asked: “{e(addition["question"])}”{when}</div>' if addition.get("question") else ""
+    return (f'<div class="addn"><div class="addh">YOUR ADDITION · {e(NAME[figure["shape"]].upper())}'
+            f'{" · " + e(figure["title"]) if figure.get("title") else ""}</div>{inner}{asked}</div>')
+
+
+def topic_html(topic: dict, theme: str = "light") -> str:
+    placed = topic.get("additions") or []
+    body = ""
+    for i, x in enumerate(topic["elements"]):
+        body += element_html(x) + "".join(addition_html(a, theme) for a in placed if a["after"] == i)
+    body += "".join(addition_html(a, theme) for a in placed if a["after"] is None
+                    or not 0 <= a["after"] < len(topic["elements"]))
     if topic.get("generator") == "fallback":
         body = f'<p class="bg">{FALLBACK_NOTE}</p>' + body
     if topic.get("question"):
@@ -125,9 +154,15 @@ def topic_label(topic: dict) -> str:
     return f"{topic['n']}. {title}  ·  {mmss(topic['start'])}–{mmss(topic['end'])}"
 
 
-def live_html(nb: dict) -> str:
+def beyond_html(nb: dict, theme: str = "light") -> str:
+    """Additions about nothing the lecture covered (§13.6), at the end of the notes."""
+    return '<div class="doc">' + "".join(addition_html(a, theme) for a in nb.get("beyond") or []) + "</div>"
+
+
+def live_html(nb: dict, theme: str = "light") -> str:
     drafts = "".join(element_html(d, nb["latest_k"]) for d in nb["drafts"]) \
         or '<p class="pending">The next notes will appear here.</p>'
+    drafts += "".join(addition_html(a, theme) for a in nb.get("live_additions") or [])
     now = f'<div class="now">now: “…{e(nb["now_text"][-260:])}”</div>' if nb.get("now_text") else ""
     return (f'<div class="live"><div class="lh">LIVE NOTES SINCE {mmss(nb["since"])} · draft, organised into a topic '
             f'every few minutes</div><div class="doc">{drafts}</div><div class="status">{e(nb["status"])}</div>'

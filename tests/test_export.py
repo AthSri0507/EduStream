@@ -13,6 +13,21 @@ EXAMPLES = Path(__file__).resolve().parents[1] / "schemas" / "examples"
 TRICKY = 'Use a[i](x) -- not **this** or __init__; C:\\path\\to # 50% < 3 > 1 “quoted” – ≥ → ✓ 😀'
 
 
+ADD_TABLE = {"addition_id": "a" * 32, "after": 0, "question": "compare the two kinds | as a table", "span": [600.0, 700.0],
+             "figure": {"shape": "table", "title": "Two kinds", "columns": ["Kind", "Symbol"],
+                        "rows": [{"cells": ["Imperative", "→"], "added": [False, True], "t": 610.0}]}}
+ADD_FLOW = {"addition_id": "b" * 32, "after": None, "question": "", "span": None,
+            "figure": {"shape": "flowchart", "title": "Decide", "nodes": [
+                {"id": "a", "label": "Is it a recipe?", "kind": "decision", "added": False, "t": None},
+                {"id": "b", "label": "Imperative", "kind": "end", "added": False, "t": None},
+                {"id": "c", "label": "Declarative", "kind": "end", "added": True, "t": None}],
+                "edges": [{"from": "a", "to": "b", "label": "yes"}, {"from": "a", "to": "c", "label": "no"}]}}
+ADD_BEYOND = {"addition_id": "c" * 32, "after": None, "question": "", "span": None,
+              "figure": {"shape": "steps", "title": "Power", "steps": [
+                  {"text": "Power is one minus beta", "code": None, "result": "0.8", "added": True, "t": None},
+                  {"text": "Higher power, fewer type II errors", "code": None, "result": None, "added": True, "t": None}]}}
+
+
 def notebook(finished=True) -> dict:
     """Every element kind once (from the consolidation fixture), a fallback topic, drafts, glossary, info."""
     done = json.loads((EXAMPLES / "consolidation" / "valid-llm.json").read_text(encoding="utf-8"))
@@ -31,8 +46,7 @@ def notebook(finished=True) -> dict:
             {"n": 2, "title": "Imperative knowledge", "start": 360.0, "end": 750.0,
              "question": "What is imperative knowledge?", "answer": "A recipe: steps that say how to do something.",
              "generator": "llm", "elements": els + [example, tricky],
-             "additions": [{"kind": "steps", "t": 640.0, "said": "", "lead": "Your step-by-step solution",
-                            "items": ["Pick a number", "Find the student"]}]},
+             "additions": [ADD_TABLE, ADD_FLOW]},
         ],
         "drafts": [] if finished else [{"kind": "para", "t": 760.0, "said": "", "lead": "Still live",
                                         "sentences": ["A draft sentence."], "terms": [], "background": None,
@@ -40,7 +54,7 @@ def notebook(finished=True) -> dict:
         "latest_k": 8, "since": 750.0, "reach": 840.0 if not finished else 750.0, "said_until": 850.0,
         "now_text": "", "glossary": [{"term": "Imperative knowledge", "definition": els[0]["terms"][0]["definition"]}],
         "info": [{"text": "Problem set 0 is due on Thursday.", "t": 640.0}], "updates": 9, "finished": finished,
-        "status": "",
+        "status": "", "live_additions": [], "beyond": [ADD_BEYOND],
     }
 
 
@@ -48,13 +62,18 @@ def test_markdown_follows_the_page_and_puts_the_answers_at_the_end():
     md = export.to_markdown(notebook(), "Python · Lecture 1")
     order = ["# Python · Lecture 1", "## Contents", "## 1. Part 1", "Written without the language model",
              "## 2. Imperative knowledge", "**Imperative knowledge.** **Imperative knowledge** is a recipe",
-             "| Kind | What it is |", "**The recipe the students gave:**", "**Remember:**", "> **Example · Picking",
-             "### Your additions", "**Check yourself:** What is imperative knowledge?", "## Glossary",
+             "**Your addition · Table · Two kinds**", "| Imperative | → † | 10:10 |", "| Kind | What it is |",
+             "**The recipe the students gave:**", "**Remember:**", "> **Example · Picking",
+             "**Your addition · Flowchart · Decide**", "```mermaid", "**Check yourself:** What is imperative knowledge?",
+             "## Beyond the lecture", "1. Power is one minus beta † → 0.8", "## Glossary",
              "## Answers to “Check yourself”", "2. *What is imperative knowledge?* A recipe", "## Course info"]
     positions = [md.index(x) for x in order]
     assert positions == sorted(positions)
     assert "*[06:50]*" in md and "Background (not from the lecture)" in md
     assert "Live notes since" not in md                                          # finished: no drafts
+    assert "You asked: “compare the two kinds \\| as a table” (10:00–11:40)" in md
+    plain = export.to_markdown(notebook(), "Python · Lecture 1", include_additions=False)
+    assert "Your addition" not in plain and "Beyond the lecture" not in plain     # "Include my additions" off
 
 
 def test_markdown_escapes_model_text():
@@ -73,11 +92,14 @@ def test_word_has_the_headings_tables_and_runs():
     doc = Document(io.BytesIO(export.to_docx(notebook(), "Python · Lecture 1")))
     headings = [p.text for p in doc.paragraphs if p.style.name.startswith(("Heading", "Title"))]
     assert headings[:4] == ["Python · Lecture 1", "Contents", "1. Part 1", "2. Imperative knowledge"]
-    assert "Your additions" in headings and headings[-3:] == ["Glossary", "Answers to “Check yourself”",
-                                                              "Course info"]
+    assert "Beyond the lecture" in headings and headings[-3:] == ["Glossary", "Answers to “Check yourself”",
+                                                                  "Course info"]
+    assert any(p.text == "Your addition · Table · Two kinds" for p in doc.paragraphs)
+    assert len(doc.inline_shapes) == 1                                           # the flowchart, drawn
     para = next(p for p in doc.paragraphs if p.text.startswith("Imperative knowledge. Imperative"))
     assert [r.text for r in para.runs if r.bold][:2] == ["Imperative knowledge. ", "Imperative knowledge"]
-    assert [[c.text for c in row.cells] for row in doc.tables[0].rows][0] == ["Kind", "What it is"]
+    heads = [[c.text for c in t.rows[0].cells] for t in doc.tables]
+    assert heads[:2] == [["Kind", "Symbol", "Source"], ["Kind", "What it is"]]      # the addition, after element 0
     assert any(TRICKY in p.text for p in doc.paragraphs)                        # text kept as is
 
 

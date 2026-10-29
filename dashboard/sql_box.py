@@ -16,7 +16,8 @@ import time
 import pandas as pd
 
 ALLOWED = {"lectures", "chunks", "window_stats", "window_latest", "notes", "notes_latest", "alerts", "dlq", "lag",
-           "live_updates", "drafts", "course_info", "passes", "topics", "elements", "glossary", "notebook_fts",
+           "live_updates", "drafts", "course_info", "passes", "topics", "elements", "glossary", "additions",
+           "notebook_fts",
            "transcript_fts", "notes_fts",
            "sqlite_master", "sqlite_schema"}
 FTS = ("notebook_fts", "transcript_fts", "notes_fts")
