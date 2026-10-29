@@ -6,7 +6,8 @@
   * The live stage (agents/notebook.py) and consolidation (agents/consolidation.py) use the same prompts' element
     format, the same validator and the same text_of(); the dashboard renders the same dicts.
 
-Pure: no Kafka, no network, no clock. Ported from bench/proto_notebook_v4.py (validated on three lectures, §11.9-10).
+Pure: no Kafka, no network, no clock. Ported from bench/proto_notebook_v4.py (validated on three lectures, §11.9-10;
+the script was deleted 29 Oct, its results are in bench/results/proto_v4*).
 Tested by tests/test_study_notes.py.
 """
 

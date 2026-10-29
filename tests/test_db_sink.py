@@ -135,7 +135,7 @@ def notebook_records():
     later_pass = {**fixture("consolidation/valid-llm.json"), "pass_index": 1, "media_start": 640.0}
     return [rec(TOPIC_NOTES, earlier, 10), rec(TOPIC_NOTES, live, 11), rec(TOPIC_NOTES, first_pass, 12),
             rec(TOPIC_NOTES, later_pass, 13),
-            rec(TOPIC_NOTES, fixture("notes_v2/valid-llm.json"), 14),        # the retired rev 6 notebook: skipped
+            rec(TOPIC_NOTES, {"schema": "notes.v2", "video_id": "python_l1"}, 14),  # retired rev 6 notebook: skipped
             rec(TOPIC_NOTES, fixture("notes/valid-llm.json"), 15)]           # an old notes.v1 record still works
 
 

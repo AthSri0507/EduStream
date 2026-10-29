@@ -38,8 +38,8 @@ GROUP = "db-sink"
 TOPICS = [TOPIC_TRANSCRIPTS, TOPIC_WINDOWS, TOPIC_NOTES, TOPIC_USER_NOTES, TOPIC_ALERTS, TOPIC_DLQ]
 SCHEMA_OF = {TOPIC_TRANSCRIPTS: "transcript.v1", TOPIC_WINDOWS: "window.v1", TOPIC_NOTES: "notes.v1",
              TOPIC_USER_NOTES: "addition.v1", TOPIC_ALERTS: "alert.v1", TOPIC_DLQ: "dlq.v1"}
-NOTES_SCHEMAS = ("notes.v3", "consolidation.v1", "notes.v2")      # by the payload's own name; notes.v1 otherwise
-RETIRED = ("notes.v2",)              # the rev 6 notebook before NOTEBOOK_DESIGN §11: no tables any more, skipped
+NOTES_SCHEMAS = ("notes.v3", "consolidation.v1")      # by the payload's own name; notes.v1 otherwise
+RETIRED = ("notes.v2",)              # the rev 6 notebook before NOTEBOOK_DESIGN §11: schema deleted 29 Oct, skipped unread
 SQLITE_RETRIES = 5
 EXIT_SQLITE_FAILED = 4
 
@@ -64,7 +64,7 @@ def _notes_body(n: dict) -> str:
 def _schema_name(topic: str, value: bytes | None) -> str:
     """final_notes carries notes.v3 and consolidation.v1 (and, from older runs, notes.v1/v2): route by name."""
     if topic == TOPIC_NOTES and value is not None:
-        for name in NOTES_SCHEMAS:
+        for name in NOTES_SCHEMAS + RETIRED:
             if f'"{name}"'.encode() in value[:200]:
                 return name
     return SCHEMA_OF[topic]
@@ -152,9 +152,12 @@ def _apply_addition(conn: sqlite3.Connection, p: dict, now: int) -> str:
 
 def apply_record(conn: sqlite3.Connection, topic: str, value: bytes | None, partition: int, offset: int,
                  key: bytes | None, now: int, window_ms: int) -> str:
-    """Store one record. Returns what happened: 'stored', 'duplicate' or 'invalid'."""
+    """Store one record. Returns what happened: 'stored', 'duplicate', 'invalid' or 'skipped' (a retired schema)."""
+    name = _schema_name(topic, value)
+    if name in RETIRED:
+        return "skipped"
     try:
-        p = schemas.decode(value, _schema_name(topic, value))
+        p = schemas.decode(value, name)
     except schemas.ContractError as exc:
         cur = conn.execute(
             "INSERT INTO dlq(stage, source_topic, src_partition, src_offset, key, error, raw_value, failed_ts, sink_ts)"
@@ -217,9 +220,6 @@ def apply_record(conn: sqlite3.Connection, topic: str, value: bytes | None, part
 
     if topic == TOPIC_USER_NOTES:
         return _apply_addition(conn, p, now)
-
-    if topic == TOPIC_NOTES and p["schema"] in RETIRED:
-        return "skipped"
 
     if topic == TOPIC_NOTES:
         cur = conn.execute(

@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import html
 import io
+import json
 import textwrap
+from functools import lru_cache
 
 from agents.figures import NAME, count_added
 from agents.text import mmss
@@ -122,7 +124,16 @@ def _layers(nodes: list[dict], edges: list[dict]) -> dict[str, int]:
 
 
 def draw_png(figure: dict, theme: str = "light") -> bytes:
-    """A flowchart or concept map as a PNG: boxes in top-down layers, arrows with their labels."""
+    """A flowchart or concept map as a PNG: boxes in top-down layers, arrows with their labels.
+
+    Cached by the figure's content: a drawing takes 0.25-0.8 s, and the notebook (every 2 s) and the chat (every 1 s)
+    show the same saved figures again and again (backup recording 29 Oct: the page stayed greyed out re-rendering)."""
+    return _draw_png(json.dumps(figure, sort_keys=True, ensure_ascii=False), theme)
+
+
+@lru_cache(maxsize=64)
+def _draw_png(key: str, theme: str) -> bytes:
+    figure = json.loads(key)
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt

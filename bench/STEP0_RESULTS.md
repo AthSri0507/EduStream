@@ -9,7 +9,8 @@ Groq calls used: about 46 (notebook 22, follow-ups 24), roughly 60k tokens, free
 | `bench/proto_followups.py` | `results/proto_followups.{md,json}` |
 | `bench/proto_streamlit_app.py` + `proto_streamlit_check.py` | `results/proto_streamlit.json` |
 
-Responses are cached in `results/proto_llm_cache.json` (development only), so reruns cost no quota.
+The prototype scripts and their response cache were deleted on 29 Oct 2026, once their findings were built into
+the pipeline (agents/study_notes.py, agents/assistant.py, dashboard/). The results files below are kept as the record.
 
 ## 1. Notebook prompt (item 8)
 
