@@ -23,6 +23,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from common.config import load  # noqa: E402
+from agents import additions  # noqa: E402
 from dashboard import assistant_panel, queries, sql_box  # noqa: E402
 from dashboard import export  # noqa: E402
 from dashboard import notebook_html as nbh  # noqa: E402
@@ -83,6 +84,7 @@ def notebook_view(video_id: str, title: str) -> None:
         legacy = queries.notes(conn, video_id) if nb["updates"] == 0 else None
     finally:
         conn.close()
+    assistant_panel.redraw_notices()
     theme = mode()
     st.html(nbh.wrap(nbh.head_html(nb), theme))
     rail, main = st.columns([1, 3.3], gap="medium")
@@ -99,22 +101,31 @@ def notebook_view(video_id: str, title: str) -> None:
             latest = i == len(nb["topics"]) - 1
             with st.expander(nbh.topic_label(topic), expanded=nb["finished"] or latest):
                 st.html(nbh.wrap(nbh.topic_html(topic, theme), theme))
-                removal_buttons(video_id, topic.get("additions") or [])
+                addition_buttons(video_id, topic.get("additions") or [])
         if not nb["finished"]:
             st.html(nbh.wrap(nbh.live_html(nb, theme), theme))
-            removal_buttons(video_id, nb["live_additions"])
+            addition_buttons(video_id, nb["live_additions"])
         if nb["beyond"]:
             with st.expander(f"Beyond the lecture · {len(nb['beyond'])} of your additions", expanded=True):
                 st.html(nbh.wrap(nbh.beyond_html(nb, theme), theme))
-                removal_buttons(video_id, nb["beyond"])
+                addition_buttons(video_id, nb["beyond"])
 
 
-def removal_buttons(video_id: str, items: list[dict]) -> None:
-    """✕ under a topic for each of the student's additions in it (NOTEBOOK_DESIGN §13.3): removal is an event too."""
+def addition_buttons(video_id: str, items: list[dict]) -> None:
+    """Under a topic, for each of the student's additions in it (NOTEBOOK_DESIGN §13.3): ✕ (removal is an event too)
+    and ↻, which rebuilds it from its own question in place, with no second offer."""
     for a in items:
         name = a["figure"].get("title") or "this addition"
-        st.button(f"Remove “{name}” from my notes", key=f"rm_{a['addition_id']}", type="tertiary",
-                  icon=":material/close:", on_click=assistant_panel.remove_addition, args=(video_id, a["addition_id"]))
+        running = assistant_panel.redraw_state(a["addition_id"]) == "running"
+        with st.container(horizontal=True, vertical_alignment="center"):
+            st.button(f"Remove “{name}” from my notes", key=f"rm_{a['addition_id']}", type="tertiary",
+                      icon=":material/close:", disabled=running,
+                      on_click=assistant_panel.remove_addition, args=(video_id, a["addition_id"]))
+            if a.get("question"):
+                st.button("Redrawing…" if running else additions.redraw_label(a), key=f"rd_{a['addition_id']}",
+                          type="tertiary", icon=":material/refresh:", disabled=running,
+                          help="Ask the saved question again and put the new figure in this one's place.",
+                          on_click=assistant_panel.redraw_addition, args=(video_id, a))
 
 
 def download_row(video_id: str, title: str) -> None:

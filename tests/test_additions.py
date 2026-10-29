@@ -57,3 +57,11 @@ def test_an_override_a_live_part_and_beyond_the_lecture():
     assert "live notes" in AD.describe({"where": "live"}, TOPICS)
     assert AD.place({**live, "span": None}, TOPICS, 800.0, True) == {"where": "beyond"}
     assert AD.place(live, TOPICS, 800.0, True) == {"where": "beyond"}           # finished, after every topic
+
+
+def test_the_redraw_button_names_the_shape_when_the_question_now_asks_for_another():
+    """Real use 29 Oct: a "flow chart / mind map" was saved as worked steps before shape detection was fixed."""
+    old = {"figure": {"shape": "steps"}, "question": "create a flow chart / mind map of different components in programming"}
+    assert AD.redraw_label(old) == "Redraw as a concept map"
+    assert AD.redraw_label({**old, "figure": {"shape": "concept_map"}}) == "Redraw"
+    assert AD.redraw_label({"figure": FIGURE, "question": "explain that"}) == "Redraw"   # no figure word: plain

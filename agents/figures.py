@@ -8,8 +8,7 @@ labels every item as said in the lecture or added. Drawing is dashboard/figure_d
     added items are dropped where that keeps the figure meaningful (table cells and columns, concept-map nodes,
     timeline events); a worked solution or flowchart with an added step is not shown at all (a procedure with a
     step removed would be wrong) and the student is pointed to the switch.
-  * Structure is checked: an arrow to a missing box is removed, boxes with no arrow are dropped, and a flowchart
-    without any decision is shown as worked steps (a straight line of boxes reads worse than a numbered list).
+  * Structure is checked: an arrow to a missing box is removed and boxes with no arrow are dropped.
 
 Tested by tests/test_figures.py.
 """
@@ -24,10 +23,14 @@ from agents.text import find_quote
 SHAPES = ("table", "steps", "flowchart", "concept_map", "timeline")
 NAME = {"table": "table", "steps": "step-by-step solution", "flowchart": "flowchart", "concept_map": "concept map",
         "timeline": "timeline"}
-DETECT = (                                  # first match wins: the more specific words first
-    ("flowchart", re.compile(r"\b(flow ?charts?|flow diagrams?)\b", re.I)),
-    ("concept_map", re.compile(r"\b(concept maps?|mind ?maps?|diagrams?|how (do|does|are) .{1,60} relate"
-                               r"|relationships? between)\b", re.I)),
+FLOW = re.compile(r"\b(flow ?charts?|flow diagrams?)\b", re.I)
+MAP = re.compile(r"\b(concept maps?|mind ?maps?|diagrams?|how (do|does|are) .{1,60} relate|relationships? between)\b",
+                 re.I)
+PICTURE = re.compile(r"\b(figures?(?! out)|visuali[sz]\w*|draw|sketch\w*|(?<!big )pictures?|illustrat\w*|graphics?|charts?)\b",
+                     re.I)                   # not "figure out", "the big picture", "a map function"
+PROCESS = re.compile(r"\b(how (to|do|does|can|would|should)|steps?|process\w*|procedures?|algorithms?|decid\w*|decisions?"
+                     r"|workflow|pipeline)\b", re.I)
+DETECT = (                                  # after the flowchart / concept-map choice: the more specific words first
     ("timeline", re.compile(r"\b(timelines?|time ?line|chronolog\w*)\b", re.I)),
     ("table", re.compile(r"\b(table|tabular|tabulate|tabulated)\b", re.I)),
     ("steps", re.compile(r"\b(step[- ]by[- ]step|steps to|walk me through|how (do|can|would|should) (i|we|you) "
@@ -44,8 +47,20 @@ NUMBER_WORDS.update({w: str(i) for i, w in enumerate("_ i ii iii iv v vi vii vii
 
 
 def detect(msg: str) -> str | None:
-    """The figure a message asks for, by its words (the model does not decide), or None."""
-    return next((shape for shape, pattern in DETECT if pattern.search(msg or "")), None)
+    """The figure a message asks for, by its words (the model does not decide), or None.
+
+    A flowchart is for a process, a concept map for structure. Real use 29 Oct: "a flow chart / mind map of different
+    components in programming" became a flowchart of components; "create a figure of …" got no figure at all."""
+    msg = msg or ""
+    flow, mapped, process = FLOW.search(msg), MAP.search(msg), PROCESS.search(msg)
+    if flow and (process or not mapped):
+        return "flowchart"
+    if mapped:
+        return "concept_map"
+    shape = next((shape for shape, pattern in DETECT if pattern.search(msg)), None)
+    if shape is None and PICTURE.search(msg):                # "a figure of …", "draw …", "visualise …"
+        shape = "flowchart" if process else "concept_map"
+    return shape
 
 
 # ----------------------------------------------------------------------------------------------- instructions
@@ -303,35 +318,10 @@ def _flowchart(raw: dict, ev: _Evidence, outside: bool):
     nodes, edges, flags = _graph(raw, ev, "label", kinds=True)
     if len(nodes) < 2:
         return None, flags + ["flowchart_too_small"], None
-    if not any(n["kind"] == "decision" for n in nodes):         # a straight line reads better as a numbered list
-        order = _topological(nodes, edges)
-        steps = [{"text": n["label"], "code": None, "result": None, "added": n["added"], "t": n["t"]}
-                 for n in order if not (n["kind"] in ("start", "end") and len(words_of(n["label"])) <= 2)]
-        figure, more, note = _procedure({"steps": steps, "shape": "steps"}, [s["added"] for s in steps], outside,
-                                        "flowchart")
-        return figure, flags + ["flowchart_without_decisions_as_steps"] + more, note
+    # A flowchart without decisions stays a drawn flowchart: it was asked for as a picture (real use 29 Oct: a chain of
+    # programming components was turned into a "step-by-step solution", which it was not).
     figure, more, note = _procedure({"nodes": nodes, "edges": edges}, [n["added"] for n in nodes], outside, "flowchart")
     return figure, flags + more, note
-
-
-def _topological(nodes: list[dict], edges: list[dict]) -> list[dict]:
-    by_id = {n["id"]: n for n in nodes}
-    indegree = {n["id"]: 0 for n in nodes}
-    for e in edges:
-        indegree[e["to"]] += 1
-    order, ready, seen = [], [n["id"] for n in nodes if indegree[n["id"]] == 0], set()
-    while ready:
-        nid = ready.pop(0)
-        if nid in seen:
-            continue
-        seen.add(nid)
-        order.append(by_id[nid])
-        for e in edges:
-            if e["from"] == nid:
-                indegree[e["to"]] -= 1
-                if indegree[e["to"]] <= 0:
-                    ready.append(e["to"])
-    return order + [n for n in nodes if n["id"] not in seen]   # cycles: the rest in the model's order
 
 
 def _concept_map(raw: dict, ev: _Evidence, outside: bool):

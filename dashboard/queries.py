@@ -115,8 +115,8 @@ def place_additions(conn: sqlite3.Connection, video_id: str, topics: list[dict],
     for t in topics:
         t["additions"] = []
     try:
-        rows = conn.execute("SELECT addition_id, figure, span_start, span_end, question, topic_override, outside"
-                            " FROM additions WHERE video_id = ? AND removed = 0 ORDER BY created_ts",
+        rows = conn.execute("SELECT addition_id, figure, span_start, span_end, question, topic_override, outside,"
+                            " created_ts FROM additions WHERE video_id = ? AND removed = 0 ORDER BY created_ts",
                             (video_id,)).fetchall()
     except sqlite3.OperationalError:                       # a database from before §13
         return [], []
@@ -124,7 +124,7 @@ def place_additions(conn: sqlite3.Connection, video_id: str, topics: list[dict],
     by_n = {t["n"]: t for t in topics}
     for r in rows:
         item = {"addition_id": r[0], "figure": json.loads(r[1]), "span": [r[2], r[3]] if r[2] is not None else None,
-                "question": r[4] or "", "topic_override": r[5], "outside": bool(r[6])}
+                "question": r[4] or "", "topic_override": r[5], "outside": bool(r[6]), "created_ts": r[7]}
         placement = adds.place(item, topics, since, finished)
         if placement["where"] == "topic":
             by_n[placement["topic_n"]]["additions"].append({**item, "after": placement["after"]})

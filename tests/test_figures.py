@@ -29,6 +29,14 @@ def fig(shape, **body):
     ("walk me through the z test", "steps"),
     ("what is a null hypothesis?", None),
     ("my timetable for tomorrow", None),
+    # real use 29 Oct: components are structure (a concept map), a process is a flowchart
+    ("create a flow chart / mind map of different components in programming", "concept_map"),
+    ("create a figure of different components in programming", "concept_map"),
+    ("visualise the hypothesis testing process", "flowchart"),
+    ("flowchart or diagram of how to decide", "flowchart"),
+    ("what does a map function do?", None),
+    ("help me figure out the formula", None),
+    ("what is the big picture here", None),
 ])
 def test_the_shape_is_decided_by_code(msg, shape):
     assert F.detect(msg) == shape
@@ -69,14 +77,13 @@ def test_a_flowchart_keeps_its_structure_sound():
     assert not any(n["added"] for n in figure["nodes"])                           # "Start" is not a claim
 
 
-def test_a_flowchart_without_decisions_becomes_worked_steps_in_order():
-    nodes = [{"id": "b", "label": "Compare z with 1.96", "quote": "compare it with 1.96"},
-             {"id": "a", "label": "Compute z from S, mu and sigma", "quote": "compute z equal to S minus mu"},
-             {"id": "s", "label": "Start", "kind": "start"}]
-    edges = [{"from": "s", "to": "a"}, {"from": "a", "to": "b"}]
-    figure, flags, _ = F.check("flowchart", fig("flowchart", nodes=nodes, edges=edges), EVIDENCE, outside=False)
-    assert figure["shape"] == "steps" and [s["text"] for s in figure["steps"]] == [
-        "Compute z from S, mu and sigma", "Compare z with 1.96"] and "flowchart_without_decisions_as_steps" in flags
+def test_a_flowchart_without_decisions_stays_a_flowchart():
+    """Real use 29 Oct: a chain of programming components was turned into a "step-by-step solution"."""
+    nodes = [{"id": "a", "label": "Compute z from S, mu and sigma", "quote": "compute z equal to S minus mu"},
+             {"id": "b", "label": "Compare z with 1.96", "quote": "compare it with 1.96"}]
+    figure, flags, _ = F.check("flowchart", fig("flowchart", nodes=nodes, edges=[{"from": "a", "to": "b"}]), EVIDENCE,
+                               outside=False)
+    assert figure["shape"] == "flowchart" and [n["id"] for n in figure["nodes"]] == ["a", "b"]
 
 
 def test_a_concept_map_drops_ideas_the_lecture_never_mentioned_unless_the_switch_is_on():

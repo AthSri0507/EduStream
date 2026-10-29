@@ -9,6 +9,8 @@ the student said yes to. Pure: no Kafka, no Streamlit.
                     become topics minutes later): the topic overlapping its time span most, right after the element
                     that best matches it (the lecturer's example with the question), else the end of the topic; while
                     its part is still live, under the live notes; nothing the lecture covered: "Beyond the lecture".
+  * redraw          a saved addition rebuilt from its own question in one click: the student already said yes, so
+                    there is no second offer; the new one keeps the old one's span, topic and order.
 
 Tested by tests/test_additions.py.
 """
@@ -114,6 +116,16 @@ def describe(placement: dict, topics: list[dict]) -> str:
         el["kind"], "the paragraph")
     name = el.get("title") or el.get("lead") or el.get("caption") or ""
     return f"{where}, after {what}" + (f" “{name}”" if name else f" at {mmss(el['t'])}")
+
+
+def redraw_label(addition: dict) -> str:
+    """The button that asks the saved question again and puts the new figure in place of the old one. It names the
+    shape when the question now asks for a different one (real use 29 Oct: a "flow chart / mind map" saved as worked
+    steps before shape detection was fixed)."""
+    shape = figures.detect(addition.get("question") or "")
+    if shape and shape != addition["figure"]["shape"]:
+        return f"Redraw as a {figures.NAME[shape]}"
+    return "Redraw"
 
 
 def offer_text(figure: dict, placement: dict, topics: list[dict]) -> str:

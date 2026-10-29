@@ -6,7 +6,9 @@ the lecture only (default), or the lecture plus general knowledge, always labell
 
 A figure (table, worked steps, flowchart, concept map, timeline: NOTEBOOK_DESIGN §13) is followed by an offer, "Add
 this to your notes under …?". The next message is read by code first (agents/additions.py): yes / no / "yes, under
-topic 2". Yes produces an addition.v1 record to user_notes (the sink stores it; the dashboard never writes SQLite). Streamlit re-runs the script on every interaction, and
+topic 2". Yes produces an addition.v1 record to user_notes (the sink stores it; the dashboard never writes SQLite). A
+saved addition can be redrawn from the notebook page in one click (its question asked again, the new figure in its
+place). Streamlit re-runs the script on every interaction, and
 a re-run aborts whatever the old run was doing (step 0, bench/STEP0_RESULTS.md §3), so a turn never runs in the
 script: it runs in a background thread that writes into a job dict kept in session_state, and this panel (its
 own fragment, polled every second) shows the job's progress and then the verified answer.
@@ -23,7 +25,7 @@ import streamlit as st
 from agents import assistant as A
 from agents import embeddings
 from agents import lecture_tools as tools
-from agents import additions, llm
+from agents import additions, figures, llm
 from agents.text import mmss
 from common import schemas
 from common.config import TOPIC_USER_NOTES, load
@@ -58,6 +60,7 @@ def _state() -> dict:
     s.setdefault("a_explained", [])
     s.setdefault("a_outside", False)    # the switch: general knowledge allowed
     s.setdefault("a_offer", None)       # a figure the student may add to the notes (§13.3)
+    s.setdefault("a_redraw", {})        # addition_id -> its running redraw job
     return s
 
 
@@ -72,30 +75,43 @@ def _position(conn, video_id: str) -> A.Position | None:
     return A.Position(video_id, info["title"], True, max(0.0, clock), info["covered_s"])
 
 
+def _ask(conn, job: dict, video_id: str, msg: str, turns: list, explained: list, outside: bool) -> A.Answer | None:
+    """One assistant turn; None (and the job done with an error) when the lecture is not in the database yet."""
+    pos = _position(conn, video_id)
+    if pos is None:
+        job.update(done=True, error="The lecture is not in the database yet.")
+        return None
+    # A live moment is transcribed 12-15 s after it is said: wait for it rather than answer from nothing.
+    if pos.live:
+        deadline = time.time() + WAIT_FOR_TRANSCRIPT_S
+        while pos.covered_s < pos.ref - 12 and time.time() < deadline:
+            job["status"] = "catching up with the lecture…"
+            time.sleep(1.0)
+            pos = replace(pos, covered_s=tools.lecture_info(conn, video_id)["covered_s"])
+    job["status"] = "thinking…"
+    vconn = indexer.connect_readonly()          # None until the indexer has written anything
+    try:
+        return A.run_turn(conn, _shared()["client"], msg, turns, pos, explained=explained, vconn=vconn,
+                          embedder=embeddings.get(), outside=outside)
+    finally:
+        if vconn is not None:
+            vconn.close()
+
+
+def _send(video_id: str, payload: dict) -> None:
+    """One addition.v1 record to user_notes (raises ProduceFailed when Kafka is unreachable)."""
+    send_and_wait(_producer(), TOPIC_USER_NOTES, schemas.encode("addition.v1", payload), key=video_id,
+                  partition=partition_for(video_id, load().partitions))
+
+
 def _run_job(job: dict, video_id: str, msg: str, turns: list, explained: list, outside: bool = False) -> None:
     shared = _shared()
     try:
         conn = connect_readonly()
         try:
-            pos = _position(conn, video_id)
-            if pos is None:
-                job.update(done=True, error="The lecture is not in the database yet.")
+            answer = _ask(conn, job, video_id, msg, turns, explained, outside)
+            if answer is None:
                 return
-            # A live moment is transcribed 12-15 s after it is said: wait for it rather than answer from nothing.
-            if pos.live:
-                deadline = time.time() + WAIT_FOR_TRANSCRIPT_S
-                while pos.covered_s < pos.ref - 12 and time.time() < deadline:
-                    job["status"] = "catching up with the lecture…"
-                    time.sleep(1.0)
-                    pos = replace(pos, covered_s=tools.lecture_info(conn, video_id)["covered_s"])
-            job["status"] = "thinking…"
-            vconn = indexer.connect_readonly()          # None until the indexer has written anything
-            try:
-                answer = A.run_turn(conn, shared["client"], msg, turns, pos, explained=explained, vconn=vconn,
-                                    embedder=embeddings.get(), outside=outside)
-            finally:
-                if vconn is not None:
-                    vconn.close()
             if answer.figure:                           # where it would go in the notes, for the offer
                 nb = queries.notebook(conn, video_id)
                 span = additions.span_of(answer.plan.span, answer.evidence)
@@ -133,9 +149,7 @@ def _answer_offer(offer: dict, decision: str, topic: int | None) -> str:
     payload = additions.payload_add(offer["video_id"], offer["figure"], offer["span"], offer["question"],
                                     offer["outside"], offer["model"], topic)
     try:
-        settings = load()
-        send_and_wait(_producer(), TOPIC_USER_NOTES, schemas.encode("addition.v1", payload), key=offer["video_id"],
-                      partition=partition_for(offer["video_id"], settings.partitions))
+        _send(offer["video_id"], payload)
     except Exception as exc:  # noqa: BLE001 - Kafka unreachable (ProduceFailed) or anything else: shown, never fatal
         _shared()["log"].error("addition_failed", video_id=offer["video_id"], error=repr(exc))
         return "I couldn't save it: the pipeline isn't reachable right now. It's still here in the chat."
@@ -148,14 +162,67 @@ def _answer_offer(offer: dict, decision: str, topic: int | None) -> str:
 def remove_addition(video_id: str, addition_id: str) -> None:
     """The ✕ on the notebook page: a removal record (the sink marks the addition removed; nothing is deleted)."""
     try:
-        settings = load()
-        send_and_wait(_producer(), TOPIC_USER_NOTES,
-                      schemas.encode("addition.v1", additions.payload_remove(video_id, addition_id)), key=video_id,
-                      partition=partition_for(video_id, settings.partitions))
+        _send(video_id, additions.payload_remove(video_id, addition_id))
         st.toast("Removed from your notes.")
     except Exception as exc:  # noqa: BLE001 - Kafka unreachable: shown, never fatal
         _shared()["log"].error("addition_remove_failed", video_id=video_id, error=repr(exc))
         st.toast("Couldn't remove it: the pipeline isn't reachable right now.")
+
+
+def redraw_addition(video_id: str, addition: dict) -> None:
+    """The ↻ on the notebook page: the saved question is asked again (with its own switch setting, not the current
+    one) and the new figure takes the old one's place. No chat and no second offer: the student already said yes.
+    The new one is saved first and keeps the old span, topic and order; the old one is removed only after that, so a
+    failure at any point leaves the saved version in the notes. Runs in a thread, like a chat turn."""
+    jobs = _state()["a_redraw"]
+    if addition["addition_id"] in jobs:
+        return
+    job = {"done": False, "status": "thinking…"}
+    jobs[addition["addition_id"]] = job
+    threading.Thread(target=_run_redraw, daemon=True, args=(job, video_id, addition)).start()
+
+
+def _run_redraw(job: dict, video_id: str, addition: dict) -> None:
+    shared = _shared()
+    old = addition["figure"]
+    try:
+        conn = connect_readonly()
+        try:
+            answer = _ask(conn, job, video_id, addition["question"], [], [], addition["outside"])
+        finally:
+            conn.close()
+        if answer is None:
+            return
+        if not answer.figure:
+            job.update(done=True, error="I couldn't redraw it this time, so your saved version stays. Try again later.")
+            return
+        payload = additions.payload_add(video_id, answer.figure, addition["span"], addition["question"],
+                                        addition["outside"], answer.model, addition.get("topic_override"),
+                                        now_ms=addition.get("created_ts"))
+        _send(video_id, payload)
+        _send(video_id, additions.payload_remove(video_id, addition["addition_id"]))
+        job.update(done=True, text=f"Redrawn as a {figures.NAME[answer.figure['shape']]}.")
+        shared["log"].info("addition_redrawn", video_id=video_id, old_id=addition["addition_id"],
+                           new_id=payload["addition_id"], old_shape=old["shape"], shape=answer.figure["shape"],
+                           model=answer.model, flags=answer.flags)
+    except Exception as exc:  # noqa: BLE001 - Kafka unreachable or anything else: shown, never fatal
+        job.update(done=True, error="I couldn't redraw it: the pipeline isn't reachable right now. Your saved version "
+                                    "stays.")
+        shared["log"].error("addition_redraw_failed", video_id=video_id, error=repr(exc))
+
+
+def redraw_state(addition_id: str) -> str | None:
+    """"running" while that addition is being redrawn, else None."""
+    job = _state()["a_redraw"].get(addition_id)
+    return "running" if job is not None and not job.get("done") else None
+
+
+def redraw_notices() -> None:
+    """Toasts for finished redraws (called from the notebook's own refresh)."""
+    jobs = _state()["a_redraw"]
+    for addition_id in [k for k, j in jobs.items() if j.get("done")]:
+        job = jobs.pop(addition_id)
+        st.toast(job.get("text") or job.get("error") or "Done.")
 
 
 def submit(video_id: str, msg: str) -> None:
