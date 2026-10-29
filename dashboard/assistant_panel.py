@@ -10,6 +10,7 @@ own fragment, polled every second) shows the job's progress and then the verifie
 
 from __future__ import annotations
 
+import html
 import threading
 import time
 from dataclasses import replace
@@ -105,6 +106,34 @@ def submit(video_id: str, msg: str) -> None:
                      args=(job, video_id, msg, history, list(s["a_explained"]), bool(s["a_outside"]))).start()
 
 
+TABLE_CSS = ("<style>.atab{overflow-x:auto;margin:4px 0 8px}.atab table{border-collapse:collapse;font-size:14px;"
+             "min-width:100%}.atab th,.atab td{border:1px solid rgba(128,128,128,.35);padding:5px 9px;text-align:left;"
+             "vertical-align:top}.atab th{font-weight:600}.atab .src{white-space:nowrap;font-family:monospace;"
+             "font-size:12.5px;opacity:.8}.atab .add{opacity:.75}.atab .cap{font-weight:600;margin-bottom:4px}"
+             ".atab .note{font-style:italic;font-size:13px;opacity:.8;margin-top:4px}</style>")
+
+
+def table_html(table: dict) -> str:
+    """The assistant's table (NOTEBOOK_DESIGN §13), as escaped HTML in a box that scrolls sideways (a markdown table
+    was cut off in the narrow chat column). A cell not from the lecture carries "†" (only when the switch is on);
+    the Source column gives the time where the row's subject was discussed."""
+    e = html.escape
+    rows = table["rows"]
+    head = "".join(f"<th>{e(c)}</th>" for c in table["columns"]) + "<th>Source</th>"
+    body = ""
+    for r in rows:
+        cells = "".join(f'<td class="add">{e(c)} †</td>' if added and c else f"<td>{e(c)}</td>"
+                        for c, added in zip(r["cells"], r["added"]))
+        body += f"<tr>{cells}<td class=\"src\">{mmss(r['t']) if r['t'] is not None else '—'}</td></tr>"
+    added = sum(sum(r["added"]) for r in rows)
+    total = sum(len(r["cells"]) for r in rows)
+    note = (f"† {added} of {total} cells are general knowledge, not from the lecture." if added
+            else "Everything in this table is from the lecture.")
+    caption = f'<div class="cap">{e(table["caption"])}</div>' if table.get("caption") else ""
+    return (f'{TABLE_CSS}<div class="atab">{caption}<table><tr>{head}</tr>{body}</table>'
+            f'<div class="note">{e(note)}</div></div>')
+
+
 def _render_answer(answer: A.Answer) -> None:
     source = "lecture + general knowledge" if answer.outside else "from the lecture only"
     st.caption(f"{answer.plan.chip()} · {source}")
@@ -112,6 +141,8 @@ def _render_answer(answer: A.Answer) -> None:
         st.write(answer.note)
     for item in answer.items:
         st.markdown(f"{item['text']} `[{mmss(item['t'])}]`", help=f"Said: “{item['quote']}”")
+    if answer.table:
+        st.html(table_html(answer.table))
     for text in answer.background:
         st.markdown(f":gray-background[Beyond the lecture: general knowledge] {text}")
     for q in answer.questions:

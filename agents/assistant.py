@@ -15,6 +15,11 @@ Two modes, chosen by the student with a switch above the chat (28 Oct):
   * lecture + general knowledge (`outside=True`): what the lecturer said comes first, then general knowledge,
     always labelled as not from the lecture (up to about half the answer; all of it when the lecture is silent).
 
+Tables (NOTEBOOK_DESIGN §13, the chat part, 29 Oct): a message asking for a table (decided by code, TABLE) gets one.
+The model returns columns and rows, each row with a quote when it comes from the lecture; code keeps a row as "from
+the lecture" only if its quote is real and its cells are supported around it (the same claim check). Lecture only:
+other rows are dropped. With general knowledge: they are kept and marked as added.
+
 If the LLM is off or fails, the user still gets the plan (the chip) and the evidence itself. Statistics
 questions ("data") never use the LLM. No word-by-word streaming: the answer is shown only after step 4.
 """
@@ -28,7 +33,7 @@ from dataclasses import asdict, dataclass, field, replace
 
 from agents import lecture_tools as tools
 from agents import retrieval
-from agents.study_notes import grounded
+from agents.study_notes import evidence_words, grounded, words_of
 from agents.text import content_words, find_quote, mmss, parse_t
 
 INTENTS = ("explain_recent", "summarise", "define", "ask", "quiz", "data", "other")
@@ -61,6 +66,7 @@ class Plan:
     style: str = "same"
     ambiguous: bool = False
     source: str = "rules"            # "llm" or "rules"
+    shape: str | None = None         # "table": the student asked for one (set by code, TABLE)
 
     def chip(self) -> str:
         what = {"explain_recent": "Explaining", "summarise": "Summarising", "define": "Defining", "ask": "Answering",
@@ -86,6 +92,7 @@ class Answer:
     flags: list = field(default_factory=list)
     generator: str = "evidence"                        # "llm" or "evidence" (fallback / data)
     outside: bool = False                              # answered with general knowledge allowed (the switch)
+    table: dict | None = None                          # {caption, columns, rows: [{cells, t, from_lecture}]}
     model: str | None = None
     latency_s: float = 0.0
 
@@ -96,6 +103,9 @@ class Answer:
         """Plain text of the answer, for the conversation memory and the log."""
         parts = [f"{i['text']} [{mmss(i['t'])}]" for i in self.items] + [f"Background: {b}" for b in self.background]
         parts += [f"Q: {q['q']}" for q in self.questions]
+        if self.table:
+            parts.append(f"Table {self.table['caption']}: " + "; ".join(" | ".join(r["cells"])
+                                                                          for r in self.table["rows"]))
         if self.stats:
             parts.append(json.dumps(self.stats))
         return " ".join(parts) or (self.note or "")
@@ -333,6 +343,26 @@ Style: {style}. Level: {level}.
 Return ONLY JSON: {schema}"""
 
 SCHEMA_DEFAULT = '{"lecture": [{"text": "...", "quote": "...", "t": "mm:ss"}], "background": "" }'
+SCHEMA_TABLE = ('{"lecture": [{"text": "...", "quote": "...", "t": "mm:ss"}], "background": "", '
+                '"table": {"caption": "...", "columns": ["...", "..."], '
+                '"rows": [{"cells": ["...", "..."], "quote": "words copied from the lecture text, or null"}]}}')
+TABLE = re.compile(r"\b(table|tabular|tabulate|tabulated)\b", re.I)
+TABLE_COMMON = ("The student asked for a table: put the answer in \"table\". Make it answer the question itself, "
+                "e.g. a comparison: one row per thing compared, one column per property (2-5 columns, at most 8 rows). "
+                "Write each cell yourself in a few words; never copy transcript sentences into cells and never add "
+                "time, quote or source columns (they are added for you). Give each row \"quote\": 3-15 words copied "
+                "EXACTLY from the line where that thing is discussed, or null. \"lecture\" may hold one or two "
+                "sentences around the table, or be empty.")
+TABLE_RULE = {
+    False: TABLE_COMMON + " Use only what the lecture text says; leave a cell empty rather than adding anything else.",
+    True: TABLE_COMMON + (" Put what the lecture did not say IN THE TABLE: add one or two columns the lecture did not "
+                          "cover, such as another name, the symbol or probability, or a real-world example (each cell "
+                          "is checked and marked when it is not from the lecture). Keep \"background\" to at most one "
+                          "sentence."),
+}
+META_COLUMN = re.compile(r"^\s*(time|timestamp|when|said|quote|quotes?|source|sources|mm:ss|\[mm:ss\])\s*$", re.I)
+MAX_TABLE_ROWS, MAX_TABLE_COLUMNS = 8, 5
+TABLE_LINES = 3                  # a row with a real quote: its cells are checked against ±3 lines (~30 s) around it
 SCHEMA_QUIZ = '{"questions": [{"q": "...", "answer": "...", "t": "mm:ss"}]}'
 STYLE = {"simpler": "simpler than usual: short sentences, an everyday analogy is welcome",
          "same": "clear and direct", "more_technical": "precise and technical"}
@@ -374,9 +404,12 @@ def answer_prompt(plan: Plan, level: str, explained: list[str], outside: bool = 
                      "empty.")
     if explained:
         extra.append("Already explained in this conversation (refer to them, do not re-explain): " + ", ".join(explained))
+    table = plan.shape == "table" and plan.intent != "quiz"
+    if table:
+        extra.append(TABLE_RULE[outside])
     return ANSWER_PROMPT.format(budget=budget_for(plan), style=STYLE.get(plan.style, "clear"), level=level,
                                 knowledge=KNOWLEDGE[outside], extra="\n".join(extra),
-                                schema=SCHEMA_QUIZ if plan.intent == "quiz" else SCHEMA_DEFAULT)
+                                schema=SCHEMA_QUIZ if plan.intent == "quiz" else SCHEMA_TABLE if table else SCHEMA_DEFAULT)
 
 
 def answer_user(plan: Plan, pos: Position, evidence: list[dict], turns: list[dict], previous: str | None) -> str:
@@ -471,6 +504,86 @@ def verify(reply: dict, plan: Plan, evidence: list[dict], outside: bool = False)
     return items, background, questions, flags
 
 
+def cell_said(cell: str, near: str) -> bool:
+    """A short cell must be said in full ("one cycle" passed at 50 % on "one"); a longer one at CLAIM_SUPPORT_MIN.
+    A cell without words (a symbol such as α) is not counted as said."""
+    cell, near = _numbers(cell), _numbers(near)
+    words = words_of(cell)
+    if not words:
+        return False
+    return words <= evidence_words(near) if len(words) <= 2 else grounded(cell, near) >= CLAIM_SUPPORT_MIN
+
+
+NUMBER_WORDS = {w: str(i) for i, w in enumerate(
+    "zero one two three four five six seven eight nine ten".split())}
+NUMBER_WORDS.update({w: str(i) for i, w in enumerate("_ i ii iii iv v vi vii viii ix x".split()) if i})
+
+
+def _numbers(text: str) -> str:
+    """"Type II", "type two" and "Type 2" are the same words to the check (Whisper writes numbers either way)."""
+    return re.sub(r"\b[A-Za-z]+\b", lambda m: NUMBER_WORDS.get(m.group(0).lower(), m.group(0)), text)
+
+
+def verify_table(reply: dict, evidence: list[dict], outside: bool) -> tuple[dict | None, list]:
+    """Every CELL is checked: from the lecture if at least half of its content words were said around its row's quote
+    (the whole part asked about when the row has no real quote) (a row-level mark was too coarse: in a Type I / Type II table the definition is from the lecture while
+    "probability α" is not). Lecture only: a column with nothing from the lecture is dropped and other cells are
+    blanked ("—"); a row left with nothing is dropped. With general knowledge: such cells are kept and marked.
+    Columns for time/quote/source are dropped (code shows the source). The row's quote, when real, gives its time."""
+    flags: list[str] = []
+    raw = reply.get("table") if isinstance(reply.get("table"), dict) else None
+    if raw is None:
+        return None, flags
+    names = [str(c).strip()[:40] for c in (raw.get("columns") if isinstance(raw.get("columns"), list) else [])]
+    keep = [i for i, n in enumerate(names) if n and not META_COLUMN.match(n)][:MAX_TABLE_COLUMNS]
+    if len(keep) < len([n for n in names if n]):
+        flags.append("table_meta_columns_dropped")
+    if len(keep) < 2:
+        return None, flags + ["table_without_columns"]
+    texts = [e["text"] for e in evidence]
+    whole = " ".join(texts)
+    rows = []
+    for r in (raw.get("rows") if isinstance(raw.get("rows"), list) else [])[:MAX_TABLE_ROWS * 2]:
+        cells = r.get("cells") if isinstance(r, dict) else r
+        if not isinstance(cells, list):
+            continue
+        cells = [str(cells[i]).strip()[:140] if i < len(cells) else "" for i in keep]
+        cells = [c if re.search(r"\w", c) else "" for c in cells]            # "-", "n/a" style blanks say nothing
+        if not any(cells):
+            continue
+        quote = str(r.get("quote") or "") if isinstance(r, dict) else ""
+        span = find_quote(quote, texts) if quote else None
+        near = " ".join(texts[max(0, span[0] - TABLE_LINES): span[1] + TABLE_LINES + 1]) if span else whole
+        # The row's name (first column) is a subject, not a claim: discussed anywhere in the part asked about is enough
+        # (real check 29 Oct: "Null hypothesis" was marked although the lecture discusses it, 40 s from the quote).
+        added = [bool(c) and not cell_said(c, whole if j == 0 else near) for j, c in enumerate(cells)]
+        rows.append({"cells": cells, "added": added, "t": evidence[span[0]]["t"] if span else None})
+    columns = [names[i] for i in keep]
+    if not outside:
+        lecture_cols = [j for j in range(len(columns)) if j == 0 or any(not r["added"][j] and r["cells"][j] for r in rows)]
+        if len(lecture_cols) < len(columns):
+            flags.append("table_columns_dropped_lecture_only")
+        columns = [columns[j] for j in lecture_cols]
+        kept = []
+        for r in rows:
+            cells = [r["cells"][j] if not r["added"][j] else "" for j in lecture_cols]
+            if not any(cells[1:]):
+                flags.append("table_row_dropped_lecture_only")
+                continue
+            if any(r["added"][j] and r["cells"][j] for j in lecture_cols):
+                flags.append("table_cells_blanked_lecture_only")
+            kept.append({"cells": [c or "—" for c in cells], "added": [False] * len(cells), "t": r["t"]})
+        rows = kept
+        if len(columns) < 2:
+            return None, flags + ["table_empty"]
+    rows = rows[:MAX_TABLE_ROWS]
+    if not rows:
+        return None, flags + ["table_empty"]
+    if any(any(r["added"]) for r in rows):
+        flags.append("table_cells_added")
+    return {"caption": str(raw.get("caption") or "").strip()[:120], "columns": columns, "rows": rows}, flags
+
+
 # ----------------------------------------------------------------------------------------------- one turn
 SWITCH_HINT = "Switch on “Use general knowledge” to get an answer beyond the lecture."
 LECTURE_ONLY_OTHER = "That isn't about this lecture, and I'm answering from the lecture only. " + SWITCH_HINT
@@ -491,6 +604,8 @@ def run_turn(conn, client, msg: str, turns: list[dict], pos: Position, level: st
                    + "\n\nLast 90 s of transcript:\n" + "\n".join(f"[{int(r['t'])} s] {r['text']}" for r in recent))
         plan = understand(client, msg, turns, pos, context, span_s)
         plan = resolve_section(plan, msg, outline, pos)
+        if TABLE.search(msg):
+            plan.shape = "table"
     evidence, stats, note = fetch(conn, plan, pos, vconn, embedder)
     if plan.intent == "other" and not outside:
         # Lecture only, and the plan says "not about this lecture": check the lecture before refusing. Dry run
@@ -522,16 +637,20 @@ def run_turn(conn, client, msg: str, turns: list[dict], pos: Position, level: st
                    + ". Leave 'lecture' empty and answer from general knowledge in 'background'.")
     result = client.complete_json(prompt,
                                   answer_user(plan, pos, evidence, turns, previous),
-                                  max_tokens=max(800, min(3000, 300 + 3 * budget_for(plan)))) if client else None
+                                  max_tokens=max(800, min(3000, 300 + 3 * budget_for(plan)))
+                                  + (700 if plan.shape == "table" else 0)) if client else None
     if result is not None and result.ok:
         answer.items, answer.background, answer.questions, answer.flags = verify(result.data, plan, evidence,
                                                                                  outside)
+        if plan.shape == "table":
+            answer.table, table_flags = verify_table(result.data, evidence, outside)
+            answer.flags += table_flags
         answer.generator, answer.model = "llm", result.model
-        if not (answer.items or answer.background or answer.questions):
+        if not (answer.items or answer.background or answer.questions or answer.table):
             answer.generator, answer.flags = "evidence", answer.flags + ["llm_answer_empty"]
             if not outside and not answer.note:
                 answer.note = "The lecture doesn't answer this. " + SWITCH_HINT
-        elif not answer.items and evidence and plan.intent in ("explain_recent", "summarise"):
+        elif not answer.items and not answer.table and evidence and plan.intent in ("explain_recent", "summarise"):
             answer.flags.append("no_lecture_items")           # the dashboard also shows what was said
     else:
         answer.flags.append(f"llm_unavailable:{getattr(result, 'reason', 'no_client')}")

@@ -366,3 +366,64 @@ def test_a_real_quote_does_not_carry_a_claim_the_lecturer_did_not_make(conn):
     assert background == [] and any(f.startswith("claim_unsupported") for f in flags)
     items, background, _, _ = A.verify(reply, plan, evidence, outside=True)
     assert len(items) == 1 and background == ["The F distribution is used in variance ratio tests."]   # labelled
+
+
+# ---------------------------------------------------------------- tables (NOTEBOOK_DESIGN §13, chat part)
+TABLE_REPLY = {"lecture": [], "background": "", "table": {
+    "caption": "Where a computer keeps things", "columns": ["Thing", "What it does", "Time", "Speed"],
+    "rows": [{"cells": ["Memory", "stores the results of calculations", "07:10", "slow compared to a register"],
+              "quote": "Store them in computer memory"},
+             {"cells": ["Registers", "tiny cells inside the processor", "", "one cycle"], "quote": None}]}}
+
+
+def test_a_table_request_is_decided_by_code_and_every_cell_is_checked(conn):
+    assert A.TABLE.search("make a table of type 1 and type 2 errors") and not A.TABLE.search("my timetable")
+    llm = FakeLLM(plan={"intent": "ask"}, answer=TABLE_REPLY)
+    msg = "make a table of where a computer keeps its results"
+    ans = A.run_turn(conn, llm, msg, [], pos(), outside=True)
+    assert ans.plan.shape == "table" and ans.table["columns"] == ["Thing", "What it does", "Speed"]   # no "Time"
+    memory, registers = ans.table["rows"]
+    assert memory["t"] == 430.0 and memory["added"] == [False, False, True]                # said / said / not said
+    assert registers["t"] is None and registers["added"] == [True, True, True]
+    assert "table_meta_columns_dropped" in ans.flags and "table_cells_added" in ans.flags
+    ans = A.run_turn(conn, llm, msg, [], pos())                                              # lecture only
+    assert ans.table["columns"] == ["Thing", "What it does"]                                 # "Speed": nothing said
+    assert [r["cells"] for r in ans.table["rows"]] == [["Memory", "stores the results of calculations"]]
+    assert {"table_columns_dropped_lecture_only", "table_row_dropped_lecture_only"} <= set(ans.flags)
+
+
+def test_the_table_rule_is_in_the_prompt_only_when_a_table_was_asked_for():
+    plan = A.Plan(intent="ask", question="x", shape="table")
+    assert "leave a cell empty rather than adding anything else" in A.answer_prompt(plan, "unknown", [], False)
+    assert "IN THE TABLE: add one or two columns" in A.answer_prompt(plan, "unknown", [], True)
+    assert "never add time, quote or source columns" in A.answer_prompt(plan, "unknown", [], True)
+    assert "\"table\"" not in A.answer_prompt(A.Plan(intent="ask", question="x"), "unknown", [], True)
+
+
+def test_a_table_with_nothing_from_the_lecture_is_no_table_in_lecture_only_mode(conn):
+    only_general = {"lecture": [], "background": "", "table": {"caption": "", "columns": ["A", "B"],
+                    "rows": [{"cells": ["Registers", "tiny storage inside the processor"], "quote": None}]}}
+    ans = A.run_turn(conn, FakeLLM(plan={"intent": "ask"}, answer=only_general),
+                     "table of processor storage please", [], pos())
+    assert ans.table is None and "table_empty" in ans.flags and "Switch on" in ans.note
+
+
+def test_the_chat_draws_the_table_with_marks_and_sources_and_escapes_model_text():
+    from dashboard.assistant_panel import table_html
+    page = table_html({"caption": "Errors <script>x</script>", "columns": ["Type", "Meaning", "Probability"],
+                       "rows": [{"cells": ["Type I", "reject a true H0 <b>x</b>", "α"], "added": [False, False, True],
+                                 "t": 600.0},
+                                {"cells": ["Type II", "fail to reject a false H0", "β"], "added": [False, False, True],
+                                 "t": None}]})
+    assert "<script>" not in page and "&lt;b&gt;x&lt;/b&gt;" in page and "Errors &lt;script&gt;" in page
+    assert "<th>Type</th><th>Meaning</th><th>Probability</th><th>Source</th>" in page
+    assert '<td class="add">α †</td><td class="src">10:00</td>' in page and '<td class="src">—</td>' in page
+    assert "† 2 of 6 cells are general knowledge, not from the lecture." in page and "overflow-x:auto" in page
+
+
+def test_a_cell_is_said_whatever_way_whisper_wrote_its_number():
+    """Real check 29 Oct: "Type II" was marked as not from the lecture because Whisper wrote "Type 2"."""
+    assert A.cell_said("Type II", "Type 2 fail to reject H naught when false.")
+    assert A.cell_said("Type I", "which you typically call the type one error")
+    assert not A.cell_said("one cycle", "it chose one number")                  # a short cell must be said in full
+    assert not A.cell_said("α", "alpha is the level of significance")           # a symbol alone: not "said"
