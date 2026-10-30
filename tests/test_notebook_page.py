@@ -85,7 +85,7 @@ def test_additions_are_placed_by_the_query_and_shown_on_the_page(tmp_path):
     assert topic3["additions"][0]["after"] == 0                          # after "The recipe the students gave"
     assert [a["question"] for a in nb["beyond"]] == ["what is power?"]   # the removed one is gone
     page = nbh.topic_html(topic3, "dark")
-    assert "YOUR ADDITION · FLOWCHART · Being a machine &lt;b&gt;" in page and 'src="data:image/png;base64,' in page
-    assert page.index("The recipe the students gave") < page.index("YOUR ADDITION") < page.index("Picking the number")
+    assert "Your addition (flowchart): Being a machine &lt;b&gt;" in page and 'src="data:image/png;base64,' in page
+    assert page.index("The recipe the students gave") < page.index("Your addition") < page.index("Picking the number")
     assert "You asked: “a flowchart of the recipe”" in page and "† 1 of 3 boxes" in page
     assert "<td class=\"add\">1 - beta †</td>" in nbh.beyond_html(nb)

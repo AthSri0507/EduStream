@@ -115,7 +115,7 @@ def test_the_users_chosen_span_is_used_for_didnt_get_that(conn):
 
 def test_the_chip_says_what_was_understood():
     plan = A.Plan(intent="explain_recent", span=[415.0, 445.0], style="simpler", previous_answer=True)
-    assert plan.chip() == "Explaining **06:55–07:25** · simpler · follow-up"
+    assert plan.chip() == "Explaining **06:55–07:25** (simpler, follow-up)"
 
 
 # ---------------------------------------------------------------- fetch, answer, verify

@@ -1,5 +1,5 @@
-"""Live class control (sidebar): record an online class (Zoom, Meet, Teams) that this laptop has joined, see that
-sound arrives, and stop it.
+"""Live class control (In class page, docs/UI_DESIGN.md §4): the "Join a live class" card on the landing, and the
+recorder bar with Stop class while a class is recorded. Records an online class (Zoom, Meet, Teams) this laptop has joined.
 
 The recording is producer/live_source.py in its own minimised window (scripts/run_component.ps1, pid file
 run/pids/live.pid, so stop_all.ps1 and kill.ps1 -Name live reach it), and it keeps going if the dashboard reloads.
@@ -19,7 +19,7 @@ import streamlit as st
 
 from common.config import ROOT, load
 from producer.lecture_source import STATE_DIR, active_lectures
-from producer.live_source import SILENCE_RMS, dbfs, free_video_id
+from producer.live_source import free_video_id
 
 REQUEST_DIR = ROOT / "run" / "live"
 PID_FILE = ROOT / "run" / "pids" / "live.pid"
@@ -88,46 +88,53 @@ def stop(video_id: str) -> None:
     (STATE_DIR / f"{video_id}.stop").touch()
 
 
-@st.fragment(run_every="2s")
-def status() -> None:
-    now_ms = int(time.time() * 1000)
-    state = latest_live()
-    now = phase(state, now_ms)
+def live_phase(now_ms: int | None = None) -> str:
+    """idle | starting | failed | recording | stopping | finished, for this session's view of the recorder."""
+    now = phase(latest_live(), now_ms or int(time.time() * 1000))
     started = st.session_state.get("live_started")
     if now == "idle" and started and time.time() - started[1] < 60:
-        st.info("Starting: the recording begins at the next 30-second mark …")
-        now = "starting"
-    elif now == "idle" and started and time.time() - started[1] < 600:
-        st.error("The live class did not start. The window 'edustream-live' (minimised) says why; is the pipeline "
-                 "running (scripts\\start_all.ps1)?")
-    if st.session_state.get("live_phase") not in (None, now) and now != "starting":
+        return "starting"
+    if now == "idle" and started and time.time() - started[1] < 600:
+        return "failed"
+    return now
+
+
+@st.fragment(run_every="2s")
+def recorder_bar() -> None:
+    """Above the live notes: Stop class while this laptop records (sound warnings are in the status row, once).
+    Reruns the page when the phase changes, so In class switches between the landing and the live notes."""
+    now = live_phase()
+    if st.session_state.get("live_phase") not in (None, now):
         st.session_state["live_phase"] = now
-        st.rerun(scope="app")                             # show / hide the start form
+        st.rerun(scope="app")
     st.session_state["live_phase"] = now
-    if now in ("recording", "stopping"):
-        minutes = (state.get("last_chunk_sent", -1) + 1) * 10 / 60
-        level = state.get("level_dbfs")
-        st.markdown(f"🔴 **Recording** · {state.get('title', state['video_id'])}")
-        st.caption(f"{minutes:.1f} min · sound {level if level is not None else '–'} dBFS"
-                   + (f" · {state['gaps_s']:.0f} s of gaps" if state.get("gaps_s") else ""))
-        if level is not None and level < dbfs(SILENCE_RMS) and minutes >= 0.5:
-            st.warning("No sound right now. Is the class playing on this laptop, on the device chosen below "
-                       f"({', '.join(state.get('devices', []))})?")
-        if now == "stopping":
-            st.info("Stopping: the last window closes in about 30 s, then the notes are finished.")
-        else:
-            st.button("Stop and finish the notes", type="primary", on_click=stop, args=(state["video_id"],),
-                      key="live_stop", width="stretch")
-    elif now == "finished":
-        st.success(f"Finished · {state.get('title', state['video_id'])}: the notes are being completed in the "
-                   f"Notebook tab.")
+    state = latest_live()
+    if now == "starting":
+        st.info("Starting: the recording begins at the next 30-second mark.", icon=":material/hourglass_top:")
+    elif now == "stopping":
+        st.info("Stopping: the last notes are written in about 30 s, then the class is finished.",
+                icon=":material/hourglass_bottom:")
+    elif now == "recording" and state:
+        with st.container(horizontal=True, vertical_alignment="center"):
+            minutes = (state.get("last_chunk_sent", -1) + 1) * 10 / 60
+            st.markdown(f"**Recording** {state.get('title', state['video_id'])}  \n"
+                        f":gray[{minutes:.1f} min so far]")
+            with st.container(key="act_stop", width="content"):
+                st.button("Stop class", type="primary", icon=":material/stop_circle:", on_click=stop,
+                          args=(state["video_id"],), key="live_stop")
 
 
-def panel() -> None:
-    st.subheader("Live class")
-    status()
-    if st.session_state.get("live_phase") in ("recording", "stopping", "starting"):
-        return
+def finished_banner() -> str | None:
+    """The title of a class this laptop recorded that finished in the last 5 minutes, for the landing's banner."""
+    state = latest_live()
+    return state.get("title", state["video_id"]) if phase(state, int(time.time() * 1000)) == "finished" else None
+
+
+def join_form() -> None:
+    """The "Join a live class" card on the In class landing."""
+    if live_phase() == "failed":
+        st.error("The last live class did not start. Is EduStream running on this laptop (scripts\\start_all.ps1)? "
+                 "The minimised 'edustream-live' console on the taskbar says why.")
     devices = audio_devices()
     with st.form("live_start", border=False):
         title = st.text_input("Title", placeholder="e.g. DBMS · Unit 3", max_chars=120)
@@ -137,13 +144,15 @@ def panel() -> None:
                               if devices["default_speaker"] in speakers else 0,
                               help="Where this laptop plays the meeting's sound (speaker or headphones)")
         with_mic = st.checkbox("Also record my microphone", help="Tick this if you are the lecturer on this laptop: "
-                                                                  "Zoom/Meet/Teams don't play your own voice back")
-        go = st.form_submit_button("Start live class", type="primary", width="stretch", disabled=not speakers)
+                                                                  "Zoom, Meet and Teams don't play your own voice back")
+        with st.container(key="act_start"):
+            go = st.form_submit_button("Start class", type="primary", icon=":material/radio_button_checked:",
+                                       width="stretch", disabled=not speakers)
     if go:
         try:
             start(title, device, with_mic)
             st.rerun(scope="app")
         except SystemExit as exc:                          # every partition busy (S1)
             st.error(str(exc))
-    st.caption("Join the class in Zoom, Meet or Teams on this laptop first. The notes appear in the Notebook tab "
-               "about a minute after it starts.")
+    st.caption("Join the class in Zoom, Meet or Teams on this laptop first. The first notes appear about 2 minutes "
+               "after it starts.")

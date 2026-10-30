@@ -77,7 +77,7 @@ class Plan:
         extras = [x for x in (self.depth if self.depth != "normal" else "",
                               self.style.replace("_", " ") if self.style != "same" else "",
                               "follow-up" if self.previous_answer else "") if x]
-        return f"{what}{target}" + (" · " + " · ".join(extras) if extras else "")
+        return f"{what}{target}" + (" (" + ", ".join(extras) + ")" if extras else "")   # no middle dots (UI rules)
 
 
 @dataclass

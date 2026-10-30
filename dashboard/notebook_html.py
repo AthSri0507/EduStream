@@ -16,53 +16,87 @@ from agents.figures import NAME
 from agents.text import mmss
 from dashboard import figure_draw
 
-e = html.escape
+NBSP = " "
+UNITS = r"(%|‰|°[CF]?|k?Hz|dB|[kmμµn]?[gmsVAW]|min|h|MB|GB|KB|kB)(?![\w])"
+TOGETHER = [(re.compile(r"(\d)[  ]+" + UNITS), r"\1" + NBSP + r"\2"),           # 95 %, 454 g, 30 s
+            (re.compile(r"(\d)[  ]+±[  ]+(?=[\d.])"), r"\1" + NBSP + "±" + NBSP),   # 4.54 ± 0.2
+            (re.compile(r"±[  ]+(?=[\d.])"), "±"),                               # ± 1.96 -> ±1.96
+            (re.compile(r"\b([Tt]ype)[  ]+(III|II|I|[123])\b"), r"\1" + NBSP + r"\2")]   # Type I, type 2
 
+
+def keep_together(text: str) -> str:
+    """No line break inside "95 %", "454 g", "±1.96" or "Type II" (docs/UI_DESIGN.md §2): the browser may break at
+    an ordinary space, and the notes often put one there. Both fonts have U+00A0."""
+    for pattern, repl in TOGETHER:
+        text = pattern.sub(repl, text)
+    return text
+
+
+def e(text) -> str:
+    """Escape model-written text for HTML, keeping numbers with their units."""
+    return html.escape(keep_together(str(text)))
+
+# Tokens: docs/UI_DESIGN.md §2 (Warm paper / Midnight ink). The values come from dashboard/theme.py (--es-*) for the
+# active theme; the fallbacks are Warm paper, for HTML shown without the dashboard (bench/replay_notebook.py).
+# Literata = what the lecturer said; Fira Sans = the interface around it (times, labels, the student's own additions).
 CSS = """
-.nb{--text:#1d2433;--muted:#5b6475;--border:#dde1e8;--panel:#f6f7f9;--accent:#3159c9;--live:#c2410c;--ex:#b45309;
---imp:#dc2626;--codebg:#eef1f5;--new:#16a34a;color:var(--text);font-size:15.5px;line-height:1.6}
-.nb[data-theme="dark"]{--text:#e6e9ef;--muted:#9aa3b2;--border:#2a3140;--panel:#161b24;--accent:#7aa2ff;--live:#fb923c;
---ex:#fbbf24;--imp:#f87171;--codebg:#1f2633;--new:#4ade80}
-.nb .doc{max-width:48em}
-.nb .el{display:grid;grid-template-columns:minmax(0,1fr) 46px;gap:14px;margin:0 0 12px}
+.nb{--text:var(--es-ink,#1F2430);--muted:var(--es-secondary,#55596A);--border:var(--es-border,#DAD5C8);
+--panel:var(--es-panel,#EFECE3);--tint:var(--es-tint,#E6EAFB);--accent:var(--es-accent,#2F4BD8);
+--live:var(--es-live,#0B6B49);--fault:var(--es-fault,#B42318);--mark:var(--es-mark,#FFF0A8);
+--livecard:var(--es-livecard,#FFFCF7);--liveborder:var(--es-liveborder,#E5C779);--caution:var(--es-caution,#8A5300);
+--said:Literata,Georgia,serif;--ui:'Fira Sans',system-ui,sans-serif;
+color:var(--text);font-family:var(--said);font-size:18px;line-height:1.65}
+.nb .doc{max-width:72ch}
+.nb .el{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;margin:0 0 16px}
 .nb .el p{margin:0}
-.nb .ts{justify-self:end;align-self:start;margin-top:3px;color:var(--muted);font-size:12px;cursor:help;
-border-bottom:1px dotted var(--muted);font-variant-numeric:tabular-nums}
-.nb .lead{font-weight:700}
-.nb .example{border-left:3px solid var(--ex);background:var(--panel);padding:8px 14px;border-radius:0 6px 6px 0}
-.nb .exh{font-size:13px;font-weight:700;color:var(--ex);margin-bottom:4px}
-.nb ol{margin:6px 0 0;padding-left:22px}.nb li{margin:2px 0}
-.nb pre{margin:8px 0 0;background:var(--codebg);color:var(--text);padding:8px 10px;border-radius:6px;overflow-x:auto;
-font-size:13px;line-height:1.45;white-space:pre}
-.nb .remember{border-left:3px solid var(--imp);padding:4px 12px}
-.nb .cap{font-weight:600;margin-bottom:4px}
-.nb table{border-collapse:collapse;font-size:14px}
+.nb .ts{align-self:start;margin-top:3px;padding:1px 7px;border-radius:999px;background:var(--tint);color:var(--text);
+font:500 13px/1.5 var(--ui);font-variant-numeric:tabular-nums;cursor:help;white-space:nowrap}
+.nb .lead{font-weight:650}
+.nb .example{border-left:3px solid var(--muted);background:var(--panel);padding:10px 16px;border-radius:0 6px 6px 0}
+.nb .exh{font:600 15px/1.4 var(--ui);margin-bottom:4px}
+.nb ol{margin:6px 0 0;padding-left:24px}.nb li{margin:3px 0}
+.nb pre{margin:8px 0 0;background:var(--panel);color:var(--text);padding:8px 10px;border-radius:6px;overflow-x:auto;
+font-size:14px;line-height:1.45;white-space:pre}
+.nb .remember{border-left:3px solid var(--text);padding:4px 14px}
+.nb .cap{font:600 15px/1.4 var(--ui);margin-bottom:4px}
+.nb table{border-collapse:collapse;font-size:16px}
 .nb th,.nb td{border:1px solid var(--border);padding:4px 10px;text-align:left;vertical-align:top}
-.nb .bg{margin:6px 0 0;color:var(--muted);font-size:13px;font-style:italic}
-.nb .check{margin:6px 0 4px;padding:8px 12px;border-left:3px solid var(--accent);background:var(--panel);border-radius:4px}
-.nb .check summary{cursor:pointer;color:var(--accent);font-size:13px}
-.nb mark.fresh{background:color-mix(in srgb,var(--new) 22%,transparent);color:inherit;border-radius:3px;padding:0 1px}
-.nb .live{border:2px dashed var(--live);border-radius:8px;padding:10px 14px;margin:4px 0 12px}
-.nb .lh{color:var(--live);font-weight:700;font-size:12.5px;letter-spacing:.04em;margin-bottom:6px}
-.nb .pending{color:var(--muted);font-style:italic}
-.nb .status{margin-top:6px;color:var(--muted);font-size:13px}
-.nb .now{margin-top:6px;font-size:13px;color:var(--muted);border-top:1px solid var(--border);padding-top:6px}
-.nb .head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 6px}
-.nb .sub{color:var(--muted);font-size:13px}
-.nb .badge{font-weight:600;font-size:13px;padding:2px 10px;border-radius:12px;border:1px solid var(--border);white-space:nowrap}
-.nb .badge.on{color:var(--live);border-color:var(--live)}
-.nb .rail h4{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
-.nb .rail ol{margin:0 0 14px;padding-left:20px;font-size:14px}
-.nb .ok{color:var(--new)}.nb .rl{color:var(--live);font-size:12px}
-.nb .rail details{margin:0 0 12px;font-size:14px}.nb .rail summary{cursor:pointer;color:var(--muted);font-weight:600}
-.nb .rail dl{margin:6px 0 0}.nb .rail dt{font-weight:600}.nb .rail dd{margin:0 0 8px;color:var(--muted);font-size:13px}
-.nb .rail ul{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:13px}
-.nb .range{color:var(--muted);font-size:13px}
-.nb .addn{border:1px solid var(--accent);border-radius:8px;padding:8px 12px 6px;margin:2px 0 14px}
-.nb .addh{font-size:12.5px;font-weight:700;color:var(--accent);margin-bottom:4px;letter-spacing:.02em}
+.nb th{font:600 15px/1.4 var(--ui)}
+.nb .bg{margin:6px 0 0;color:var(--muted);font:15px/1.5 var(--ui)}
+.nb .check{margin:8px 0 4px;padding:10px 14px;background:var(--tint);border-left:3px solid var(--accent);border-radius:0 6px 6px 0}
+.nb .check b{font-family:var(--ui);font-weight:600}
+.nb .check summary{cursor:pointer;color:var(--accent);font:15px/1.6 var(--ui)}
+.nb mark.fresh{background:var(--mark);color:inherit;padding:1px 2px;border-radius:3px;
+-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.nb .live{background:var(--livecard);border:1px solid var(--liveborder);border-left-width:4px;border-radius:8px;
+padding:14px 18px;margin:14px 0}
+.nb .lh{font:600 15px/1.4 var(--ui);margin-bottom:12px;color:var(--caution)}
+.nb .lh span{font-weight:400;color:var(--muted)}
+.nb .pending{color:var(--muted);font-family:var(--ui)}
+.nb .status{margin-top:6px;color:var(--muted);font:15px/1.5 var(--ui)}
+.nb .now{margin-top:8px;color:var(--muted);font-size:16px}
+.nb .now b{font:600 15px/1.5 var(--ui)}
+.nb .head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 10px;font-family:var(--ui)}
+.nb .state{font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:7px}
+.nb .state.on{color:var(--live)}
+.nb .dot{width:9px;height:9px;border-radius:50%;background:var(--live);display:inline-block}
+.nb .sub{color:var(--muted);font-size:15px}
+.nb .toc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:28px;font-family:var(--ui);font-size:15px}
+.nb .toc h4{font:600 15px/1.4 var(--ui);margin:0 0 8px}
+.nb .toc ol{margin:0;padding-left:22px;line-height:1.5}.nb .toc li{margin:0 0 4px}
+.nb .rl{color:var(--muted)}
+.nb .terms details{border-radius:6px;padding:4px 10px;margin:0 0 2px;border-left:3px solid transparent}
+.nb .terms details[open]{background:var(--tint);border-left-color:var(--accent)}
+.nb .terms summary{cursor:pointer;font:600 16px/1.5 var(--said)}
+.nb .terms details p{margin:4px 0 6px;font:16px/1.55 var(--said)}
+.nb .terms .none{color:var(--muted)}
+.nb .info{margin-top:12px;color:var(--muted)}.nb .info ul{margin:4px 0 0;padding-left:18px}
+.nb .addn{border:1px solid var(--border);border-radius:6px;padding:10px 14px 8px;margin:2px 0 16px;font-family:var(--ui)}
+.nb .addh{font:600 15px/1.4 var(--ui);color:var(--muted);margin-bottom:6px}
 .nb .addn img{max-width:100%;height:auto;border-radius:6px}
-.nb .addq{color:var(--muted);font-size:12.5px;margin-top:4px}
-@media (max-width:1000px){.nb .el{grid-template-columns:minmax(0,1fr)}.nb .ts{justify-self:start;order:-1}}
+.nb .addq{color:var(--muted);font-size:15px;margin-top:4px}
+@media (max-width:900px){.nb .el{grid-template-columns:minmax(0,1fr);gap:2px}.nb .ts{justify-self:start;order:-1}
+.nb .toc{grid-template-columns:minmax(0,1fr)}}
 """
 
 
@@ -94,7 +128,7 @@ def element_html(el: dict, fresh: int | None = None) -> str:
         if el.get("background"):
             body += f'<div class="bg">Background (not from the lecture): {e(el["background"])}</div>'
     elif k == "example":
-        body = (f'<div class="example"><div class="exh">Example{" · " + e(el["title"]) if el.get("title") else ""}</div>'
+        body = (f'<div class="example"><div class="exh">Example{": " + e(el["title"]) if el.get("title") else ""}</div>'
                 + (f"<p>{_sentences(el, fresh)}</p>" if el.get("sentences") else "")
                 + ("<ol>" + "".join(f"<li>{e(x)}</li>" for x in el["steps"]) + "</ol>" if el.get("steps") else "")
                 + (f"<pre>{e(el['code'])}</pre>" if el.get("code") else "") + "</div>")
@@ -113,7 +147,7 @@ def element_html(el: dict, fresh: int | None = None) -> str:
             f'{mmss(el["t"])}</span></div>')
 
 
-FALLBACK_NOTE = "Written without the language model: the live notes as they were."
+FALLBACK_NOTE = "Draft notes as written during the class (this part was not tidied up)."
 
 
 def addition_html(addition: dict, theme: str = "light") -> str:
@@ -129,8 +163,8 @@ def addition_html(addition: dict, theme: str = "light") -> str:
     span = addition.get("span")
     when = f" · {mmss(span[0])}–{mmss(span[1])}" if span else ""
     asked = f'<div class="addq">You asked: “{e(addition["question"])}”{when}</div>' if addition.get("question") else ""
-    return (f'<div class="addn"><div class="addh">YOUR ADDITION · {e(NAME[figure["shape"]].upper())}'
-            f'{" · " + e(figure["title"]) if figure.get("title") else ""}</div>{inner}{asked}</div>')
+    return (f'<div class="addn"><div class="addh">Your addition ({e(NAME[figure["shape"]].lower())})'
+            f'{": " + e(figure["title"]) if figure.get("title") else ""}</div>{inner}{asked}</div>')
 
 
 def topic_html(topic: dict, theme: str = "light") -> str:
@@ -151,7 +185,7 @@ def topic_html(topic: dict, theme: str = "light") -> str:
 def topic_label(topic: dict) -> str:
     """Expander label (Streamlit markdown): plain title and range."""
     title = re.sub(r"([\\`*_{}\[\]<>#|~$])", r"\\\1", topic["title"])
-    return f"{topic['n']}. {title}  ·  {mmss(topic['start'])}–{mmss(topic['end'])}"
+    return f"{topic['n']}. {title}  ({mmss(topic['start'])}–{mmss(topic['end'])})"
 
 
 def beyond_html(nb: dict, theme: str = "light") -> str:
@@ -163,26 +197,33 @@ def live_html(nb: dict, theme: str = "light") -> str:
     drafts = "".join(element_html(d, nb["latest_k"]) for d in nb["drafts"]) \
         or '<p class="pending">The next notes will appear here.</p>'
     drafts += "".join(addition_html(a, theme) for a in nb.get("live_additions") or [])
-    now = f'<div class="now">now: “…{e(nb["now_text"][-260:])}”</div>' if nb.get("now_text") else ""
-    return (f'<div class="live"><div class="lh">LIVE NOTES SINCE {mmss(nb["since"])} · draft, organised into a topic '
-            f'every few minutes</div><div class="doc">{drafts}</div><div class="status">{e(nb["status"])}</div>'
-            f'{now}</div>')
+    now = f'<div class="now"><b>Just said:</b> “…{e(nb["now_text"][-260:])}”</div>' if nb.get("now_text") else ""
+    return (f'<div class="live"><div class="lh">Draft notes since {mmss(nb["since"])} <span>About 1–2 minutes '
+            f'behind the class; they become a topic every few minutes.</span></div><div class="doc">{drafts}</div>'
+            f'<div class="status">{e(nb["status"])}</div>{now}</div>')
+
+
+def duration(seconds: float) -> str:
+    """16 min 30 s, 1 h 07 min."""
+    s = int(seconds or 0)
+    return f"{s // 3600} h {s % 3600 // 60:02d} min" if s >= 3600 else f"{s // 60} min {s % 60:02d} s"
 
 
 def head_html(nb: dict) -> str:
+    """One status line (docs/UI_DESIGN.md §3): listening and how far into the class, or finished."""
     if nb["finished"]:
-        badge, sub = f'<span class="badge">Finished · {mmss(nb["said_until"])}</span>', ""
+        state, sub = '<span class="state">Class finished</span>', f"{duration(nb['said_until'])} recorded"
     else:
-        badge = f'<span class="badge on">● LIVE {mmss(nb["said_until"])}</span>'
-        sub = (f"Notes reach {mmss(nb['reach'])} (they follow the lecture by about 1–2 minutes)" if nb["reach"]
-               else "The first notes appear about 2 minutes into the lecture")
-    return f'<div class="head"><span class="sub">{e(sub)}</span>{badge}</div>'
+        state = '<span class="state on"><span class="dot"></span>Listening</span>'
+        sub = (f"{duration(nb['said_until'])} into the class" if nb["reach"]
+               else "The first notes appear about 2 minutes after the class starts.")
+    return f'<div class="head">{state}<span class="sub">{e(sub)}</span></div>'
 
 
 def rail_html(nb: dict) -> str:
-    items = [f'<li>{e(t["title"])} <span class="ok">✓</span></li>' for t in nb["topics"]]
+    items = [f'<li>{e(t["title"])}</li>' for t in nb["topics"]]
     if not nb["finished"] and (nb["drafts"] or nb["reach"]):
-        items.append(f'<li>Live notes since {mmss(nb["since"])} <span class="rl">live</span></li>')
+        items.append(f'<li>Draft since {mmss(nb["since"])} <span class="rl">(being written)</span></li>')
     out = ["<h4>Contents</h4>", "<ol>" + "".join(items) + "</ol>" if items else '<p class="pending">No topics yet.</p>']
     if nb["glossary"]:
         out.append(f'<details open><summary>Glossary ({len(nb["glossary"])})</summary><dl>'
@@ -192,3 +233,18 @@ def rail_html(nb: dict) -> str:
         out.append(f'<details><summary>Course info ({len(nb["info"])})</summary><ul>'
                    + "".join(f'<li>{e(i["text"])}</li>' for i in nb["info"]) + "</ul></details>")
     return '<div class="rail">' + "".join(out) + "</div>"
+
+
+def toc_html(nb: dict) -> str:
+    """Contents and glossary as one compact block above the notes (docs/UI_DESIGN.md §5): the topics on the left, the
+    terms on the right as tap-to-open entries (the open one on the accent tint). Native <details>: no JavaScript."""
+    items = [f'<li>{e(t["title"])}</li>' for t in nb["topics"]]
+    if not nb["finished"] and (nb["drafts"] or nb["reach"]):
+        items.append(f'<li>Draft since {mmss(nb["since"])} <span class="rl">(being written)</span></li>')
+    contents = "<ol>" + "".join(items) + "</ol>" if items else '<p class="pending">No topics yet.</p>'
+    terms = "".join(f'<details><summary>{e(g["term"])}</summary><p>{e(g["definition"])}</p></details>'
+                    for g in nb["glossary"]) or '<p class="none">No terms yet.</p>'
+    info = (f'<div class="info"><b>Course info</b><ul>' + "".join(f'<li>{e(i["text"])}</li>' for i in nb["info"])
+            + "</ul></div>") if nb["info"] else ""
+    return (f'<div class="toc"><div><h4>Contents</h4>{contents}{info}</div>'
+            f'<div class="terms"><h4>Glossary ({len(nb["glossary"])})</h4>{terms}</div></div>')

@@ -60,7 +60,7 @@ def notebook(finished=True) -> dict:
 
 def test_markdown_follows_the_page_and_puts_the_answers_at_the_end():
     md = export.to_markdown(notebook(), "Python · Lecture 1")
-    order = ["# Python · Lecture 1", "## Contents", "## 1. Part 1", "Written without the language model",
+    order = ["# Python · Lecture 1", "## Contents", "## 1. Part 1", "Draft notes as written during the class",
              "## 2. Imperative knowledge", "**Imperative knowledge.** **Imperative knowledge** is a recipe",
              "**Your addition · Table · Two kinds**", "| Imperative | → † | 10:10 |", "| Kind | What it is |",
              "**The recipe the students gave:**", "**Remember:**", "> **Example · Picking",

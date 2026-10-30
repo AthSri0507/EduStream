@@ -96,11 +96,11 @@ def notebook(conn: sqlite3.Connection, video_id: str, update_s: float = 90.0) ->
         "SELECT text, t FROM course_info WHERE video_id = ? ORDER BY t", (video_id,))]
     finished = bool(final) or (bool(flushed) and updates > 0 and not drafts and reach <= since)
     if flushed:
-        status = "⏳ finishing the notes …"
+        status = "Finishing the notes…"
     elif said_until - reach >= update_s:
-        status = f"⏳ writing notes for {_mmss(reach)}–{_mmss(reach + update_s)} …"
+        status = f"Writing the notes for {_mmss(reach)}–{_mmss(reach + update_s)}…"
     else:
-        status = f"Listening · next notes after {_mmss(reach + update_s)}"
+        status = f"Next notes after {_mmss(reach + update_s)}."
     live_additions, beyond = place_additions(conn, video_id, topics, since, finished)
     return {"topics": topics, "drafts": drafts, "latest_k": latest, "since": since, "reach": reach,
             "said_until": said_until, "now_text": " ".join(tail), "glossary": glossary, "info": info,

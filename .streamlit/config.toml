@@ -1,0 +1,80 @@
+# EduStream dashboard themes: Warm paper (light) and Midnight ink (dark) (docs/UI_DESIGN.md §2; rules in
+# .claude/skills/edustream-ui). Base colours here; semantic colours (cards, highlighter, chips) in dashboard/theme.py.
+# The browser picks the theme from the laptop's light/dark setting. Earlier themes: docs/ui-themes/.
+# Read when the dashboard starts from the project root (scripts\start_all.ps1 does); font changes need a restart.
+
+[server]
+enableStaticServing = true            # dashboard/static/ -> app/static/ (the self-hosted fonts)
+
+[client]
+toolbarMode = "viewer"                # the ⋮ menu for viewers (Settings: light or dark); no Deploy button
+
+[theme]
+font = "'Fira Sans', sans-serif"
+headingFont = "Literata, serif"
+baseFontSize = 16
+headingFontSizes = ["30px", "24px", "20px", "17px", "15px", "14px"]
+headingFontWeights = [600, 600, 600, 600, 600, 600]
+baseRadius = "medium"
+buttonRadius = "medium"
+showWidgetBorder = true
+showSidebarBorder = false
+linkUnderline = true
+
+[theme.light]
+primaryColor = "#2F4BD8"              # accent (on-accent text #FFFEFB: 6.7:1)
+backgroundColor = "#F7F5EF"           # page
+secondaryBackgroundColor = "#EFECE3"  # panel: inputs, toolbars
+textColor = "#1F2430"                 # ink, 14.2:1 on the page
+linkColor = "#2F4BD8"
+borderColor = "#8C8676"               # edge: input outlines, 3.3:1
+greenColor = "#0B6B49"                # listening only
+redColor = "#B42318"                  # failures only
+orangeColor = "#8A5300"               # caution
+blueColor = "#2F4BD8"
+grayColor = "#55596A"                 # secondary, 6.4:1
+
+[theme.dark]
+primaryColor = "#7C93FF"              # accent (on-accent text #0E1220: 6.6:1; set in dashboard/theme.py)
+backgroundColor = "#12161F"           # page
+secondaryBackgroundColor = "#1A2030"  # panel
+textColor = "#E8EAF0"                 # 15.0:1 on the page
+linkColor = "#7C93FF"
+borderColor = "#6E7896"               # edge, 3.3:1 on the card
+greenColor = "#4ADE9B"
+redColor = "#FF8A7A"
+orangeColor = "#F5C451"
+blueColor = "#7C93FF"
+grayColor = "#A3AABD"
+
+[[theme.fontFaces]]
+family = "Fira Sans"
+url = "app/static/fonts/FiraSans-Regular.woff"
+weight = 400
+
+[[theme.fontFaces]]
+family = "Fira Sans"
+url = "app/static/fonts/FiraSans-Medium.woff"
+weight = 500
+
+[[theme.fontFaces]]
+family = "Fira Sans"
+url = "app/static/fonts/FiraSans-SemiBold.woff"
+weight = 600
+
+[[theme.fontFaces]]
+family = "Fira Sans"
+url = "app/static/fonts/FiraSans-Bold.woff"
+weight = 700
+
+[[theme.fontFaces]]
+family = "Literata"
+url = "app/static/fonts/Literata.woff"
+weight = "200 900"
+style = "normal"
+
+[[theme.fontFaces]]
+family = "Literata"
+url = "app/static/fonts/Literata-Italic.woff"
+weight = "200 900"
+style = "italic"

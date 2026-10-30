@@ -260,19 +260,26 @@ def _theme() -> str:
         return "light"
 
 
+SHORT_ITEMS = 2                       # an answer shows its first two points; the rest behind "Show more"
+
+
+def _item(item: dict) -> None:
+    st.markdown(f"{item['text']} :gray-background[{mmss(item['t'])}]", help=f"Said: “{item['quote']}”")
+
+
 def _render_answer(answer: A.Answer) -> None:
-    source = "lecture + general knowledge" if answer.outside else "from the lecture only"
-    st.caption(f"{answer.plan.chip()} · {source}")
+    """The short answer first (summary and first points), the rest behind Show more, the lecture's own words folded
+    (docs/UI_DESIGN.md §5)."""
+    source = "lecture and general knowledge" if answer.outside else "from the lecture only"
+    st.caption(f"{answer.plan.chip()}, {source}")
     if answer.note and (not answer.items or (answer.plan.shape and not answer.figure)):
         st.write(answer.note)
-    for item in answer.items:
-        st.markdown(f"{item['text']} `[{mmss(item['t'])}]`", help=f"Said: “{item['quote']}”")
+    for item in answer.items[:SHORT_ITEMS]:
+        _item(item)
     if answer.figure:
         render_figure(answer.figure)
-    for text in answer.background:
-        st.markdown(f":gray-background[Beyond the lecture: general knowledge] {text}")
     for q in answer.questions:
-        with st.expander(q["q"] + (f"  `[{mmss(q['t'])}]`" if q.get("t") is not None else "")):
+        with st.expander(q["q"] + (f"  :gray-background[{mmss(q['t'])}]" if q.get("t") is not None else "")):
             st.write(q["answer"] or "")
     if answer.stats:
         s = answer.stats
@@ -281,11 +288,18 @@ def _render_answer(answer: A.Answer) -> None:
                     f"({s['words']} words).")
         if s["alerts"]:
             st.caption("Alerts in this lecture: " + ", ".join(f"{k} × {v}" for k, v in s["alerts"].items()))
+    rest = answer.items[SHORT_ITEMS:]
+    if rest or answer.background:
+        with st.expander(f"Show more ({len(rest)} more points)" if rest else "Show more"):
+            for item in rest:
+                _item(item)
+            for text in answer.background:
+                st.markdown(f":gray-background[Beyond the lecture: general knowledge] {text}")
     show_said = answer.generator == "evidence" or "no_lecture_items" in answer.flags
     if show_said and answer.evidence and answer.plan.intent != "data":
-        st.caption("What was said:")
-        for e in answer.evidence[:12]:
-            st.markdown(f"`[{mmss(e['t'])}]` {e['text']}")
+        with st.expander(f"What the lecturer said ({min(len(answer.evidence), 12)})"):
+            for e in answer.evidence[:12]:
+                st.markdown(f":gray-background[{mmss(e['t'])}] {e['text']}")
 
 
 @st.fragment(run_every="1s")
@@ -305,24 +319,25 @@ def panel(video_id: str) -> None:
                 s["a_explained"] = (s["a_explained"] + [answer.plan.term])[-20:]
         s["a_job"] = job = None
 
-    head, switch = st.columns([1, 1.3], vertical_alignment="center")
-    head.markdown("**Lecture Assistant**")
-    switch.toggle("Use general knowledge", key="a_outside",
-                  help="Off: answers come only from what was said in this lecture. On: the assistant may add general "
-                       "knowledge, always labelled as not from the lecture.")
-    with st.container(height=600, border=True):
-        if not s["a_turns"] and job is None:
-            st.caption("Ask anything about the lecture, the way you would ask any chat assistant. For example: "
-                       "“I didn't get the last 10 seconds”, “summarise the last 5 minutes”, "
-                       "“what is a computer program?”, “explain that more simply”, “quiz me”.")
-        for turn in s["a_turns"]:
-            with st.chat_message(turn["role"]):
-                if turn["role"] == "user" or turn.get("answer") is None:
-                    st.write(turn["text"])
-                else:
-                    _render_answer(turn["answer"])
-        if job is not None:
-            with st.chat_message("assistant"):
-                st.caption(job.get("status", "thinking…"))
-    st.chat_input("Ask about the lecture", key="a_input", disabled=job is not None,
-                  on_submit=lambda: submit(video_id, st.session_state.get("a_input")))
+    with st.container(key="assistant", border=True):          # a raised card; text at the notes' size (theme.py)
+        with st.container(horizontal=True, vertical_alignment="center", horizontal_alignment="distribute"):
+            st.markdown("**Lecture assistant**", width="content")
+            st.toggle("General knowledge", key="a_outside", width="content",
+                      help="Off: answers come only from what was said in this lecture. On: the assistant may add "
+                           "general knowledge, always labelled as not from the lecture.")
+        talking = bool(s["a_turns"]) or job is not None
+        with st.container(height=600 if talking else "content", border=False):
+            if not talking:
+                st.caption("Ask anything about the lecture, the way you would ask any chat assistant: "
+                           "“I missed the last 2 minutes”, “explain that more simply”, “quiz me”.")
+            for turn in s["a_turns"]:
+                with st.chat_message(turn["role"]):
+                    if turn["role"] == "user" or turn.get("answer") is None:
+                        st.write(turn["text"])
+                    else:
+                        _render_answer(turn["answer"])
+            if job is not None:
+                with st.chat_message("assistant"):
+                    st.caption(job.get("status", "thinking…"))
+        st.chat_input("Ask about the lecture", key="a_input", disabled=job is not None,
+                      on_submit=lambda: submit(video_id, st.session_state.get("a_input")))
