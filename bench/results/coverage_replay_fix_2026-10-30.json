@@ -1,0 +1,67 @@
+[
+  {
+    "video_id": "hypothesis_testing_0208",
+    "title": "Hypothesis Testing (8 Feb)",
+    "minutes": 67.3,
+    "notes": {
+      "topics": 9,
+      "elements": 33,
+      "words_per_minute": 7.6,
+      "worked_elements": 2,
+      "placeholder_titles": []
+    },
+    "generators": {
+      "live": {
+        "llm": 45
+      },
+      "passes": {
+        "fallback": 2,
+        "llm": 10
+      }
+    },
+    "lost": {
+      "sentences": 0,
+      "worked": 0,
+      "draft_sentences": 42,
+      "examples": [],
+      "other": []
+    },
+    "glossary": {
+      "kept": 5,
+      "proposed": 38,
+      "terms": [
+        "null hypothesis",
+        "Type I error",
+        "Type II error",
+        "t‑statistic",
+        "Z‑score"
+      ],
+      "dropped_by": {
+        "term_dropped_no_definition": 22,
+        "term_dropped_unsaid": 20,
+        "term_dropped_symbol": 1
+      }
+    },
+    "checks": {
+      "term_dropped_no_definition": 32,
+      "term_dropped_unsaid": 31,
+      "sentence_unsupported": 27,
+      "quote_near_verbatim": 11,
+      "paragraph_dropped": 10,
+      "filler": 9,
+      "all_elements_dropped": 9,
+      "not_grounded": 5,
+      "repeat": 3,
+      "carried_from_live": 3,
+      "continues": 3,
+      "number_unsaid": 2,
+      "cascade": 2,
+      "located_by_support": 2,
+      "nothing_survived": 2,
+      "item_unsupported": 2,
+      "term_dropped_symbol": 1,
+      "remember_demoted": 1,
+      "emitted_on": 1
+    }
+  }
+]

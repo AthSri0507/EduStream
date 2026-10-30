@@ -1,0 +1,322 @@
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=1.114 tokens=973 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=0 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={} flags=0 agent_ms=1138.7
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.726 tokens=1032 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=1 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={} flags=0 agent_ms=752.2
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.646 tokens=965 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=2 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={} flags=0 agent_ms=663.9
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.493 tokens=994 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=3 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={} flags=0 agent_ms=507.7
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=0.561 tokens=1627 fallbacks=0
+[replay] INFO  consolidated video_id=hypothesis_testing_0208 pass_index=0 mode=open final=False start=0.0 cut=360.0 generator=fallback model=None topics=[] elements=0 glossary=0 stats={} flags=1 agent_ms=593.8
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.765 tokens=1156 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=4 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_unsupported': 1, 'sentences_kept': 1, 'kept_para': 1} flags=4 agent_ms=811.0
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=1.585 tokens=1320 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=5 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para', 'para'] stats={'proposed_para': 2, 'sentences_proposed': 5, 'sentences_filler': 2, 'sentences_kept': 3, 'kept_para': 2} flags=4 agent_ms=1631.8
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.786 tokens=1284 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=6 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para', 'para'] stats={'proposed_para': 2, 'sentences_proposed': 3, 'sentences_repeat': 1, 'sentences_kept': 2, 'kept_para': 2} flags=3 agent_ms=815.3
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.778 tokens=1266 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=7 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={'proposed_para': 1, 'elements_not_grounded': 1} flags=2 agent_ms=800.3
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=2.154 tokens=2594 fallbacks=0
+[replay] INFO  consolidated video_id=hypothesis_testing_0208 pass_index=1 mode=open final=False start=360.0 cut=720.0 generator=llm model=openai/gpt-oss-120b topics=[[1, 'Hypothesis Statements and Decision Rule', True], [2, 'Type I and Type II Errors', True]] elements=4 glossary=3 stats={'proposed_para': 4, 'sentences_proposed': 9, 'sentences_unsupported': 2, 'sentences_kept': 7} flags=5 agent_ms=2241.0
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.842 tokens=1251 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=8 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_unsupported': 1, 'sentences_kept': 1, 'kept_para': 1} flags=3 agent_ms=878.2
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=1.476 tokens=1290 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=9 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_kept': 2, 'kept_para': 1} flags=3 agent_ms=1522.5
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=1.011 tokens=1325 fallbacks=1
+[replay] INFO  update video_id=hypothesis_testing_0208 update=10 windows=1 reason=complete generator=llm model=openai/gpt-oss-120b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_unsupported': 1, 'sentences_kept': 1, 'kept_para': 1} flags=3 agent_ms=1045.5
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=0.802 tokens=1404 fallbacks=1
+[replay] INFO  update video_id=hypothesis_testing_0208 update=11 windows=1 reason=complete generator=llm model=openai/gpt-oss-120b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_unsupported': 1, 'sentences_kept': 1, 'kept_para': 1} flags=4 agent_ms=837.5
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=1.833 tokens=2815 fallbacks=0
+[replay] INFO  consolidated video_id=hypothesis_testing_0208 pass_index=2 mode=open final=False start=720.0 cut=1080.0 generator=llm model=openai/gpt-oss-120b topics=[[3, 'Significance Level and Confidence', True]] elements=5 glossary=0 stats={'proposed_para': 5, 'sentences_proposed': 5, 'sentences_kept': 5} flags=3 agent_ms=14029.2
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.801 tokens=1378 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=12 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 4, 'sentences_kept': 4, 'kept_para': 1} flags=1 agent_ms=855.1
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.72 tokens=1383 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=13 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 2, 'sentences_proposed': 3, 'sentences_unsupported': 2, 'paragraphs_dropped': 1, 'sentences_kept': 1, 'kept_para': 1} flags=4 agent_ms=757.7
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.87 tokens=1322 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=14 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_unsupported': 1, 'sentences_kept': 1, 'kept_para': 1} flags=3 agent_ms=906.5
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=1.032 tokens=1588 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=15 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para', 'para'] stats={'proposed_para': 2, 'sentences_proposed': 5, 'sentences_repeat': 1, 'sentences_number_unsaid': 1, 'sentences_kept': 3, 'kept_para': 2} flags=6 agent_ms=1104.9
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=2.665 tokens=3433 fallbacks=0
+[replay] INFO  consolidated video_id=hypothesis_testing_0208 pass_index=3 mode=open final=False start=1080.0 cut=1440.0 generator=llm model=openai/gpt-oss-120b topics=[[3, 'Significance Level and Confidence', False]] elements=6 glossary=1 stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_kept': 2, 'drafts_carried': 5} flags=2 agent_ms=2752.1
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=1.274 tokens=1458 fallbacks=1
+[replay] INFO  update video_id=hypothesis_testing_0208 update=16 windows=1 reason=complete generator=llm model=openai/gpt-oss-120b elements=['para', 'para'] stats={'proposed_para': 2, 'sentences_proposed': 3, 'sentences_kept': 3, 'kept_para': 2} flags=3 agent_ms=18467.4
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=0.793 tokens=1454 fallbacks=1
+[replay] INFO  update video_id=hypothesis_testing_0208 update=17 windows=1 reason=complete generator=llm model=openai/gpt-oss-120b elements=['para+'] stats={'proposed_para': 1, 'sentences_proposed': 1, 'sentences_kept': 1, 'continued': 1, 'kept_para': 1} flags=2 agent_ms=823.0
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=1.372 tokens=1551 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=18 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 3, 'sentences_unsupported': 1, 'sentences_kept': 2, 'kept_para': 1} flags=3 agent_ms=1422.9
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.89 tokens=1570 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=19 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 2, 'sentences_proposed': 6, 'sentences_unsupported': 4, 'sentences_kept': 2, 'kept_para': 1, 'paragraphs_dropped': 1} flags=7 agent_ms=963.3
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=2.469 tokens=3225 fallbacks=0
+[replay] INFO  consolidated video_id=hypothesis_testing_0208 pass_index=4 mode=open final=False start=1440.0 cut=1800.0 generator=llm model=openai/gpt-oss-120b topics=[[4, 'Critical Values and Decision Rule for a Fair Coin Test', True]] elements=4 glossary=0 stats={'proposed_para': 3, 'sentences_proposed': 6, 'sentences_kept': 6, 'proposed_example': 1} flags=3 agent_ms=16738.6
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.748 tokens=1280 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=20 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={'proposed_para': 1, 'sentences_proposed': 3, 'sentences_filler': 2, 'sentences_cascade': 1, 'paragraphs_dropped': 1} flags=5 agent_ms=770.4
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.615 tokens=1300 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=21 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_unsupported': 1, 'sentences_kept': 1, 'kept_para': 1} flags=1 agent_ms=651.6
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=0.582 tokens=1156 fallbacks=1
+[replay] INFO  update video_id=hypothesis_testing_0208 update=22 windows=1 reason=complete generator=llm model=openai/gpt-oss-120b elements=[] stats={} flags=0 agent_ms=9684.6
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=0.933 tokens=1205 fallbacks=1
+[replay] INFO  update video_id=hypothesis_testing_0208 update=23 windows=1 reason=complete generator=llm model=openai/gpt-oss-120b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_kept': 2, 'kept_para': 1} flags=2 agent_ms=973.0
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=2.066 tokens=2601 fallbacks=0
+[replay] INFO  consolidated video_id=hypothesis_testing_0208 pass_index=5 mode=open final=False start=1800.0 cut=2160.0 generator=llm model=openai/gpt-oss-120b topics=[[5, 'Confidence Interval Width and Significance Level', True], [6, 'Bag Weight Example and Confidence Interval Calculation', True]] elements=2 glossary=0 stats={'proposed_para': 4, 'sentences_proposed': 3, 'sentences_kept': 2, 'sentences_unsupported': 1, 'paragraphs_dropped': 1, 'elements_not_grounded': 1} flags=7 agent_ms=25359.5
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.888 tokens=1232 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=24 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 1, 'sentences_kept': 1, 'kept_para': 1} flags=2 agent_ms=939.1
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.885 tokens=1353 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=25 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={'proposed_para': 1, 'sentences_proposed': 3, 'sentences_filler': 2, 'proposed_remember': 1, 'remember_demoted': 1, 'sentences_unsupported': 1, 'paragraphs_dropped': 1} flags=6 agent_ms=914.8
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.788 tokens=1329 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=26 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 3, 'sentences_unsupported': 1, 'sentences_kept': 2, 'kept_para': 1} flags=2 agent_ms=848.3
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=1.102 tokens=1351 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=27 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_unsupported': 1, 'sentences_kept': 1, 'kept_para': 1} flags=3 agent_ms=1152.8
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=2.21 tokens=2739 fallbacks=0
+[replay] INFO  consolidated video_id=hypothesis_testing_0208 pass_index=6 mode=open final=False start=2160.0 cut=2520.0 generator=llm model=openai/gpt-oss-120b topics=[[7, 'Packaging Machine Hypothesis Test', True]] elements=4 glossary=1 stats={'proposed_para': 3, 'sentences_proposed': 5, 'sentences_kept': 5, 'proposed_example': 1} flags=5 agent_ms=2355.1
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.846 tokens=1233 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=28 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={'proposed_para': 1, 'sentences_proposed': 1, 'sentences_filler': 1} flags=2 agent_ms=872.4
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.87 tokens=1277 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=29 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_filler': 1, 'sentences_cascade': 1, 'paragraphs_dropped': 1} flags=4 agent_ms=893.9
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=1.104 tokens=1134 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=30 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={} flags=0 agent_ms=1126.2
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.597 tokens=1096 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=31 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={} flags=0 agent_ms=619.4
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=2.164 tokens=2431 fallbacks=0
+[replay] INFO  consolidated video_id=hypothesis_testing_0208 pass_index=7 mode=open final=False start=2520.0 cut=2880.0 generator=llm model=openai/gpt-oss-120b topics=[[8, 'Walnut Supplement Hypothesis Test Example', True]] elements=1 glossary=0 stats={'proposed_para': 3, 'sentences_proposed': 5, 'sentences_unsupported': 3, 'sentences_kept': 2, 'elements_not_grounded': 2, 'proposed_example': 1, 'paragraphs_dropped': 1} flags=7 agent_ms=2292.9
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=0.737 tokens=1130 fallbacks=1
+[replay] INFO  update video_id=hypothesis_testing_0208 update=32 windows=1 reason=complete generator=llm model=openai/gpt-oss-120b elements=[] stats={} flags=0 agent_ms=754.3
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.802 tokens=1370 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=33 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_filler': 1, 'sentences_kept': 1, 'kept_para': 1} flags=2 agent_ms=850.0
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=1.109 tokens=1420 fallbacks=1
+[replay] INFO  update video_id=hypothesis_testing_0208 update=34 windows=1 reason=complete generator=llm model=openai/gpt-oss-120b elements=[] stats={'proposed_para': 1, 'sentences_proposed': 1, 'sentences_unsupported': 1, 'paragraphs_dropped': 1} flags=3 agent_ms=15288.0
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=1.001 tokens=1411 fallbacks=1
+[replay] INFO  update video_id=hypothesis_testing_0208 update=35 windows=1 reason=complete generator=llm model=openai/gpt-oss-120b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_kept': 2, 'kept_para': 1} flags=2 agent_ms=1047.6
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=2.35 tokens=2877 fallbacks=0
+[replay] INFO  consolidated video_id=hypothesis_testing_0208 pass_index=8 mode=open final=False start=2880.0 cut=3240.0 generator=llm model=openai/gpt-oss-120b topics=[[9, 't‑test for unknown σ', True]] elements=2 glossary=0 stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_unsupported': 1, 'sentences_kept': 1, 'drafts_carried': 1} flags=3 agent_ms=20551.7
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.702 tokens=1386 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=36 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 1, 'sentences_kept': 1, 'kept_para': 1} flags=2 agent_ms=749.9
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.862 tokens=1458 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=37 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={'proposed_para': 1, 'elements_not_grounded': 1} flags=2 agent_ms=896.2
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=1.005 tokens=1209 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=38 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={} flags=0 agent_ms=1019.6
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.637 tokens=1337 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=39 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=[] stats={} flags=0 agent_ms=661.4
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=1.393 tokens=2426 fallbacks=0
+[replay] INFO  consolidated video_id=hypothesis_testing_0208 pass_index=9 mode=open final=False start=3240.0 cut=3600.0 generator=llm model=openai/gpt-oss-120b topics=[[9, 't‑test for unknown σ', False]] elements=1 glossary=1 stats={'proposed_para': 1, 'sentences_proposed': 1, 'sentences_kept': 1} flags=1 agent_ms=1437.4
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=1.07 tokens=1467 fallbacks=1
+[replay] INFO  update video_id=hypothesis_testing_0208 update=40 windows=1 reason=complete generator=llm model=openai/gpt-oss-120b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_unsupported': 1, 'sentences_kept': 1, 'kept_para': 1} flags=4 agent_ms=1136.6
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=0.906 tokens=1460 fallbacks=1
+[replay] INFO  update video_id=hypothesis_testing_0208 update=41 windows=1 reason=complete generator=llm model=openai/gpt-oss-120b elements=[] stats={'proposed_para': 1, 'sentences_proposed': 1, 'sentences_unsupported': 1, 'paragraphs_dropped': 1} flags=3 agent_ms=13051.4
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.75 tokens=1440 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=42 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_repeat': 1, 'sentences_kept': 1, 'kept_para': 1} flags=4 agent_ms=802.2
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.704 tokens=1455 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=43 windows=1 reason=complete generator=llm model=openai/gpt-oss-20b elements=['para'] stats={'proposed_para': 1, 'sentences_proposed': 2, 'sentences_number_unsaid': 1, 'sentences_kept': 1, 'kept_para': 1} flags=4 agent_ms=756.6
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=1.401 tokens=2798 fallbacks=0
+[replay] INFO  consolidated video_id=hypothesis_testing_0208 pass_index=10 mode=open final=False start=3600.0 cut=3960.0 generator=llm model=openai/gpt-oss-120b topics=[[9, 't‑test for unknown σ', False]] elements=4 glossary=0 stats={'proposed_para': 3, 'sentences_proposed': 3, 'sentences_kept': 3, 'drafts_carried': 1} flags=6 agent_ms=16640.2
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-20b latency_s=0.755 tokens=1499 fallbacks=0
+[replay] INFO  update video_id=hypothesis_testing_0208 update=44 windows=1 reason=lecture_end generator=llm model=openai/gpt-oss-20b elements=[] stats={'proposed_para': 1, 'sentences_proposed': 1, 'sentences_unsupported': 1, 'paragraphs_dropped': 1} flags=4 agent_ms=787.0
+[replay] INFO  llm_call agent=notes model=openai/gpt-oss-120b latency_s=0.952 tokens=1754 fallbacks=0
+[replay] INFO  consolidated video_id=hypothesis_testing_0208 pass_index=11 mode=closed final=True start=3960.0 cut=4040.725 generator=fallback model=None topics=[[9, 't‑test for unknown σ', False]] elements=0 glossary=0 stats={} flags=1 agent_ms=28200.0
+{'duplicate': 276, 'stored': 187}
+{
+  "updates": 45,
+  "updates_llm": 45,
+  "live_elements": 30,
+  "passes": [
+    {
+      "span": "0-360",
+      "final": false,
+      "generator": "fallback",
+      "model": null,
+      "topics": [],
+      "elements": 0,
+      "flags": [
+        "nothing_survived"
+      ]
+    },
+    {
+      "span": "360-720",
+      "final": false,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "topics": [
+        "1 Hypothesis Statements and Decision Rule",
+        "2 Type I and Type II Errors"
+      ],
+      "elements": 4,
+      "flags": [
+        "sentence_unsupported(0.38): 'Both hypotheses together specify the parameter of interest and the tes'",
+        "term_dropped_no_definition:'hypothesis'",
+        "term_dropped_no_definition:'alternate hypothesis'",
+        "term_dropped_unsaid:'decision rule'",
+        "sentence_unsupported(0.33): 'These correspond to judging our decision wrong in opposite directions.'"
+      ]
+    },
+    {
+      "span": "720-1080",
+      "final": false,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "topics": [
+        "3 Significance Level and Confidence"
+      ],
+      "elements": 5,
+      "flags": [
+        "term_dropped_unsaid:'significance level'",
+        "quote_near_verbatim",
+        "quote_near_verbatim"
+      ]
+    },
+    {
+      "span": "1080-1440",
+      "final": false,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "topics": [
+        "3+ Significance Level and Confidence"
+      ],
+      "elements": 6,
+      "flags": [
+        "carried_from_live(5, thin pass)",
+        "continues:'Z‑score and Decision Rule for Hypothesis' -> 'Significance Level and Confidence' (6 kept, 0 repeated)"
+      ]
+    },
+    {
+      "span": "1440-1800",
+      "final": false,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "topics": [
+        "4 Critical Values and Decision Rule for a Fair Coin Test"
+      ],
+      "elements": 4,
+      "flags": [
+        "term_dropped_no_definition:'Z‑score'",
+        "term_dropped_no_definition:'null hypothesis'",
+        "quote_near_verbatim"
+      ]
+    },
+    {
+      "span": "1800-2160",
+      "final": false,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "topics": [
+        "5 Confidence Interval Width and Significance Level",
+        "6 Bag Weight Example and Confidence Interval Calculation"
+      ],
+      "elements": 2,
+      "flags": [
+        "term_dropped_no_definition:'confidence interval'",
+        "term_dropped_unsaid:'significance level'",
+        "sentence_unsupported(0.17): 'A wider interval reflects the analyst’s willingness to tolerate more u'",
+        "paragraph_dropped(0/1)",
+        "quote_near_verbatim",
+        "term_dropped_unsaid:'mean net weight'",
+        "not_grounded(0.21): 'Variability Actual bag weights can differ from the claimed m'"
+      ]
+    },
+    {
+      "span": "2160-2520",
+      "final": false,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "topics": [
+        "7 Packaging Machine Hypothesis Test"
+      ],
+      "elements": 4,
+      "flags": [
+        "quote_near_verbatim",
+        "located_by_support",
+        "quote_near_verbatim",
+        "item_unsupported(0.20): 'Compute the test statistic z from the sample data.'",
+        "item_unsupported(0.33): 'Compare z to the critical values.'"
+      ]
+    },
+    {
+      "span": "2520-2880",
+      "final": false,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "topics": [
+        "8 Walnut Supplement Hypothesis Test Example"
+      ],
+      "elements": 1,
+      "flags": [
+        "sentence_unsupported(0.27): 'The null hypothesis states that walnuts have no effect on the scores, '",
+        "term_dropped_unsaid:'null hypothesis'",
+        "not_grounded(0.38): 'Observed data After one year of walnut consumption, the chil'",
+        "not_grounded(0.29): 'Compute sample mean Calculate the average score of the 12 ch'",
+        "sentence_unsupported(0.22): 'Using the sample mean and an assumed population standard deviation, a '",
+        "sentence_unsupported(0.25): 'If the Z‑score exceeds the critical value of 1.645, the null hypothesi'",
+        "paragraph_dropped(0/2)"
+      ]
+    },
+    {
+      "span": "2880-3240",
+      "final": false,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "topics": [
+        "9 t‑test for unknown σ"
+      ],
+      "elements": 2,
+      "flags": [
+        "sentence_unsupported(0.36): 'This test is used because the sampling distribution of the mean follow'",
+        "term_dropped_no_definition:'t‑test'",
+        "carried_from_live(1, thin pass)"
+      ]
+    },
+    {
+      "span": "3240-3600",
+      "final": false,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "topics": [
+        "9+ t‑test for unknown σ"
+      ],
+      "elements": 1,
+      "flags": [
+        "continues:'t‑Statistic Formula for One‑Sample Test' -> 't‑test for unknown σ' (1 kept, 0 repeated)"
+      ]
+    },
+    {
+      "span": "3600-3960",
+      "final": false,
+      "generator": "llm",
+      "model": "openai/gpt-oss-120b",
+      "topics": [
+        "9+ t‑test for unknown σ"
+      ],
+      "elements": 4,
+      "flags": [
+        "term_dropped_unsaid:'t‑statistic'",
+        "term_dropped_unsaid:'t‑statistic'",
+        "quote_near_verbatim",
+        "term_dropped_no_definition:'null hypothesis'",
+        "carried_from_live(1)",
+        "continues:'t‑test critical value and statistic for ' -> 't‑test for unknown σ' (4 kept, 0 repeated)"
+      ]
+    },
+    {
+      "span": "3960-4041",
+      "final": true,
+      "generator": "fallback",
+      "model": null,
+      "topics": [
+        "9+ t‑test for unknown σ"
+      ],
+      "elements": 0,
+      "flags": [
+        "nothing_survived"
+      ]
+    }
+  ],
+  "final_elements": {
+    "example": 2,
+    "para": 31
+  },
+  "words_per_6_min": 78,
+  "glossary": [
+    "Type I error",
+    "Type II error",
+    "Z‑score",
+    "null hypothesis",
+    "t‑statistic"
+  ]
+}

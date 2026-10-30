@@ -156,19 +156,31 @@ def _canon(text: str) -> str:
 
 
 def in_transcript(term: str, whole: str) -> bool:
-    """The term was said, in spoken form ("type one error" for "type I error", "alternate" for "alternative")."""
+    """The term was said, in spoken form ("type one error" for "type I error", "alternate" for "alternative"), or its
+    words were said close together in another order ("level of significance" for "significance level")."""
     n = _canon(term)
-    return bool(n) and f" {n} " in f" {_canon(whole)} "
+    if not n:
+        return False
+    said = _canon(whole)
+    if f" {n} " in f" {said} ":
+        return True
+    need, toks = set(n.split()), said.split()
+    span = len(n.split()) + 2
+    return len(need) > 1 and any(need <= set(toks[i: i + span]) for i in range(len(toks)))
 
 
 def defining_sentence(term: str, lead: str, sents: list[str]) -> str | None:
-    """The checked sentence that explains a term: one opening with it ("<term> is / occurs when ..."), or the first
-    sentence of a paragraph whose run-in heading is the term ("**Rejection region.** Reject H₀ when ...")."""
+    """The checked sentence that explains a term: one opening with it, singular or plural ("<term> is / occurs when
+    ...", "The critical values are ..."), one naming it with a relative clause ("... is the t-test, which uses ..."),
+    or the first sentence of a paragraph whose run-in heading is the term ("**Rejection region.** Reject H₀ when ...")."""
     words = [re.escape(p) for p in re.split(r"[\s\-‑]+", term.strip()) if p]
     if not words:
         return None
-    opening = re.compile(r"(the |a |an )?" + r"[\s\-‑]+".join(words) + DEFINES, re.I)
-    found = next((x for x in sents if opening.match(x)), None)
+    name = r"[\s\-‑]+".join(words) + r"(e?s)?"
+    opening = re.compile(r"(the |a |an )?" + name + DEFINES, re.I)
+    naming = re.compile(r"\b(is|are|called|known as|named)\s+(the |a |an )?" + name
+                        + r"(\s*\([^()]{1,40}\))?,\s+(which|that|where)\b", re.I)
+    found = next((x for x in sents if opening.match(x)), None) or next((x for x in sents if naming.search(x)), None)
     if found is None and lead and _canon(lead) in (_canon(term), _canon(term) + "s"):
         found = sents[0] if sents else None
     return found

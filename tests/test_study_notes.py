@@ -150,6 +150,20 @@ def test_definitions_in_the_shapes_notes_really_use_enter_the_glossary():
     assert "term_dropped_symbol:'z'" in flags and "term_dropped_symbol:'μ₀'" in flags
 
 
+def test_glossary_accepts_plurals_relative_clauses_and_spoken_word_order():
+    # Replay 30 Oct: "significance level" was said as "level of significance"; "The critical values are ..." and
+    # "... is the t-test, which ..." explain their terms but were refused.
+    sents = ["The critical values are ±1.96 and they bound the rejection region.",
+             "When σ is unknown the appropriate test is the t‑test, which uses the sample standard deviation."]
+    assert sn.defining_sentence("critical value", "", sents) == sents[0]
+    assert sn.defining_sentence("t-test", "", sents) == sents[1]
+    assert sn.defining_sentence("rejection region", "", sents) is None          # only mentioned
+    assert sn.in_transcript("significance level", "we define what is called as the level of significance")
+    assert sn.in_transcript("critical values", "this guy is also a critical region and the critical value")
+    assert not sn.in_transcript("significance level", "the level of the test has no significance at all here")
+    assert not sn.in_transcript("standard error", "standard deviation")
+
+
 def test_remember_needs_the_lecturer_to_stress_it():
     el, _, stats = check({"kind": "remember", "text": "A computer only does what you tell it.",
                           "quote": "a computer only does what you tell it"})
