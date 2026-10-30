@@ -24,9 +24,14 @@ New-Item -ItemType Directory -Force $PidDir, $LogDir | Out-Null
 $style = if ($Minimized) { "Minimized" } else { "Normal" }
 
 function Start-Window([string]$Name, [string]$Arguments) {
-    if (Test-Path (Join-Path $PidDir "$Name.pid")) {
-        Write-Host "  $Name already running (pid file exists) - skipped"
+    $pidFile = Join-Path $PidDir "$Name.pid"
+    if (Test-EduProcess $Name) {
+        Write-Host "  $Name already running - skipped"
         return
+    }
+    if (Test-Path $pidFile) {
+        Remove-Item $pidFile -Force
+        Write-Host "  $Name was not running (stale pid file removed)"
     }
     $proc = Start-Process powershell.exe -WindowStyle $style -PassThru -ArgumentList (
         "-NoExit -ExecutionPolicy Bypass -File `"$PSScriptRoot\run_component.ps1`" -Name $Name $Arguments")

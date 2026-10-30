@@ -1,0 +1,326 @@
+[
+  {
+    "video_id": "algorithms_ku_l1",
+    "title": "Algorithms · Lecture 1 (Ku)",
+    "minutes": 15.0,
+    "notes": {
+      "topics": 3,
+      "elements": 7,
+      "words_per_minute": 6.8,
+      "worked_elements": 0,
+      "placeholder_titles": []
+    },
+    "generators": {
+      "live": {
+        "llm": 9,
+        "extractive": 1
+      },
+      "passes": {
+        "llm": 3
+      }
+    },
+    "lost": {
+      "sentences": 6,
+      "worked": 1,
+      "draft_sentences": 20,
+      "examples": [
+        {
+          "t": 680.0,
+          "worked": true,
+          "text": "Example (Birthday‑Matching Algorithm): If a duplicate is found, the algorithm stops and reports success; otherwise it continues until all students are processed. Steps: Interview student; Record birthday; Check record for match; If match, return success; Else add to record and continue."
+        }
+      ],
+      "other": [
+        {
+          "t": 60.0,
+          "worked": false,
+          "text": "It is not just about solving problems, but also about how to present them clearly."
+        },
+        {
+          "t": 100.0,
+          "worked": false,
+          "text": "The course emphasizes proving correctness, arguing efficiency, and communicating solutions clearly."
+        },
+        {
+          "t": 100.0,
+          "worked": false,
+          "text": "It requires more writing than coding, aiming to convince others of correctness beyond the computer."
+        },
+        {
+          "t": 660.0,
+          "worked": false,
+          "text": "The birthday‑matching procedure described will return a match when a duplicate birthday is found, and otherwise will finish after all students have been processed."
+        },
+        {
+          "t": 740.0,
+          "worked": false,
+          "text": "add a new student to record."
+        }
+      ]
+    },
+    "glossary": {
+      "kept": 1,
+      "proposed": 11,
+      "terms": [
+        "algorithm"
+      ],
+      "dropped_by": {
+        "term_dropped": 10
+      }
+    },
+    "checks": {
+      "term_dropped": 17,
+      "quote_near_verbatim": 5,
+      "sentence_unsupported": 4,
+      "filler": 2,
+      "paragraph_dropped": 2,
+      "repeat": 1,
+      "cascade": 1,
+      "all_elements_dropped": 1,
+      "located_by_support": 1,
+      "llm_unavailable": 1,
+      "short_topic_merged": 1
+    }
+  },
+  {
+    "video_id": "hypothesis_testing_0208",
+    "title": "Hypothesis Testing (8 Feb)",
+    "minutes": 67.3,
+    "notes": {
+      "topics": 7,
+      "elements": 23,
+      "words_per_minute": 5.0,
+      "worked_elements": 2,
+      "placeholder_titles": [
+        "Part 6"
+      ]
+    },
+    "generators": {
+      "live": {
+        "llm": 43,
+        "extractive": 2
+      },
+      "passes": {
+        "fallback": 3,
+        "llm": 9
+      }
+    },
+    "lost": {
+      "sentences": 18,
+      "worked": 14,
+      "draft_sentences": 56,
+      "examples": [
+        {
+          "t": 1180.0,
+          "worked": true,
+          "text": "The 95% area of the standard normal distribution defines the critical region for a two‑sided test."
+        },
+        {
+          "t": 1200.0,
+          "worked": true,
+          "text": "Example (Decision Rule for a Simple Test): The example involves a problem where the hypothesis concerns a proportion, and the rule will be based on whether the test statistic lies in one of the critical regions."
+        },
+        {
+          "t": 1390.0,
+          "worked": true,
+          "text": "For a two‑sided test at the 0.05 significance level the critical values are zc1 = −1.96 and zc2 = +1.96, so rejection occurs if z < −1.96 or z > +1.96."
+        },
+        {
+          "t": 1390.0,
+          "worked": true,
+          "text": "At the 0.01 level the critical values are zc1 = −2.58 and zc2 = +2.58, so rejection occurs if z < −2.58 or z > +2.58."
+        },
+        {
+          "t": 1510.0,
+          "worked": true,
+          "text": "With 64 trials the expected number of heads is 32; the standard deviation is the square root of Npq, i.e. √(64×0.5×0.5) = 4."
+        },
+        {
+          "t": 1640.0,
+          "worked": true,
+          "text": "The critical value is found by multiplying the standard deviation 4 by the z‑score 1.96, giving 7.84."
+        },
+        {
+          "t": 1640.0,
+          "worked": true,
+          "text": "The rejection region is defined as X < 24.16 or X > 39.84."
+        },
+        {
+          "t": 1730.0,
+          "worked": true,
+          "text": "The rejection region is defined by integer counts: values below 24.16 are rounded up to 25, and values above 39.84 are rounded down to 39, so the critical integers are 25 and 39."
+        },
+        {
+          "t": 2130.0,
+          "worked": true,
+          "text": "Example (Potato wafer net‑weight study): The company claims the mean net weight of its potato wafers is 454 g."
+        },
+        {
+          "t": 2390.0,
+          "worked": true,
+          "text": "The null hypothesis states that the mean weight of the product is 4.54 grams, while the alternative hypothesis asserts that it is not equal to 4.54 grams."
+        },
+        {
+          "t": 3270.0,
+          "worked": true,
+          "text": "9.09 9.09 right so let's take that as 9.095 somebody told me"
+        },
+        {
+          "t": 3610.0,
+          "worked": true,
+          "text": "not mentioned right so if it is not mentioned 95% it is given okay so take T at 0.05 level of significance."
+        },
+        {
+          "t": 3830.0,
+          "worked": true,
+          "text": "This value is compared to the critical t value for α = 0.05 with 11 degrees of freedom, which is about 1.796, to determine the rejection region."
+        },
+        {
+          "t": 3870.0,
+          "worked": true,
+          "text": "Because the calculated t‑statistic of 2.28 exceeds the critical value of 1.796, we reject the null hypothesis that μ equals 100, indicating that eating walnuts does affect IQ."
+        }
+      ],
+      "other": [
+        {
+          "t": 830.0,
+          "worked": false,
+          "text": "The test type—two‑tailed or one‑tailed—is chosen based on the alternative hypothesis."
+        },
+        {
+          "t": 1020.0,
+          "worked": false,
+          "text": "In a two‑tailed test, this means the statistic is either larger than the upper critical value or smaller than the lower critical value."
+        },
+        {
+          "t": 1330.0,
+          "worked": false,
+          "text": "To find the decision rule, first draw the standard normal curve and mark the critical values for the chosen significance level."
+        },
+        {
+          "t": 3270.0,
+          "worked": false,
+          "text": "the statistic that you need to check, t statistic you need to check what is t, t is nothing but x minus mu x bar divided by."
+        }
+      ]
+    },
+    "glossary": {
+      "kept": 1,
+      "proposed": 37,
+      "terms": [
+        "hypothesis"
+      ],
+      "dropped_by": {
+        "term_dropped": 37
+      }
+    },
+    "checks": {
+      "term_dropped": 72,
+      "sentence_unsupported": 26,
+      "paragraph_dropped": 10,
+      "filler": 10,
+      "quote_near_verbatim": 7,
+      "all_elements_dropped": 5,
+      "cascade": 4,
+      "repeat": 4,
+      "not_grounded": 4,
+      "continues": 4,
+      "nothing_survived": 3,
+      "llm_unavailable": 2,
+      "item_unsupported": 2,
+      "remember_demoted": 1,
+      "located_by_support": 1,
+      "element_topic_by_time": 1,
+      "short_topic_merged": 1,
+      "example_text_repeats_steps": 1,
+      "question_unsupported": 1
+    }
+  },
+  {
+    "video_id": "python_l1",
+    "title": "Python · Lecture 1 (Bell)",
+    "minutes": 15.0,
+    "notes": {
+      "topics": 3,
+      "elements": 14,
+      "words_per_minute": 17.2,
+      "worked_elements": 3,
+      "placeholder_titles": []
+    },
+    "generators": {
+      "live": {
+        "llm": 10
+      },
+      "passes": {
+        "llm": 3
+      }
+    },
+    "lost": {
+      "sentences": 6,
+      "worked": 0,
+      "draft_sentences": 24,
+      "examples": [],
+      "other": [
+        {
+          "t": 90.0,
+          "worked": false,
+          "text": "We start with Python basics, focusing on mathematical operations that can be performed in Python."
+        },
+        {
+          "t": 280.0,
+          "worked": false,
+          "text": "The course is divided into three main sections: learning how to program, understanding control flow, and writing good code style."
+        },
+        {
+          "t": 360.0,
+          "worked": false,
+          "text": "Writing readable code and organizing it is essential when a program becomes a big mess, because then you cannot understand or re‑understand what you were doing."
+        },
+        {
+          "t": 390.0,
+          "worked": false,
+          "text": "After learning to write programs in Python, we compare them by asking which program is better or more efficient, and which algorithm is superior."
+        },
+        {
+          "t": 450.0,
+          "worked": false,
+          "text": "Once a language supplies these primitive types, a programmer can combine them to create new calculations that the computer will execute."
+        },
+        {
+          "t": 810.0,
+          "worked": false,
+          "text": "The refinement uses the average of g and x/g, which becomes the new g."
+        }
+      ]
+    },
+    "glossary": {
+      "kept": 1,
+      "proposed": 21,
+      "terms": [
+        "declarative knowledge"
+      ],
+      "dropped_by": {
+        "term_dropped": 21
+      }
+    },
+    "checks": {
+      "term_dropped": 34,
+      "filler": 12,
+      "sentence_unsupported": 4,
+      "element_topic_by_time": 3,
+      "located_by_support": 1,
+      "logistics_paragraph": 1,
+      "quote_near_verbatim": 1,
+      "all_elements_dropped": 1,
+      "cascade": 1,
+      "example_empty": 1,
+      "remember_demoted": 1,
+      "logistics_question": 1,
+      "short_topic_merged": 1,
+      "too_many_sentences": 1,
+      "example_steps_repeat_code": 1,
+      "item_unsupported": 1,
+      "continues": 1
+    }
+  }
+]

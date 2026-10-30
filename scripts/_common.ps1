@@ -30,11 +30,30 @@ function Test-Port([int]$Port) {
     [bool](Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
 }
 
+# A pid file can outlive its process (reboot, closed window), and Windows reuses pids (29 Oct: w2.pid named a
+# browser, so start_all skipped w2 and stop_all would have killed the browser). A component counts as running
+# only if the pid is alive AND that process is the component's own window.
+function Test-EduProcess([string]$Name) {
+    $pidFile = Join-Path $PidDir "$Name.pid"
+    if (-not (Test-Path $pidFile)) { return $false }
+    $procId = (Get-Content $pidFile -Raw).Trim()
+    if ($procId -notmatch '^\d+$') { return $false }
+    $p = Get-CimInstance Win32_Process -Filter "ProcessId=$procId" -ErrorAction SilentlyContinue
+    if (-not $p) { return $false }
+    $mark = if ($Name -eq "broker") { "kafka-server-start" } else {
+        "run_component\.ps1.*-Name\s+$([regex]::Escape($Name))(\s|$)" }
+    return [bool]($p.CommandLine -match $mark)
+}
+
 # Kill a recorded process TREE. Killing only the top process orphans children:
 # e.g. Oracle's javapath "java" shim leaves the real JVM running (M2 finding).
 function Stop-EduProcess([string]$Name) {
     $pidFile = Join-Path $PidDir "$Name.pid"
     if (-not (Test-Path $pidFile)) { return $false }
+    if (-not (Test-EduProcess $Name)) {                    # stale: never kill whatever now has that pid
+        Remove-Item $pidFile -Force
+        return $false
+    }
     $procId = (Get-Content $pidFile -Raw).Trim()
     & taskkill /PID $procId /T /F *> $null
     Remove-Item $pidFile -Force

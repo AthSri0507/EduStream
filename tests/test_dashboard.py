@@ -79,7 +79,8 @@ def test_the_assistant_answers_from_the_evidence_when_the_llm_is_off(tmp_path, m
     monkeypatch.setenv("LLM_ENABLED", "false")
     at = AppTest.from_file(APP, default_timeout=60).run()
     assert not at.exception, at.exception
-    assert not at.button                                  # a plain chat: no buttons (decision 15 Oct)
+    assert not at.main.button                             # a plain chat: no buttons (decision 15 Oct)
+    assert [b.label for b in at.sidebar.button] == ["Start live class"]   # the live class control (30 Oct)
     assert at.toggle(key="a_outside").value is False      # answers from the lecture only unless switched on
     at.chat_input(key="a_input").set_value("I didn't get the last 10 seconds").run()
     for _ in range(20):                                    # the turn runs in a background thread

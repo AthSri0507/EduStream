@@ -17,7 +17,7 @@ import re
 from collections import Counter
 from difflib import SequenceMatcher
 
-from agents.text import content_words, find_quote, mmss, norm, similar, stem, support
+from agents.text import content_words, find_quote, mmss, norm, numbers_in, similar, spoken_tokens, stem, support
 
 KINDS = ("para", "example", "steps", "table", "code", "remember")
 ANCHOR_MIN = 0.80                # share of a quote's words found in order (the model tidies ASR text)
@@ -31,15 +31,22 @@ LIVE_PARA_MAX, PARA_MAX_SENTENCES = 6, 4
 MAX_ITEMS, MAX_ROWS, MAX_COLUMNS = 8, 6, 3
 
 FILLER = re.compile(r"\b(in this (section|lecture|topic|part|segment)|(the )?(lecturer|professor|instructor|speaker)\b"
-                    r"|\b(she|he) (says|said|explains|explained|mentions|mentioned|notes|stresses|emphasi[sz]es"
-                    r"|suggests|recommends|encourages|argues|demonstrates|shows|wants)"
+                    r"|\b(she|he) (says|said|explains|explained|mentions|mentioned|notes|noted|stresses|stressed"
+                    r"|emphasi[sz]es|emphasi[sz]ed|suggests|suggested|recommends|recommended|encourages|encouraged"
+                    r"|argues|argued|demonstrates|demonstrated|shows|showed|wants|wanted|describes|described"
+                    r"|illustrates|illustrated|points out|pointed out|asks|asked|adds|added|reminds|reminded)"
+                    r"|students (are|were) (encouraged|asked|told|reminded)"
                     r"|we (will|'ll|are going to) (now )?(explore|discuss|look at|cover|learn about)"
                     r"|this (section|part|topic) (covers|explains|introduces|discusses|describes)"
                     r"|let'?s (explore|look at|dive)|transcript)\b", re.I)
 BACKREF = re.compile(r"^(this|that|these|those|it|its|they|such|so|thus|therefore|hence|here)\b", re.I)
 LOGISTICS = re.compile(r"\b(record(ed|ing)|ocw|opencourseware|creative commons|camera|licen[cs]e|office hours"
                        r"|piazza|syllabus|grading|deadline)\b", re.I)
-DEFINES = (r"\W+(is|are|means|refers to|consists of|is called|are called)\b"
+# A sentence that opens with the term and explains it. Live run 29 Oct: 37 terms proposed, 1 kept; real definitions
+# read "The level of significance (α) is ...", "A type I error occurs when ...", "The t-statistic is calculated as".
+DEFINES = (r"(\s*\([^()]{1,40}\)|\s*,[^,.]{1,50},)?"           # "(α)", ", denoted H₀," between term and verb
+           r"\W+(is defined as|are defined as|is calculated as|is computed as|is given by|is called|are called"
+           r"|refers to|consists of|occurs? when|happens when|states that|denotes|represents|measures|means|is|are)\b"
            r"(?!\s+(\w+ed|taught|built|made|given|done|shown|known)\b)")
 EMPHASIS = re.compile(r"\b(important|i want to stress|want you to (remember|know|understand)|keep in mind"
                       r"|don'?t forget|key ?(word|thing|point|idea|takeaway)|the (main|big) (thing|point|takeaway)"
@@ -144,9 +151,33 @@ def snap(t: float, chunks: list[dict]) -> float:
     return max(starts) if starts else chunks[0]["start_time"]
 
 
+def _canon(text: str) -> str:
+    return " ".join(w[:-1] if len(w) > 4 and w.endswith("e") else w for w in map(stem, spoken_tokens(text)))
+
+
 def in_transcript(term: str, whole: str) -> bool:
-    n, w = norm(term), norm(whole)
-    return bool(n) and (n in w or " ".join(stem(x) for x in n.split()) in " ".join(stem(x) for x in w.split()))
+    """The term was said, in spoken form ("type one error" for "type I error", "alternate" for "alternative")."""
+    n = _canon(term)
+    return bool(n) and f" {n} " in f" {_canon(whole)} "
+
+
+def defining_sentence(term: str, lead: str, sents: list[str]) -> str | None:
+    """The checked sentence that explains a term: one opening with it ("<term> is / occurs when ..."), or the first
+    sentence of a paragraph whose run-in heading is the term ("**Rejection region.** Reject H₀ when ...")."""
+    words = [re.escape(p) for p in re.split(r"[\s\-‑]+", term.strip()) if p]
+    if not words:
+        return None
+    opening = re.compile(r"(the |a |an )?" + r"[\s\-‑]+".join(words) + DEFINES, re.I)
+    found = next((x for x in sents if opening.match(x)), None)
+    if found is None and lead and _canon(lead) in (_canon(term), _canon(term) + "s"):
+        found = sents[0] if sents else None
+    return found
+
+
+def glossary_worthy(term: str) -> bool:
+    """A name with at least one real word: not a bare symbol or variable ("z", "np", "μ₀")."""
+    return any(len(w) >= 3 and w.isalpha() for w in spoken_tokens(term)) and not set(spoken_tokens(term)) <= set(
+        "mu sigma alpha beta lambda theta pi rho chi phi omega tau gamma delta epsilon".split())
 
 
 # ============================================================================================== sentence checks (§11.2)
@@ -172,8 +203,15 @@ def split_sentences(text) -> list[str]:
     return [s.strip() for s in re.split(r"(?<=[.!?])\s+(?=[A-Z0-9\"“(\[])", text) if s.strip()]
 
 
+def unsaid_numbers(text: str, said: set[str]) -> set[str]:
+    """Data numbers (numbers_in) a sentence states that were not said nearby: an invented value is the worst error a
+    note can carry, and the word checks now accept "454" for "four hundred and fifty four"."""
+    return numbers_in(text) - said
+
+
 def clean_items(raw, evidence: str, flags: list) -> list[str]:
     out: list[str] = []
+    said = numbers_in(evidence)
     for it in (raw if isinstance(raw, list) else [])[:MAX_ITEMS]:
         text = str((it.get("text") if isinstance(it, dict) else it) or "").strip()[:220]
         if not text:
@@ -181,6 +219,8 @@ def clean_items(raw, evidence: str, flags: list) -> list[str]:
         score = grounded(text, evidence)
         if score < SENTENCE_MIN:
             flags.append(f"item_unsupported({score:.2f}): {text[:60]!r}")
+        elif unsaid_numbers(text, said):
+            flags.append(f"number_unsaid({','.join(sorted(unsaid_numbers(text, said)))}): {text[:50]!r}")
         elif not any(similar(text, x) >= DUPLICATE_MIN for x in out):
             out.append(text)
     return out
@@ -195,6 +235,7 @@ def check_sentences(raw, evidence: str, flags: list, stats: Counter, limit: int,
     stats["sentences_proposed"] += len(sents)
     kept: list[str] = []
     checked, prev_dropped = 0, False
+    said = numbers_in(evidence)
     for s in sents:
         s = s[:400]
         if FILLER.search(s):
@@ -216,6 +257,12 @@ def check_sentences(raw, evidence: str, flags: list, stats: Counter, limit: int,
         if score < SENTENCE_MIN:
             flags.append(f"sentence_unsupported({score:.2f}): {s[:70]!r}")
             stats["sentences_unsupported"] += 1
+            prev_dropped = True
+            continue
+        unsaid = unsaid_numbers(s, said)
+        if unsaid:
+            flags.append(f"number_unsaid({','.join(sorted(unsaid))}): {s[:60]!r}")
+            stats["sentences_number_unsaid"] += 1
             prev_dropped = True
             continue
         kept.append(s)
@@ -305,21 +352,25 @@ def validate(raw: dict, chunks: list[dict], flags: list, stats: Counter, known: 
         sents = check_sentences(raw.get("text"), ev, flags, stats, LIVE_PARA_MAX if live else PARA_MAX_SENTENCES, known)
         if sents is None:
             return None
-        lead = lead_of(raw.get("lead"))
+        heading = lead = lead_of(raw.get("lead"))
         if lead and norm(sents[0]).startswith(norm(lead)):
             lead = ""                                  # "Declarative knowledge. Declarative knowledge consists ..."
         # The glossary entry is the checked sentence of these notes that explains the term, so it is grounded by
         # construction (prototype run 3: model-written definitions were textbook ones the lecturer never gave).
-        terms = []
+        terms, said_here = [], " ".join(texts)
         for tm in (raw.get("terms") if isinstance(raw.get("terms"), list) else [])[:3]:
             term = _short(tm.get("term") if isinstance(tm, dict) else tm, 60)
-            heard = term and any(in_transcript(term, x) for x in texts)
-            defining = next((x for x in sents if term and re.match(r"(the |a |an )?" + re.escape(term) + DEFINES, x, re.I)),
-                            None)                      # must open with "<term> is/consists of ..." (not "is taught")
-            if heard and defining:
+            if not term:
+                continue
+            defining = defining_sentence(term, heading, sents)  # not "is taught": that is no definition
+            if not glossary_worthy(term):
+                flags.append(f"term_dropped_symbol:{term!r}")
+            elif not in_transcript(term, said_here):
+                flags.append(f"term_dropped_unsaid:{term!r}")
+            elif defining is None:
+                flags.append(f"term_dropped_no_definition:{term!r}")
+            else:
                 terms.append({"term": term, "definition": defining})
-            elif term:
-                flags.append(f"term_dropped:{term!r}")
         el = {**base, "lead": lead, "sentences": sents, "terms": terms,
               "background": background_of(raw.get("background"), " ".join(sents), flags)}
         if live:

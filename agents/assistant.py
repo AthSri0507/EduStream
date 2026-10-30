@@ -39,7 +39,8 @@ INTENTS = ("explain_recent", "summarise", "define", "ask", "quiz", "data", "othe
 DEFAULT_SPAN_S = 30
 BUDGET_WORDS = {"explain_recent": 90, "summarise": 120, "define": 50, "ask": 110, "quiz": 120, "data": 40,
                 "other": 40}
-DEPTH = {"brief": 0.5, "normal": 1.0, "detailed": 2.0}
+DEPTH = {"brief": 0.5, "normal": 1.0, "detailed": 3.0}   # 29 Oct: "the entire context" of 6 min got 3 bullets
+MAX_WORDS = 1200
 MAX_TURNS = 4                        # conversation turns passed to the LLM
 
 
@@ -134,7 +135,9 @@ Rules:
 - If the message refers to an earlier part of the lecture, give that part's span from the transcript or outline.
 - ambiguous is true ONLY if two different readings would need different answers and nothing resolves it."""
 
-DETAIL = re.compile(r"\b(more detail|in detail|lot more|elaborate|in depth|deeper|everything about)\b", re.I)
+DETAIL = re.compile(r"\b(more detail|in detail|lot more|elaborate|in depth|deeper|everything about"
+                    r"|(entire|full|whole|complete) (context|picture|discussion|explanation|details?)"
+                    r"|everything (that was )?(said|discussed|covered|explained)|all (of )?the details)\b", re.I)
 BRIEF = re.compile(r"\b(short|brief|briefly|quick|one line|tl;?dr|in a sentence)\b", re.I)
 SIMPLER = re.compile(r"\b(simpler|simply|easier|plain english|like i'?m (5|five)|eli5|dumb it down)\b", re.I)
 TECH = re.compile(r"\b(more technical|formally|precisely|technically)\b", re.I)
@@ -300,6 +303,9 @@ def fetch(conn, plan: Plan, pos: Position, vconn=None, embedder=None) -> tuple[l
         lines = tools.transcript(conn, vid, plan.span[0], plan.span[1])
         if len(lines) > tools.MAX_LINES:                       # long range: the notebook stands in for it,
             lines = tools.notebook_digest(conn, vid, plan.span[0], plan.span[1])   # trimmed evenly per section
+        elif plan.depth == "detailed":                        # "the entire context": the notes of the stretch too,
+            lines += [{"t": p["t"], "end": p["t"] + 10, "text": p["text"]}     # so a worked example arrives whole
+                      for p in tools.notebook_points(conn, vid, plan.span[0], plan.span[1])]
     if plan.intent == "define" and plan.term:
         for g in tools.glossary(conn, vid, plan.term):
             lines.append({"t": g["t"], "end": g["t"] + 10, "text": f"Glossary: {g['term']}: {g['definition']}"})
@@ -349,12 +355,13 @@ STYLE = {"simpler": "simpler than usual: short sentences, an everyday analogy is
 def budget_for(plan: Plan) -> int:
     """Words the answer may use. A summary grows with the time it covers (the notebook is the condensed lecture
     and the assistant is the only summariser, so "summarise the lecture" must scale): about 120 words for 5 min,
-    260 for 30 min, up to 600 for an hour or more; "in detail" doubles it."""
+    260 for 30 min, up to 600 for an hour or more; "in detail" / "the entire context" triples it, up to MAX_WORDS
+    (the answer's max_tokens is capped at 3,000: a longer reply would be cut off mid-JSON)."""
     base = BUDGET_WORDS.get(plan.intent, 100)
     if plan.intent == "summarise" and plan.span is not None:
         minutes = max(0.0, plan.span[1] - plan.span[0]) / 60
         base = max(base, min(600, int(80 + 6 * minutes)))
-    return int(base * DEPTH.get(plan.depth, 1.0))
+    return min(MAX_WORDS, int(base * DEPTH.get(plan.depth, 1.0)))
 
 
 KNOWLEDGE = {
@@ -373,6 +380,9 @@ def answer_prompt(plan: Plan, level: str, explained: list[str], outside: bool = 
         extra.append("Explain what was just said: first what the lecturer said, then what it means.")
     if plan.intent == "summarise":
         extra.append("Summarise as short items in time order.")
+    if plan.depth == "detailed" and plan.intent in ("summarise", "explain_recent", "ask"):
+        extra.append("The student wants the full detail: cover every point in time order, one item per point, and "
+                     "give each worked example completely: its setup, the given values, every step and the result.")
     if plan.intent == "define":
         extra.append("Give the definition as the lecturer used it, then one example from the lecture if there is one.")
     if plan.intent == "quiz":

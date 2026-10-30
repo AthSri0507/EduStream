@@ -1,0 +1,1281 @@
+{
+  "checks": [
+    {
+      "name": "all records match the JSON Schemas",
+      "ok": true,
+      "detail": "997 records"
+    },
+    {
+      "name": "algorithms_ku_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "algorithms_ku_l1: complete",
+      "ok": true,
+      "detail": "90/90 chunks across 30 windows"
+    },
+    {
+      "name": "algorithms_ku_l1: each window emitted once",
+      "ok": true,
+      "detail": "30 distinct windows, 30 records"
+    },
+    {
+      "name": "algorithms_ku_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "algorithms_ku_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10046 ms after the flush's event time"
+    },
+    {
+      "name": "algorithms_ku_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "10/10 updates, 10 records"
+    },
+    {
+      "name": "algorithms_ku_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "30 windows in updates, 30 windows emitted"
+    },
+    {
+      "name": "algorithms_ku_l1: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "3 passes, 3 records: 0-450 llm, 450-810 llm, 810-900 llm"
+    },
+    {
+      "name": "algorithms_ku_l1: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 900 s, last cut 900 s"
+    },
+    {
+      "name": "algorithms_ku_l1: topics numbered 1..N",
+      "ok": true,
+      "detail": "3 topics"
+    },
+    {
+      "name": "hypothesis_testing_0208: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "hypothesis_testing_0208: complete",
+      "ok": true,
+      "detail": "405/405 chunks across 135 windows"
+    },
+    {
+      "name": "hypothesis_testing_0208: each window emitted once",
+      "ok": true,
+      "detail": "135 distinct windows, 135 records"
+    },
+    {
+      "name": "hypothesis_testing_0208: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "hypothesis_testing_0208: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10038 ms after the flush's event time"
+    },
+    {
+      "name": "hypothesis_testing_0208: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "45/45 updates, 45 records"
+    },
+    {
+      "name": "hypothesis_testing_0208: every window in exactly one update",
+      "ok": true,
+      "detail": "135 windows in updates, 135 windows emitted"
+    },
+    {
+      "name": "hypothesis_testing_0208: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "12 passes, 12 records: 0-360 fallback, 360-720 llm, 720-1080 llm, 1080-1440 llm, 1440-1800 llm, 1800-2160 llm, 2160-2520 llm, 2520-2880 fallback, 2880-3240 llm, 3240-3600 llm, 3600-3960 llm, 3960-4041 fallback"
+    },
+    {
+      "name": "hypothesis_testing_0208: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 4041 s, last cut 4041 s"
+    },
+    {
+      "name": "hypothesis_testing_0208: topics numbered 1..N",
+      "ok": true,
+      "detail": "7 topics"
+    },
+    {
+      "name": "python_l1: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "python_l1: complete",
+      "ok": true,
+      "detail": "90/90 chunks across 30 windows"
+    },
+    {
+      "name": "python_l1: each window emitted once",
+      "ok": true,
+      "detail": "30 distinct windows, 30 records"
+    },
+    {
+      "name": "python_l1: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "python_l1: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10038 ms after the flush's event time"
+    },
+    {
+      "name": "python_l1: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "10/10 updates, 10 records"
+    },
+    {
+      "name": "python_l1: every window in exactly one update",
+      "ok": true,
+      "detail": "30 windows in updates, 30 windows emitted"
+    },
+    {
+      "name": "python_l1: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "3 passes, 3 records: 0-360 llm, 360-720 llm, 720-900 llm"
+    },
+    {
+      "name": "python_l1: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 900 s, last cut 900 s"
+    },
+    {
+      "name": "python_l1: topics numbered 1..N",
+      "ok": true,
+      "detail": "3 topics"
+    },
+    {
+      "name": "no LATE_DROP alerts",
+      "ok": true,
+      "detail": "0 LATE_DROP"
+    },
+    {
+      "name": "DLQ as expected",
+      "ok": true,
+      "detail": "3 DLQ record(s), expected 3"
+    },
+    {
+      "name": "db: chunks == distinct transcripts",
+      "ok": true,
+      "detail": "585 in SQLite, 585 in Kafka"
+    },
+    {
+      "name": "db: windows == topic windows (keys and content)",
+      "ok": true,
+      "detail": "195 in SQLite, 195 distinct in Kafka"
+    },
+    {
+      "name": "db: live updates == topic updates, with all their drafts",
+      "ok": true,
+      "detail": "65 updates and 59 drafts in SQLite, 65 distinct updates in Kafka"
+    },
+    {
+      "name": "db: passes == topic passes, with all their topics and elements",
+      "ok": true,
+      "detail": "18 passes, 13 topics, 44 elements in SQLite"
+    },
+    {
+      "name": "db: no draft left in the search index of a finished lecture",
+      "ok": true,
+      "detail": "0 draft rows"
+    },
+    {
+      "name": "db: alerts == distinct topic alerts",
+      "ok": true,
+      "detail": "124 in SQLite"
+    }
+  ],
+  "lectures": {
+    "algorithms_ku_l1": {
+      "partition": 1,
+      "chunks_sent": 90,
+      "windows": 30,
+      "last_window_emitted_after_flush_ms": 10046,
+      "updates": {
+        "llm": 9,
+        "extractive": 1
+      },
+      "passes": {
+        "llm": 3
+      }
+    },
+    "hypothesis_testing_0208": {
+      "partition": 1,
+      "chunks_sent": 405,
+      "windows": 135,
+      "last_window_emitted_after_flush_ms": 10038,
+      "updates": {
+        "llm": 43,
+        "extractive": 2
+      },
+      "passes": {
+        "fallback": 3,
+        "llm": 9
+      }
+    },
+    "python_l1": {
+      "partition": 0,
+      "chunks_sent": 90,
+      "windows": 30,
+      "last_window_emitted_after_flush_ms": 10038,
+      "updates": {
+        "llm": 10
+      },
+      "passes": {
+        "llm": 3
+      }
+    }
+  },
+  "notebooks": {
+    "algorithms_ku_l1": {
+      "topics": {
+        "1": {
+          "title": "Course Goals: Solving, Proving, and Communicating",
+          "elements": [
+            [
+              "para",
+              50.0,
+              "Course purpose. The class teaches you to solve computational problems, but also to communicate those solutions to others and convince them of correctness and efficiency"
+            ],
+            [
+              "para",
+              100.0,
+              "Proof and efficiency. You will spend a lot of time proving that an algorithm is correct and arguing about its efficiency, which are central to the course"
+            ]
+          ],
+          "question": {
+            "q": "What three activities does the course emphasize beyond simply solving problems?",
+            "answer": "Proving correctness, arguing efficiency, and communicating solutions"
+          },
+          "end": 180.0
+        },
+        "2": {
+          "title": "Formal Definition of a Computational Problem",
+          "elements": [
+            [
+              "para",
+              250.0,
+              "Problem as binary relation. A computational problem is defined as a binary relation between a set of possible inputs and a set of possible outputs, specifying which outputs are correct for each input"
+            ],
+            [
+              "para",
+              270.0,
+              "Multiple correct outputs. The relation may associate multiple correct outputs with a single input, such as any index containing the value 5 in an array"
+            ],
+            [
+              "para",
+              290.0,
+              "Graphical view. This relation can be visualized as a bipartite graph whose left vertices are inputs, right vertices are outputs, and edges indicate correctness"
+            ]
+          ],
+          "question": {
+            "q": "How is a computational problem formally described?",
+            "answer": "As a binary relation between inputs and outputs that specifies which outputs are correct for each input"
+          },
+          "end": 450.0
+        },
+        "3": {
+          "title": "Algorithm Definition and Correctness",
+          "elements": [
+            [
+              "para",
+              490.0,
+              "General input size. We want algorithms that work for any classroom size, not just the current 300\u2013400 students. The goal is to handle arbitrarily large inputs, such as a billion users in a social\u2011network database"
+            ],
+            [
+              "para",
+              880.0,
+              "Algorithm as a Function. An algorithm is a procedure that takes an input and produces a single output, matching the mathematical definition of a function. It must map each input to exactly one output, which guarantees that the result is well\u2011defined and can be checked for correctness"
+            ]
+          ],
+          "question": {
+            "q": "Why must an algorithm map each input to exactly one output?",
+            "answer": "Because that is the mathematical definition of a function, ensuring the result is well\u2011defined and can be verified as correct."
+          },
+          "end": 900.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": [
+            [
+              "u0e0",
+              null,
+              "Course Overview. The course is about teaching how to solve computational problems and also about communicating solutions. It is not just about solving problems, but also about how to present them clearly"
+            ]
+          ]
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": [
+            [
+              "u1e0",
+              null,
+              "Course Focus. The course emphasizes proving correctness, arguing efficiency, and communicating solutions clearly. It requires more writing than coding, aiming to convince others of correctness beyond the computer"
+            ]
+          ]
+        },
+        {
+          "update": 2,
+          "generator": "llm",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "Computational Problem. A computational problem is a binary relation between a set of possible inputs and a set of possible outputs, where for each input the relation specifies which outputs are correct. The relation may allow multiple correct outputs for a single input"
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "llm",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "Problem Definition. The relation can be visualized as a bipartite graph between inputs and outputs, with edges indicating correctness"
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 5,
+          "generator": "llm",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "General Input Size. We want algorithms that work for any classroom size, not just the current 300\u2013400 students. The goal is to handle arbitrarily large inputs, such as a billion users in a social\u2011network database"
+            ]
+          ]
+        },
+        {
+          "update": 6,
+          "generator": "llm",
+          "elements": [
+            [
+              "u6e0",
+              null,
+              "Algorithm Definition. An algorithm is a fixed\u2011size machine or procedure that, given an input, generates an output that must be one of the correct outputs for that input. It is a function that maps inputs to a single output, and the output must satisfy the problem specification"
+            ],
+            [
+              "u6e1",
+              null,
+              "Correctness Requirement. If an algorithm produces an output that is not among the acceptable outputs for a given input, it is not a correct algorithm"
+            ]
+          ]
+        },
+        {
+          "update": 7,
+          "generator": "llm",
+          "elements": [
+            [
+              "u7e0",
+              null,
+              "Algorithm Correctness. An algorithm is correct if it returns a correct output for every input in its domain. The birthday\u2011matching procedure described will return a match when a duplicate birthday is found, and otherwise will finish after all students have been processed"
+            ],
+            [
+              "u7e1",
+              null,
+              "Example (Birthday\u2011Matching Algorithm): If a duplicate is found, the algorithm stops and reports success; otherwise it continues until all students are processed. Steps: Interview student; Record birthday; Check record for match; If match, return success; Else add to record and continue."
+            ]
+          ]
+        },
+        {
+          "update": 8,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u8e0",
+              null,
+              "interview, students, students, in some order. And what does interviewing a student mean? add a new student to record."
+            ]
+          ]
+        },
+        {
+          "update": 9,
+          "generator": "llm",
+          "elements": [
+            [
+              "u9e0",
+              null,
+              "Algorithm as a Function. An algorithm is a procedure that takes an input and produces a single output, matching the mathematical definition of a function. It must map each input to exactly one output, ensuring correctness at the end"
+            ]
+          ]
+        }
+      ]
+    },
+    "hypothesis_testing_0208": {
+      "topics": {
+        "1": {
+          "title": "Structure of Null and Alternative Hypotheses",
+          "elements": [
+            [
+              "para",
+              410.0,
+              "Hypothesis components. A hypothesis is a statement about a population parameter that you intend to test. It consists of a null hypothesis (H\u2080) and an alternative hypothesis (H\u2081), each taking a specific form without equality signs in the alternative"
+            ],
+            [
+              "para",
+              460.0,
+              "Form of hypotheses. The null hypothesis is written with an equality sign (e.g., \u03bc = \u03bc\u2080) while the alternative hypothesis is expressed with inequality signs (\u2260, >, <) and never includes an equals sign"
+            ],
+            [
+              "para",
+              500.0,
+              "Decision outcomes. When testing, two judgment outcomes are possible: correctly accepting the true null or incorrectly rejecting it. Errors arise when the judgment does not match the ground truth"
+            ]
+          ],
+          "question": null,
+          "end": 550.0
+        },
+        "2": {
+          "title": "Type I and Type II Errors and Significance Level",
+          "elements": [
+            [
+              "para",
+              550.0,
+              "Error definitions. A type I error occurs when we reject H\u2080 while it is actually true"
+            ],
+            [
+              "para",
+              660.0,
+              "Significance level. The level of significance (\u03b1) is the maximum probability of committing a type I error that the researcher is willing to tolerate"
+            ],
+            [
+              "para",
+              740.0,
+              "Alpha values. Typical alpha values are 0.05 and 0.01. An alpha of 0.05 corresponds to a 95 % confidence level, while an alpha of 0.01 corresponds to a 99 % confidence level"
+            ],
+            [
+              "para",
+              780.0,
+              "Tail probability. The confidence level is the complement of the tail probability that we are willing to accept for a Type I error"
+            ]
+          ],
+          "question": {
+            "q": "What confidence level corresponds to an alpha of 0.01?",
+            "answer": "99\u202f% confidence level"
+          },
+          "end": 820.0
+        },
+        "3": {
+          "title": "Test Procedure: Sampling Distribution and Rejection Region",
+          "elements": [
+            [
+              "para",
+              830.0,
+              "Possible test distributions. A hypothesis test may involve normal, t, F, or chi\u2011square distributions, but for this lecture we restrict attention to the normal distribution"
+            ],
+            [
+              "para",
+              940.0,
+              "Sampling distribution under H0. Assume the null hypothesis is true and consider the sampling distribution of the chosen test statistic. For a normal population the sampling distribution of the sample mean is normal with mean \u03bc and standard deviation \u03c3/\u221an"
+            ],
+            [
+              "para",
+              1010.0,
+              "Rejection region. Reject the null hypothesis when the test statistic falls in the extreme tails of the standard normal curve"
+            ],
+            [
+              "para",
+              1080.0,
+              "Z\u2011score definition. The Z\u2011score is formed by subtracting the hypothesised population mean from the sample statistic and dividing by the population standard deviation. Because the sampling distribution of the sample mean has mean equal to the population mean, this statistic follows a standard normal distribution with mean zero and unit variance"
+            ],
+            [
+              "para",
+              1550.0,
+              "Test statistic and parameters. The test statistic is Z = (X \u2013 \u03bc\u2080)/\u03c3\u2080, where \u03bc\u2080 = Np = 64\u00d70.5 = 32 and \u03c3\u2080 = \u221a(Np(1\u2013p)) = \u221a(64\u00d70.5\u00d70.5) = 4. The null hypothesis that the coin is fair is rejected when Z lies outside the interval [\u20131.96, 1.96]"
+            ],
+            [
+              "para",
+              1600.0,
+              "Critical values for the observed count. Solving X = \u03bc\u2080 + Z\u00b7\u03c3\u2080 with Z = 1.96 gives X = 32 + 1.96\u00d74 = 39.84 as the upper critical count and X = 32 \u2013 1.96\u00d74 = 24.16 as the lower critical count"
+            ],
+            [
+              "para",
+              1700.0,
+              "Rejection region in practice. Thus the test accepts H\u2080 when the observed number of heads lies between 25 and 39 inclusive, and rejects H\u2080 when it is 24 or fewer or 40 or more"
+            ]
+          ],
+          "question": {
+            "q": "In a two\u2011tailed test, when do we reject the null hypothesis?",
+            "answer": "When the test statistic is either larger than the upper critical value or smaller than the lower critical value"
+          },
+          "end": 1800.0
+        },
+        "4": {
+          "title": "Effect of Significance Level on Confidence Interval Width",
+          "elements": [
+            [
+              "para",
+              1910.0,
+              "Significance level and interval width. When the significance level (\u03b1) is decreased, the critical value increases, which makes the confidence interval wider because it must accommodate a larger error margin"
+            ],
+            [
+              "example",
+              1930.0,
+              "Example (Interval for \u03b1=0.05): Using \u03b1=0.05 the calculated interval was 21.7 to 42.6."
+            ]
+          ],
+          "question": {
+            "q": "What happens to the confidence interval when the significance level is lowered?",
+            "answer": "It becomes wider because the critical value increases"
+          },
+          "end": 2160.0
+        },
+        "5": {
+          "title": "Quality\u2011Assurance Hypothesis Test for a Packaging Machine",
+          "elements": [
+            [
+              "para",
+              2170.0,
+              "QA testing context. The quality\u2011assurance team periodically conducts hypothesis tests to decide whether the packaging machine is working properly"
+            ]
+          ],
+          "question": null,
+          "end": 2520.0
+        },
+        "6": {
+          "title": "Part 6",
+          "elements": [
+            [
+              "para",
+              2540.0,
+              "Testing a 95% hypothesis. A random sample of 12 kids is taken, each given walnuts"
+            ]
+          ],
+          "question": null,
+          "end": 2880.0
+        },
+        "7": {
+          "title": "Using the t\u2011test when the population standard deviation is unknown",
+          "elements": [
+            [
+              "para",
+              3000.0,
+              "t\u2011test requirement. When the population standard deviation \u03c3 is not provided, the appropriate hypothesis test is the t\u2011test, which substitutes the sample standard deviation for \u03c3"
+            ],
+            [
+              "para",
+              3080.0,
+              "Sample standard deviation formula. The sample standard deviation is calculated by squaring each observation\u2019s deviation from the sample mean, summing those squares, dividing by n\u20111, and finally taking the square root"
+            ],
+            [
+              "example",
+              3150.0,
+              "Example (Computing s for 12 observations):  Steps: Compute each (x\u2011106)\u00b2; Sum the 12 squared deviations; Divide the sum by 11; Take the square root of the result."
+            ],
+            [
+              "para",
+              3290.0,
+              "t\u2011statistic definition. The t\u2011statistic is calculated as the difference between the sample mean and the hypothesised population mean, divided by the estimated standard error of the mean. Because the population standard deviation is unknown, the standard error uses the sample standard deviation s divided by the square root of the sample size n"
+            ],
+            [
+              "para",
+              3830.0,
+              "Compute the t\u2011statistic. The test statistic is calculated as (106 \u2212 100) divided by (9.1 / \u221a12), which gives approximately 2.28"
+            ]
+          ],
+          "question": {
+            "q": "What t\u2011statistic value leads to rejecting the null hypothesis at \u03b1=0.05 with 11\u202fdf?",
+            "answer": "Because the calculated t\u2011statistic 2.28 exceeds the critical value 1.796, we reject the null hypothesis."
+          },
+          "end": 4040.725
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 2,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 3,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 4,
+          "generator": "llm",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "Hypothesis definition. A hypothesis is a statement about a population parameter that you intend to test. The hypothesis consists of a null hypothesis and an alternative hypothesis, and you use a test statistic derived from the sample to decide whether to reject the null"
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 6,
+          "generator": "llm",
+          "elements": [
+            [
+              "u6e0",
+              null,
+              "Type I and II Errors. A type I error occurs when the null hypothesis is rejected even though it is true"
+            ]
+          ]
+        },
+        {
+          "update": 7,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 8,
+          "generator": "llm",
+          "elements": [
+            [
+              "u8e0",
+              null,
+              "Alpha and Confidence. Alpha is the chosen significance level, typically 0.05, which corresponds to a 95 % confidence level. A smaller alpha, such as 0.01, corresponds to a 99 % confidence level. The confidence level is the complement of the tail probability that we are willing to accept for a Type I error"
+            ]
+          ]
+        },
+        {
+          "update": 9,
+          "generator": "llm",
+          "elements": [
+            [
+              "u9e0",
+              null,
+              "Test Distributions. The test can involve normal, t, F, or chi\u2011square distributions, but we will focus on the normal distribution for this lecture. The test type\u2014two\u2011tailed or one\u2011tailed\u2014is chosen based on the alternative hypothesis. The null hypothesis is assumed first, then the test statistic is calculated under that assumption"
+            ]
+          ]
+        },
+        {
+          "update": 10,
+          "generator": "llm",
+          "elements": [
+            [
+              "u10e0",
+              null,
+              "Sampling Distribution. The sampling distribution of a test statistic is the distribution of that statistic over all possible samples drawn from the population under the null hypothesis. For a normal population, the sampling distribution of the sample mean is normal with mean equal to the population mean and standard deviation equal to sigma over sqrt(n)"
+            ],
+            [
+              "u10e1",
+              null,
+              "Normal Approximation. When the sample size is large, the sampling distribution of many statistics can be approximated by a normal distribution, even if the underlying population is not normal"
+            ]
+          ]
+        },
+        {
+          "update": 11,
+          "generator": "llm",
+          "elements": [
+            [
+              "u11e0",
+              null,
+              "Rejection Region. Rejecting the null hypothesis occurs when the test statistic lies in the extreme tails of the standard normal distribution. In a two\u2011tailed test, this means the statistic is either larger than the upper critical value or smaller than the lower critical value"
+            ]
+          ]
+        },
+        {
+          "update": 12,
+          "generator": "llm",
+          "elements": [
+            [
+              "u12e0",
+              null,
+              "Z\u2011score construction. The Z\u2011score is the sample statistic minus the hypothesised population mean, divided by the population standard deviation. It is a standard normal variable with mean zero and unit variance. The sampling distribution of the sample mean has mean equal to the population mean, so the Z\u2011score is calculated as (x\u0304\u2212\u03bc\u2080)/\u03c3"
+            ]
+          ]
+        },
+        {
+          "update": 13,
+          "generator": "llm",
+          "elements": [
+            [
+              "u13e0",
+              null,
+              "Critical Region. The 95% area of the standard normal distribution defines the critical region for a two\u2011sided test. The decision rule rejects the null hypothesis when the test statistic falls into either of these critical regions"
+            ],
+            [
+              "u13e1",
+              null,
+              "Example (Decision Rule for a Simple Test): The example involves a problem where the hypothesis concerns a proportion, and the rule will be based on whether the test statistic lies in one of the critical regions."
+            ]
+          ]
+        },
+        {
+          "update": 14,
+          "generator": "llm",
+          "elements": [
+            [
+              "u14e0",
+              null,
+              "Decision Rule. To find the decision rule, first draw the standard normal curve and mark the critical values for the chosen significance level"
+            ]
+          ]
+        },
+        {
+          "update": 15,
+          "generator": "llm",
+          "elements": [
+            [
+              "u15e0",
+              null,
+              "Decision Rule. For a two\u2011sided test at the 0.05 significance level the critical values are zc1 = \u22121.96 and zc2 = +1.96, so rejection occurs if z < \u22121.96 or z > +1.96. At the 0.01 level the critical values are zc1 = \u22122.58 and zc2 = +2.58, so rejection occurs if z < \u22122.58 or z > +2.58"
+            ]
+          ]
+        },
+        {
+          "update": 16,
+          "generator": "llm",
+          "elements": [
+            [
+              "u16e0",
+              null,
+              "Z\u2011test for a fair coin. The test statistic is computed as Z = (X\u0304 \u2013 \u03bc\u2080)/\u03c3\u2080, where \u03bc\u2080 = Np = 64\u00d70.5 = 32 and \u03c3\u2080 = \u221a(Np(1\u2013p)) = \u221a(64\u00d70.5\u00d70.5) = 4. The null hypothesis is rejected if Z lies outside the interval [\u20131.96, 1.96]"
+            ],
+            [
+              "u16e1",
+              null,
+              "Sample size and standard deviation. With 64 trials the expected number of heads is 32; the standard deviation is the square root of Npq, i.e. \u221a(64\u00d70.5\u00d70.5) = 4"
+            ]
+          ]
+        },
+        {
+          "update": 17,
+          "generator": "llm",
+          "elements": [
+            [
+              "u17e0",
+              null,
+              "Computing the Z\u2011score. The Z\u2011score is calculated as Z = (X \u2013 \u03bc\u2080)/\u03c3\u2080, where \u03bc\u2080 = 32 and \u03c3\u2080 = 4. Solving gives X = 1.96\u00d74 + 32 = 39.84, which is the observed number of heads"
+            ]
+          ]
+        },
+        {
+          "update": 18,
+          "generator": "llm",
+          "elements": [
+            [
+              "u18e0",
+              null,
+              "Critical Value Calculation. The critical value is found by multiplying the standard deviation 4 by the z\u2011score 1.96, giving 7.84. Adding this to the mean 32 yields 39.84, the upper critical point, and subtracting gives 24.16, the lower critical point. The rejection region is defined as X < 24.16 or X > 39.84"
+            ]
+          ]
+        },
+        {
+          "update": 19,
+          "generator": "llm",
+          "elements": [
+            [
+              "u19e0",
+              null,
+              "Rejection Region Rounding. The rejection region is defined by integer counts: values below 24.16 are rounded up to 25, and values above 39.84 are rounded down to 39, so the critical integers are 25 and 39. The test accepts H0 for counts between 25 and 39 inclusive"
+            ]
+          ]
+        },
+        {
+          "update": 20,
+          "generator": "llm",
+          "elements": [
+            [
+              "u20e0",
+              null,
+              "Confidence Interval Method. He noted that the interval is constructed as mean plus or minus 1.9 times sigma over sqrt(n)"
+            ]
+          ]
+        },
+        {
+          "update": 21,
+          "generator": "llm",
+          "elements": [
+            [
+              "u21e0",
+              null,
+              "Significance Level Effect. Increasing the significance level (decreasing alpha) makes the confidence interval wider, because the critical value grows"
+            ],
+            [
+              "u21e1",
+              null,
+              "Example (Interval Calculation): For a 0.05 significance level the interval was 21.7 to 42.6."
+            ]
+          ]
+        },
+        {
+          "update": 22,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 23,
+          "generator": "llm",
+          "elements": [
+            [
+              "u23e0",
+              null,
+              "Example (Potato wafer net\u2011weight study): The company claims the mean net weight of its potato wafers is 454 g."
+            ]
+          ]
+        },
+        {
+          "update": 24,
+          "generator": "llm",
+          "elements": [
+            [
+              "u24e0",
+              null,
+              "Quality Assurance Testing. The quality assurance team periodically conducts hypothesis tests to decide whether the packaging machine is working properly or not"
+            ]
+          ]
+        },
+        {
+          "update": 25,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 26,
+          "generator": "llm",
+          "elements": [
+            [
+              "u26e0",
+              null,
+              "Null and Alternative. The null hypothesis states that the mean weight of the product is 4.54 grams, while the alternative hypothesis asserts that it is not equal to 4.54 grams"
+            ]
+          ]
+        },
+        {
+          "update": 27,
+          "generator": "llm",
+          "elements": [
+            [
+              "u27e0",
+              null,
+              "Rejection Region. For a two\u2011tailed test the rejection region consists of the two extreme tails of the sampling distribution"
+            ]
+          ]
+        },
+        {
+          "update": 28,
+          "generator": "llm",
+          "elements": [
+            [
+              "u28e0",
+              null,
+              "Testing a 95% hypothesis. A random sample of 12 kids is taken, each given walnuts"
+            ]
+          ]
+        },
+        {
+          "update": 29,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 30,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 31,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 32,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 33,
+          "generator": "llm",
+          "elements": [
+            [
+              "u33e0",
+              null,
+              "t\u2011test when \u03c3 unknown. When the population standard deviation is not provided, you must use a t\u2011test, which relies on the sample standard deviation instead of \u03c3"
+            ]
+          ]
+        },
+        {
+          "update": 34,
+          "generator": "llm",
+          "elements": [
+            [
+              "u34e0",
+              null,
+              "Standard Deviation Calculation. To compute the sample standard deviation you square each observation minus the sample mean, sum those squares, divide by n-1, and take the square root"
+            ]
+          ]
+        },
+        {
+          "update": 35,
+          "generator": "llm",
+          "elements": [
+            [
+              "u35e0",
+              null,
+              "Sample variance calculation. The sample variance is obtained by summing the squared deviations of each observation from the sample mean, then dividing by n\u20111, which here is 11 because the sample size is 12. The standard deviation sigma\u2011x\u2011bar is the square root of that variance"
+            ]
+          ]
+        },
+        {
+          "update": 36,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u36e0",
+              null,
+              "9.09 9.09 right so let's take that as 9.095 somebody told me the statistic that you need to check, t statistic you need to check what is t, t is nothing but x minus mu x bar divided by. Because this is sample standard deviation you have sigma x bar divided by root n."
+            ]
+          ]
+        },
+        {
+          "update": 37,
+          "generator": "llm",
+          "elements": [
+            [
+              "u37e0",
+              null,
+              "t\u2011statistic calculation. The null hypothesis sets the population mean \u03bc at 100. The sample mean \u0305x is 106, so the numerator of the t\u2011statistic is 106 \u2212 100"
+            ]
+          ]
+        },
+        {
+          "update": 38,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 39,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 40,
+          "generator": "extractive",
+          "elements": [
+            [
+              "u40e0",
+              null,
+              "We have 2.28, we have 2.28, we have 2.28, we have 2.28, we have 2.28, we can find out. at 0.05 level of significance because I mean that is what you got to take that. not mentioned right so if it is not mentioned 95% it is given okay so take T at 0.05 level of significance."
+            ]
+          ]
+        },
+        {
+          "update": 41,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 42,
+          "generator": "llm",
+          "elements": [
+            [
+              "u42e0",
+              null,
+              "t\u2011statistic calculation. The test statistic is computed as (106 \u2212 100) / (9.1 / \u221a12), which yields approximately 2.28. This value is compared to the critical t value for \u03b1 = 0.05 with 11 degrees of freedom, which is about 1.796, to determine the rejection region"
+            ]
+          ]
+        },
+        {
+          "update": 43,
+          "generator": "llm",
+          "elements": [
+            [
+              "u43e0",
+              null,
+              "Conclusion of test. Because the calculated t\u2011statistic of 2.28 exceeds the critical value of 1.796, we reject the null hypothesis that \u03bc equals 100, indicating that eating walnuts does affect IQ"
+            ]
+          ]
+        },
+        {
+          "update": 44,
+          "generator": "llm",
+          "elements": []
+        }
+      ]
+    },
+    "python_l1": {
+      "topics": {
+        "1": {
+          "title": "Learning approach and practice",
+          "elements": [
+            [
+              "para",
+              130.0,
+              "Fast\u2011paced course. The course moves quickly, so students are encouraged to read problem sets as soon as they are released to let terminology sink in. Practicing programming is compared to practicing math or reading; the more you practice, the better you become"
+            ],
+            [
+              "para",
+              190.0,
+              "Hands\u2011on coding. Running code in Anaconda and restarting the computer if something goes wrong removes fear of breaking the system"
+            ],
+            [
+              "para",
+              230.0,
+              "Three learning outcomes. The course aims for three outcomes: knowledge of core concepts, development of programming skills, and the ability to solve problems through problem sets. All three are reinforced by lectures, examples, and testing"
+            ],
+            [
+              "para",
+              260.0,
+              "Practice underlies all three outcomes"
+            ],
+            [
+              "para",
+              290.0,
+              "Section\u202f1 \u2013 Programming fundamentals. The first section focuses on learning how to program, which includes deciding what objects to create and how to represent knowledge with data structures"
+            ],
+            [
+              "para",
+              300.0,
+              "Section\u202f2 \u2013 Control flow. The second section covers non\u2011linear programs, decision making, and control flow, emphasizing that programs can jump and make choices rather than being purely sequential"
+            ],
+            [
+              "para",
+              330.0,
+              "Section\u202f3 \u2013 Code style. The third section stresses writing readable, modular, and well\u2011organized code so that others in a large company\u2014or future selves\u2014can understand and maintain it"
+            ]
+          ],
+          "question": {
+            "q": "What are the three sections into which the course content is divided?",
+            "answer": "Learning how to program (objects and data structures), control flow (decisions and non\u2011linear execution), and code style (readable, modular code)"
+          },
+          "end": 360.0
+        },
+        "2": {
+          "title": "Fundamental Computer Operations",
+          "elements": [
+            [
+              "para",
+              420.0,
+              "What a computer does. A computer performs two essential functions: it carries out calculations and stores the results in memory. Modern machines can execute billions of calculations per second and are equipped with hundreds of gigabytes of storage. The calculations fall into two categories. Primitive operations are built\u2011in language features such as addition, subtraction, and multiplication"
+            ],
+            [
+              "para",
+              490.0,
+              "Types of knowledge. Computers only know what they are told; they have no mind of their own. Declarative knowledge consists of statements of fact that the machine can store, such as \"Someone will win a prize before class ends.\" Imperative knowledge is the recipe or sequence of steps that tells the computer how to achieve a goal"
+            ]
+          ],
+          "question": {
+            "q": "What are the two categories of calculations a computer can perform?",
+            "answer": "Primitive (built\u2011in) operations and user\u2011defined operations composed from those primitives."
+          },
+          "end": 520.0
+        },
+        "3": {
+          "title": "Declarative vs Imperative Knowledge and Random Selection Example",
+          "elements": [
+            [
+              "example",
+              690.0,
+              "Example (Random responder selection):  Code: import random\nrandom_number = random.randint(16,272)  # returns 75 in this run"
+            ],
+            [
+              "para",
+              770.0,
+              "Declarative knowledge states that the square root of a number x is a value y such that y\u00b7y = x, which is a factual statement."
+            ],
+            [
+              "para",
+              780.0,
+              "Imperative knowledge provides a recipe that a computer can follow to compute the square root, starting with an initial guess and repeatedly refining it until the guess is close enough to the target."
+            ],
+            [
+              "example",
+              790.0,
+              "Example (Square\u2011root iteration for\u202fx=16): Starting with guess g=3, the algorithm computes g\u00b7g=9, checks closeness, then forms a new guess by averaging g and x/g, and repeats until the result is sufficiently close to 4. Steps: Set x=16 and initial guess g=3; If not close enough, set g = (g + x/g)/2; Repeat steps 2\u20133 until close enough."
+            ],
+            [
+              "steps",
+              870.0,
+              "Recipe structure: 1) A linear sequence of steps (initial guess, compute, compare); 2) Conditional control to test whether the guess is close enough; 3) A repetition loop that repeats the steps until the stopping condition is met"
+            ]
+          ],
+          "question": {
+            "q": "What is the difference between declarative and imperative knowledge in the context of programming?",
+            "answer": "Declarative knowledge is factual information stored by the computer, while imperative knowledge is the step\u2011by\u2011step procedure that tells the computer how to act."
+          },
+          "end": 900.0
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": [
+            [
+              "u1e0",
+              null,
+              "Python basics. We start with Python basics, focusing on mathematical operations that can be performed in Python. The slides and in\u2011class exercises will illustrate these operations. Students are encouraged to take notes on the code for future reference"
+            ],
+            [
+              "u1e1",
+              null,
+              "Course strategy. The course is fast\u2011paced, so reading problem sets immediately after release helps terminology sink in. Practice is emphasized as the key to mastering programming, similar to math or reading"
+            ]
+          ]
+        },
+        {
+          "update": 2,
+          "generator": "llm",
+          "elements": [
+            [
+              "u2e0",
+              null,
+              "Course emphasis. The main goal is to build knowledge of concepts, programming skills, and problem\u2011solving ability through problem sets"
+            ]
+          ]
+        },
+        {
+          "update": 3,
+          "generator": "llm",
+          "elements": [
+            [
+              "u3e0",
+              null,
+              "Course structure. The course is divided into three main sections: learning how to program, understanding control flow, and writing good code style. The first part focuses on creating objects and representing knowledge with data structures. The second part covers non\u2011linear programs, decision making, and control flow. The third part emphasizes readable, modular, and maintainable code for collaboration and future reference"
+            ],
+            [
+              "u3e1",
+              null,
+              "Code readability. Good code should be readable and understandable by others, especially in a large company setting"
+            ]
+          ]
+        },
+        {
+          "update": 4,
+          "generator": "llm",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "Readable Code. Writing readable code and organizing it is essential when a program becomes a big mess, because then you cannot understand or re\u2011understand what you were doing"
+            ],
+            [
+              "u4e1",
+              null,
+              "Program Comparison. After learning to write programs in Python, we compare them by asking which program is better or more efficient, and which algorithm is superior"
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "llm",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "Primitive Operations. Computers perform two kinds of calculations: built\u2011in primitive operations such as addition, subtraction, and multiplication, and user\u2011defined operations composed from these primitives. Once a language supplies these primitive types, a programmer can combine them to create new calculations that the computer will execute"
+            ],
+            [
+              "u5e1",
+              null,
+              "Declarative Knowledge. He noted that declarative knowledge is what you tell the computer, and that the computer does not possess a mind or understanding beyond executing the calculations you specify"
+            ]
+          ]
+        },
+        {
+          "update": 6,
+          "generator": "llm",
+          "elements": [
+            [
+              "u6e0",
+              null,
+              "Imperative knowledge is the recipe, the how\u2011to, or the sequence of steps that a machine must follow to achieve a goal."
+            ],
+            [
+              "u6e1",
+              null,
+              "IDE Setup. He demonstrated that the IDE is the environment where the machine will execute the imperative steps"
+            ]
+          ]
+        },
+        {
+          "update": 7,
+          "generator": "llm",
+          "elements": [
+            [
+              "u7e0",
+              null,
+              "Random Selection. He calls random.randint(16,272) to obtain the number 75, then looks up that number in the responder list"
+            ]
+          ]
+        },
+        {
+          "update": 8,
+          "generator": "llm",
+          "elements": [
+            [
+              "u8e0",
+              null,
+              "Declarative vs Imperative. Declarative knowledge states that the square root of a number x is y such that y times y equals x, a fact that is true. Imperative knowledge is a recipe that a computer follows to compute the square root, such as starting with a guess G and iteratively refining it"
+            ]
+          ]
+        },
+        {
+          "update": 9,
+          "generator": "llm",
+          "elements": [
+            [
+              "u9e0",
+              null,
+              "Iterative Square\u2011Root. We compute g\u00d7g and compare it to x; if not close enough we refine the guess. The refinement uses the average of g and x/g, which becomes the new g"
+            ],
+            [
+              "u9e1",
+              null,
+              "Recipe Structure. The imperative recipe consists of a linear sequence of steps, conditional control to test closeness, and a repetition loop that continues until the stopping condition is met"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "alerts_by_type": {
+    "CONSUMER_LAG": 3,
+    "LOW_ASR_SCORE": 66,
+    "SILENCE": 55
+  },
+  "counts": {
+    "transcriptions": 588,
+    "window_summaries": 195,
+    "final_notes": 83,
+    "user_notes": 4,
+    "alerts": 124,
+    "dlq": 3
+  }
+}

@@ -316,8 +316,23 @@ def test_a_summary_grows_with_the_time_it_covers():
     words = lambda minutes, depth="normal": A.budget_for(A.Plan(intent="summarise", span=[0.0, minutes * 60],  # noqa: E731
                                                                depth=depth))
     assert (words(5), words(30), words(120)) == (120, 260, 600)
-    assert words(120, "detailed") == 1200
+    assert words(120, "detailed") == 1200                                  # capped: the reply must fit max_tokens
     assert A.budget_for(A.Plan(intent="define")) == 50                     # other intents unchanged
+
+
+def test_asking_for_the_entire_context_gets_the_detail_and_the_notes_of_that_stretch(conn):
+    msg = "give me the entire context between 36:00 to 42:00"           # live run 29 Oct: 3 bullets for 6 min
+    recorded = A.Position("python_l1", "Python · Lecture 1 (Bell)", False, 3000.0, 3000.0)
+    plan = A.guard(A.Plan(intent="summarise", question=msg), msg, False, recorded)
+    assert plan.depth == "detailed" and plan.span == [2160.0, 2520.0] and A.budget_for(plan) == 360
+    assert "give each worked example completely" in A.answer_prompt(plan, "university", [])
+    for wording in ("what was the full context here", "tell me everything that was said", "all the details please"):
+        assert A.guard(A.Plan(intent="ask", question=wording), wording, False, pos()).depth == "detailed"
+    normal, _, _ = A.fetch(conn, A.Plan(intent="summarise", span=[420.0, 520.0]), pos())
+    detailed, _, _ = A.fetch(conn, A.Plan(intent="summarise", span=[420.0, 520.0], depth="detailed"), pos())
+    notes = A.tools.notebook_points(conn, "python_l1", 420.0, 520.0)
+    assert notes and len(detailed) == len(normal) + len(notes)             # the transcript, plus the notes
+    assert [ln["t"] for ln in detailed] == sorted(ln["t"] for ln in detailed)
 
 
 def test_a_long_range_keeps_every_section_evenly(conn):

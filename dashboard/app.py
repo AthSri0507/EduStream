@@ -1,7 +1,7 @@
 """EduStream dashboard (PLAN M5; ARCHITECTURE §1): a near-real-time, read-only view of data/edustream.db.
 
 Tabs: Notebook (study notes + Lecture Assistant chat), Data (query the stored data),
-window stats, alerts, pipeline health. Live parts refresh in their own fragments (2 s; assistant 1 s). The database is
+window stats, alerts, pipeline health. Sidebar: start and stop a live class (dashboard/live_panel.py). Live parts refresh in their own fragments (2 s; assistant 1 s). The database is
 opened read-only (mode=ro); storage/db_sink.py is the only writer.
 
     .venv\\Scripts\\streamlit run dashboard\\app.py          (normally started by scripts\\start_all.ps1)
@@ -24,7 +24,7 @@ if str(ROOT) not in sys.path:
 
 from common.config import load  # noqa: E402
 from agents import additions  # noqa: E402
-from dashboard import assistant_panel, queries, sql_box  # noqa: E402
+from dashboard import assistant_panel, live_panel, queries, sql_box  # noqa: E402
 from dashboard import export  # noqa: E402
 from dashboard import notebook_html as nbh  # noqa: E402
 from storage.db import connect_readonly, db_path  # noqa: E402
@@ -333,6 +333,8 @@ def refreshing(tab: str) -> None:
 
 
 def page() -> None:
+    with st.sidebar:
+        live_panel.panel()
     lectures = pd.DataFrame()
     if db_path().exists():
         try:
@@ -345,14 +347,16 @@ def page() -> None:
             lectures = pd.DataFrame()
     lecture_watch(tuple(lectures["video_id"]) if not lectures.empty else ())
     if lectures.empty:
-        st.info("No lecture yet. Start one with `.venv\\Scripts\\python -m producer.lecture_source --demo` "
-                "(or replay recorded transcripts with `-m tools.replay_fixtures --demo`).")
+        st.info("No lecture yet. Start a live class in the sidebar, or play one with "
+                "`.venv\\Scripts\\python -m producer.lecture_source --demo`.")
         return
     notebook_t, data_t, stats_t, alerts_t, health_t = st.tabs(TABS, key="tab", bind="query-params", on_change="rerun")
     with notebook_t:
         if notebook_t.open is not False:
             live_first = lectures.sort_values("status", key=lambda s: s != "live", kind="stable")
             titles = dict(zip(live_first["video_id"], live_first["title"]))
+            if st.session_state.get("follow_live") in titles:   # a live class started here: show its notes
+                st.session_state["notes_lecture"] = st.session_state.pop("follow_live")
             video_id = st.selectbox("Lecture", list(titles), format_func=lambda v: titles[v], key="notes_lecture")
             left, right = st.columns([3.4, 2])
             with left:

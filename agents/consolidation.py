@@ -7,7 +7,8 @@ question. The drafts before the cut then disappear (decision 3). The result is o
   * due()          when a pass runs and over which stretch (§4.1, capped so one request fits the free limit)
   * prompts        system prompt (with the "in progress" hand-over in open mode) and the user prompt with the
                    lecture-so-far index (§4.2)
-  * from_reply()   validation: topics, elements by time, questions, short topics merged, "continues" (§11.10)
+  * from_reply()   validation: topics, elements by time, questions, short topics merged, "continues" (§11.10);
+                   checked live drafts the reply left out come back (carry_over)
   * fallback()     no usable reply: the drafts themselves, de-duplicated (only at the lecture's end, when the LLM is
                    off, or after a long outage; otherwise the pass is deferred, §11.10 fix 2)
   * build_pass()   the consolidation.v1 payload
@@ -24,7 +25,7 @@ from dataclasses import dataclass
 
 from agents import study_notes as sn
 from agents.notebook import Memory
-from agents.text import mmss, parse_t, similar
+from agents.text import mmss, parse_t, similar, support
 
 STRETCH_S = 360                  # a pass once 6 minutes of drafts have accumulated (§4.1)
 FORCE_S = 720                    # after 12 minutes nothing is handed over ("closed" mode)
@@ -36,9 +37,14 @@ PASS_SPACING_S = 61              # passes of different lectures one minute apart
 RETRY_S = 60                     # a deferred pass is tried again after this
 GIVE_UP_S = 1080                 # 18 minutes without a successful pass: publish the oldest drafts as they are
 END_GRACE_S = 180                # after the lecture's end a failed pass is retried this long, then the drafts stand in
-MAX_TOKENS = 1800                # a pass uses ~800-1,000; the requested maximum counts against the limit (§11.10)
+MAX_TOKENS = 2400                # a pass used ~800-1,000 (29 Oct: too thin; worked examples now kept whole, and three
+                                 # HTTP 400s fit replies cut off mid-JSON); the requested maximum counts against the
+                                 # per-minute limit (§11.10): with a ~3,000-token prompt it stays well under 8,000
 MAX_TOPICS, MAX_ELEMENTS = 3, 30
 REPEAT_MIN = 0.5                 # an element of a merged short topic that repeats the topic it joins is left out
+COVER_MIN = 0.5                  # a live-draft sentence is in the pass's notes if one new element holds half its words
+THIN_RATIO = 0.5                 # a pass keeping under half the drafts' words lost content, not just repeats
+WORKED = ("example", "steps", "table", "code")
 OFF_REASONS = ("disabled", "forced_failure", "no_provider_configured")    # waiting cannot help
 QUESTION_LOGISTICS = re.compile(r"\b(problem sets?|psets?|due|deadlines?|exams? (date|time)|quiz(zes)? (date|time)"
                                 r"|office hours|slides|recitations?|grades?|grading)\b", re.I)
@@ -55,10 +61,14 @@ stretch (speech recognition, so it can contain errors), and the rough live notes
 
 - Split the stretch into 1-3 topics where the subject actually changes, each with a clear, specific title.
   Course logistics (recording, slides, problem-set dates) are never a topic and never a question.
-- Write each topic mostly as paragraphs (2-4 sentences each; about 2-4 paragraphs per 6 minutes) that explain the
-  ideas and how they connect. Use steps, table or code only where the lecturer really listed, compared or wrote
-  something. Put each example right after the paragraph it illustrates.
-- Use the live notes as a draft: keep what is right, merge repeats, fix what is wrong, drop what is trivial.
+- Write each topic mostly as paragraphs (2-4 sentences each, as many as the content needs: usually 3-6 per 6 minutes
+  of teaching) that explain the ideas and how they connect. Use steps, table or code only where the lecturer really
+  listed, compared or wrote something. Put each example right after the paragraph it illustrates.
+- A worked problem the lecturer solves (a scenario with given values) is never dropped or cut to one sentence: write
+  it as an "example" whose "text" gives the setup and the given values, and whose "steps" give the solution in the
+  lecturer's order with the lecturer's numbers (hypotheses, test statistic, critical values, decision ...).
+- Use the live notes as a draft: every correct point in them must appear in your notes (reworded or merged); fix
+  what is wrong, merge repeats, and leave out only asides and course logistics.
 - Do not define again a term already in the glossary unless the lecturer adds something new.
 - One check-yourself question per topic that tests understanding of the subject (never about the lecturer or the
   class), with a short answer from the lecture.
@@ -211,6 +221,11 @@ def from_reply(memory: Memory, reply: dict, plan: Plan, chunks: list[dict]) -> d
             continue
         target["elements"].append(el)
         known += sn.sentences_of(el)
+    if any(t["elements"] for t in new_topics):          # the reply's topics stand: its own elements were sound
+        for el in carry_over([d for d in memory.drafts if d["t"] < cut], new_topics, known, flags, stats):
+            target = [t for t in new_topics if t["start"] <= el["t"]][-1] if el["t"] >= new_topics[0]["start"] \
+                else new_topics[0]
+            target["elements"].append(el)
     for q in [q for q in (reply.get("questions") if isinstance(reply.get("questions"), list) else [])
               if isinstance(q, dict)]:
         target = by_n.get(q.get("topic"))
@@ -237,6 +252,57 @@ def from_reply(memory: Memory, reply: dict, plan: Plan, chunks: list[dict]) -> d
     return _fields(memory, topics, ext, S, cut, plan.final, "llm", flags, dict(stats))
 
 
+def carry_over(drafts: list[dict], new_topics: list[dict], known: list[str], flags: list, stats: Counter) -> list[dict]:
+    """A pass may reorganise and rewrite the live notes, but not lose them (live run 29 Oct: 120b turned six minutes
+    of a worked example into one sentence, and the drafts it replaced disappeared). The drafts were checked when
+    they were written; those the new notes do not cover come back:
+      * always worked material: an example, steps, table or code, or a sentence that states numbers;
+      * everything else only when the pass is thin (it kept under THIN_RATIO of the drafts' words). A rich pass that
+        left a sentence out usually dropped it on purpose (course intros, asides), so it stays out."""
+    have = [sn.text_of(x) for t in new_topics for x in t["elements"]]
+
+    def covered(text: str) -> bool:
+        return any(support(text, h) >= COVER_MIN for h in have) or any(similar(text, k) >= sn.DUPLICATE_MIN
+                                                                       for k in known)
+    draft_words = sum(len(sn.words_of(s)) for d in drafts for s in (sn.sentences_of(d) or [sn.text_of(d)]))
+    thin = draft_words > 0 and sum(len(sn.words_of(h)) for h in have) < THIN_RATIO * draft_words
+    out, seen = [], []
+    for d in drafts:
+        el = sn.published(d)
+        if el["kind"] == "para":
+            keep = []
+            for s in el.get("sentences", []):
+                if not covered(s) and (thin or re.search(r"\d", s)) and not sn.FILLER.search(s) \
+                        and not sn.LOGISTICS.search(s) and not QUESTION_LOGISTICS.search(s) \
+                        and not s.rstrip().endswith("?") and not any(similar(s, x) >= sn.DUPLICATE_MIN
+                                                                     for x in seen + keep):
+                    keep.append(s)
+            if not keep:
+                continue
+            el = {**el, "sentences": keep, "terms": [tm for tm in el.get("terms", []) if tm["definition"] in keep]}
+        else:
+            text = sn.text_of(el)
+            if covered(text) or any(similar(text, x) >= sn.DUPLICATE_MIN for x in seen) \
+                    or QUESTION_LOGISTICS.search(text) or not (thin or el["kind"] in WORKED or re.search(r"\d", text)):
+                continue
+        out.append(el)
+        seen += sn.sentences_of(el) or [sn.text_of(el)]
+    if out:
+        flags.append(f"carried_from_live({len(out)}{', thin pass' if thin else ''})")
+        stats["drafts_carried"] += len(out)
+    return out
+
+
+def fallback_title(elements: list[dict], n: int) -> str:
+    """A topic written without the model is named after its fullest paragraph's run-in heading, else an example's
+    title; "Part N" only when there is neither (live run 29 Oct: "Part 6" held the walnut t-test example)."""
+    paras = [x for x in elements if x["kind"] == "para" and x.get("lead")]
+    if paras:
+        return max(paras, key=lambda x: len(x.get("sentences", [])))["lead"][:90]
+    titled = [x for x in elements if x["kind"] == "example" and x.get("title")]
+    return titled[0]["title"][:90] if titled else f"Part {n}"
+
+
 def fallback(memory: Memory, plan: Plan, flags: list | None = None) -> dict:
     """No usable reply: the drafts of the stretch as they are, without repeats, as one topic "Part N"."""
     flags = list(flags or [])
@@ -254,8 +320,8 @@ def fallback(memory: Memory, plan: Plan, flags: list | None = None) -> dict:
         seen += sn.sentences_of(el)
     S = plan.start
     n = len(memory.topics) + 1
-    topics = [{"title": f"Part {n}", "start": S, "end": plan.end, "elements": elements, "question": None}] \
-        if elements else []
+    topics = [{"title": fallback_title(elements, n), "start": S, "end": plan.end, "elements": elements,
+               "question": None}] if elements else []
     last = memory.topics[-1] if memory.topics else None
     topics, ext = _merge(topics, last, flags)
     if not topics and ext is None and last is not None:      # nothing to add: the last topic reaches the cut

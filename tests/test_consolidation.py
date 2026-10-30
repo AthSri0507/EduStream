@@ -139,6 +139,77 @@ def test_nothing_surviving_falls_back_to_the_drafts_without_repeats():
     assert all("id" not in e and "sentence_k" not in e for e in p["elements"])
 
 
+# Live run 29 Oct, Hypothesis Testing 36:00-42:00: the live drafts held a worked example; 120b's pass kept one sentence.
+def draft(t, kind, k=0, **fields):
+    base = {"id": f"u{k}e{int(t)}", "extends": None, "k": k, "kind": kind, "t": float(t), "said": "...",
+            "sentence_k": [k] * len(fields.get("sentences", []))}
+    if kind == "para":
+        base.update(lead="", terms=[], background=None, sentences=[])
+    else:
+        base.update(title="", sentences=[], steps=[], code=None)
+    return {**base, **fields}
+
+
+QA_DRAFTS = [
+    draft(30, "example", title="Potato wafer net-weight study",
+          sentences=["The company claims the mean net weight of its potato wafers is 454 g."]),
+    draft(100, "para", lead="Quality assurance testing",
+          sentences=["The quality assurance team periodically conducts hypothesis tests on the packaging machine."]),
+    draft(250, "para", lead="Null and alternative",
+          sentences=["The null hypothesis says the mean weight is 454 grams; the alternative says it is not 454 grams."]),
+    draft(300, "para", lead="Rejection region",
+          sentences=["For a two-tailed test the rejection region is the two extreme tails of the distribution.",
+                     "Students are encouraged to copy the diagram.", "He noted that the tails matter."]),
+]
+ONE_SENTENCE = {"topics": [{"n": 1, "title": "Quality-assurance hypothesis test", "starts_at": "00:00"}],
+                "elements": [el("A computer performs calculations and remembers results.",
+                                "it performs calculations and it remembers results", 1)]}
+
+
+def test_a_thin_pass_cannot_lose_what_its_live_drafts_held():
+    m = lecture(4)
+    m.drafts = [dict(d) for d in QA_DRAFTS]
+    p = run(m, ONE_SENTENCE)
+    assert p["generator"] == "llm" and [t["title"] for t in p["topics"]] == ["Quality-assurance hypothesis test"]
+    got = [(e["kind"], e["t"], e.get("lead") or e.get("title")) for e in p["elements"]]
+    assert got == [("para", 0.0, None), ("example", 30.0, "Potato wafer net-weight study"),
+                   ("para", 100.0, "Quality assurance testing"), ("para", 250.0, "Null and alternative"),
+                   ("para", 300.0, "Rejection region")]
+    assert p["elements"][-1]["sentences"] == [QA_DRAFTS[-1]["sentences"][0]]     # not the filler or the logistics
+    assert "carried_from_live(4, thin pass)" in p["quality_flags"]
+    assert all("id" not in e and "sentence_k" not in e for e in p["elements"])
+
+
+def test_a_rich_pass_keeps_its_choices_but_never_drops_numbers_or_examples():
+    m = lecture(4)
+    m.drafts = [dict(d) for d in QA_DRAFTS]
+    rich = {"topics": ONE_SENTENCE["topics"], "elements": ONE_SENTENCE["elements"] + [
+        el("A computer performs a billion calculations per second. The results are stored in computer memory, hundreds "
+           "of gigabytes.", "It performs a billion calculations per second", 1),
+        el("Declarative knowledge is statements of fact. Imperative knowledge is a recipe, a sequence of steps.",
+           "Declarative knowledge is statements of fact", 1),
+        el("The square root of x is y such that y times y is x.", "The square root of x is y such that y times y", 1)]}
+    p = run(m, rich)
+    carried = [e.get("lead") or e.get("title") for e in p["elements"] if e["t"] in (30.0, 100.0, 250.0, 300.0)]
+    assert carried == ["Potato wafer net-weight study", "Null and alternative"]   # the example, the 454 g sentence
+    assert "carried_from_live(2)" in p["quality_flags"]
+
+
+def test_the_pass_prompt_keeps_worked_problems_whole_and_every_live_point():
+    prompt = C.system_prompt(lecture(4), C.due(lecture(4), False))
+    assert "never dropped or cut to one sentence" in prompt and "every correct point in them must appear" in prompt
+    assert "2-4 paragraphs per 6 minutes" not in prompt and C.MAX_TOKENS == 2400
+
+
+def test_a_fallback_topic_is_named_after_its_drafts_not_part_n():
+    m = lecture(4)
+    m.drafts = [dict(d) for d in QA_DRAFTS]
+    p = run(m, {"topics": [{"n": 1, "title": "Rust", "starts_at": "00:00"}],
+                "elements": [el("Rust has a borrow checker.", "rust borrow checker", 1)]})
+    assert p["generator"] == "fallback" and p["topics"][0]["title"] == "Rejection region"    # its fullest paragraph
+    assert C.fallback_title([], 6) == "Part 6"
+
+
 # ------------------------------------------------------------------------------------------------ the agent
 class FakeProducer:
     def __init__(self):

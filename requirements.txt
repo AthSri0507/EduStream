@@ -8,6 +8,9 @@ kafka-python==3.0.11
 # Speech-to-text (CPU, int8) and audio decoding (bundles PyAV)
 faster-whisper
 
+# Live classes: record what this PC plays (Zoom/Meet/Teams loopback) or a microphone (producer/live_source.py)
+soundcard
+
 # Data, validation, config
 numpy
 jsonschema
