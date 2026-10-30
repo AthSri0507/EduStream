@@ -31,6 +31,8 @@ STRETCH_S = 360                  # a pass once 6 minutes of drafts have accumula
 FORCE_S = 720                    # after 12 minutes nothing is handed over ("closed" mode)
 MAX_PASS_S = 540                 # one pass covers at most 9 minutes: the request must fit the per-minute limit
 MIN_TOPIC_S = 120                # shorter topics join a neighbour (prototype run 3)
+MAX_TOPIC_S = 900                # "continues" never grows a topic past 15 minutes (run 30 Oct: the model said
+                                 # "continues" on all 10 passes and "Hypothesis testing fundamentals" took 6-67 min)
 GAP_S = 45                       # a pass waits this long after the lecture's last live call (§11.10 fix 1)
 PASS_SPACING_S = 61              # passes of different lectures one minute apart: each (~5,000 tokens with its
                                  # max_tokens) needs the strong model's minute to itself (dry run 28 Oct)
@@ -52,8 +54,9 @@ QUESTION_LOGISTICS = re.compile(r"\b(problem sets?|psets?|due|deadlines?|exams? 
 OPEN_RULE = ("- If the last topic is still going on at the end of the stretch (the lecturer is in the middle of it),"
              " do not write it: set \"in_progress_from\" to the mm:ss where it starts; it will be written with the"
              " next stretch. Otherwise \"in_progress_from\": null.")
-CONTINUES_RULE = ("- If the first topic of this stretch simply continues the last finished topic (same subject),"
-                  " give it \"continues\": true; it is then added to that topic.")
+CONTINUES_RULE = ("- If the first topic of this stretch simply continues the last finished topic (the lecturer is"
+                  " still on the same concept or the same worked problem), give it \"continues\": true; it is then"
+                  " added to that topic. A new concept, method or problem is a new topic, even in the same chapter.")
 
 SYSTEM = f"""You write the final study notes for one stretch of a university lecture, like a section of a
 good textbook. You receive the topics finished earlier in the lecture and the glossary so far, the transcript of the
@@ -141,6 +144,9 @@ def _merge(topics: list[dict], last: dict | None, flags: list) -> tuple[list[dic
             t["question"] = t["question"] or carry["question"]
             carry = None
         continues = i == 0 and t.get("continues") and last is not None
+        if continues and t["end"] - last["start"] > MAX_TOPIC_S and t["end"] - t["start"] >= MIN_TOPIC_S:
+            flags.append(f"continues_refused:{t['title'][:40]!r} ({(t['end'] - last['start']) / 60:.0f} min)")
+            continues = False
         if not continues and t["end"] - t["start"] >= MIN_TOPIC_S:
             kept.append(t)
             continue

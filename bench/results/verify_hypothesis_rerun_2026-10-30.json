@@ -1,0 +1,724 @@
+{
+  "checks": [
+    {
+      "name": "all records match the JSON Schemas",
+      "ok": true,
+      "detail": "715 records"
+    },
+    {
+      "name": "hypothesis_testing_0208: flush forwarded once",
+      "ok": true,
+      "detail": "1 flush record(s) in transcriptions"
+    },
+    {
+      "name": "hypothesis_testing_0208: complete",
+      "ok": true,
+      "detail": "405/405 chunks across 135 windows"
+    },
+    {
+      "name": "hypothesis_testing_0208: each window emitted once",
+      "ok": true,
+      "detail": "135 distinct windows, 135 records"
+    },
+    {
+      "name": "hypothesis_testing_0208: never emitted before end + grace",
+      "ok": true,
+      "detail": "all on time"
+    },
+    {
+      "name": "hypothesis_testing_0208: last window closed by its own flush",
+      "ok": true,
+      "detail": "emitted 10040 ms after the flush's event time"
+    },
+    {
+      "name": "hypothesis_testing_0208: one notebook update per 90 s block, each once",
+      "ok": true,
+      "detail": "45/45 updates, 45 records"
+    },
+    {
+      "name": "hypothesis_testing_0208: every window in exactly one update",
+      "ok": true,
+      "detail": "135 windows in updates, 135 windows emitted"
+    },
+    {
+      "name": "hypothesis_testing_0208: consolidation passes 0..n-1, each once, back to back",
+      "ok": true,
+      "detail": "12 passes, 12 records: 0-360 fallback, 360-720 llm, 720-1080 llm, 1080-1440 llm, 1440-1800 llm, 1800-2160 llm, 2160-2520 llm, 2520-2880 llm, 2880-3240 llm, 3240-3600 llm, 3600-3960 llm, 3960-4041 fallback"
+    },
+    {
+      "name": "hypothesis_testing_0208: finished once, by the last pass, covering all live notes",
+      "ok": true,
+      "detail": "1 final pass(es); notes reach 4041 s, last cut 4041 s"
+    },
+    {
+      "name": "hypothesis_testing_0208: topics numbered 1..N",
+      "ok": true,
+      "detail": "1 topics"
+    },
+    {
+      "name": "no LATE_DROP alerts",
+      "ok": true,
+      "detail": "0 LATE_DROP"
+    },
+    {
+      "name": "DLQ as expected",
+      "ok": true,
+      "detail": "0 DLQ record(s), expected 0"
+    },
+    {
+      "name": "db: chunks == distinct transcripts",
+      "ok": true,
+      "detail": "405 in SQLite, 405 in Kafka"
+    },
+    {
+      "name": "db: windows == topic windows (keys and content)",
+      "ok": true,
+      "detail": "135 in SQLite, 135 distinct in Kafka"
+    },
+    {
+      "name": "db: live updates == topic updates, with all their drafts",
+      "ok": true,
+      "detail": "45 updates and 32 drafts in SQLite, 45 distinct updates in Kafka"
+    },
+    {
+      "name": "db: passes == topic passes, with all their topics and elements",
+      "ok": true,
+      "detail": "12 passes, 1 topics, 34 elements in SQLite"
+    },
+    {
+      "name": "db: no draft left in the search index of a finished lecture",
+      "ok": true,
+      "detail": "0 draft rows"
+    },
+    {
+      "name": "db: alerts == distinct topic alerts",
+      "ok": true,
+      "detail": "117 in SQLite"
+    }
+  ],
+  "lectures": {
+    "hypothesis_testing_0208": {
+      "partition": 1,
+      "chunks_sent": 405,
+      "windows": 135,
+      "last_window_emitted_after_flush_ms": 10040,
+      "updates": {
+        "llm": 45
+      },
+      "passes": {
+        "fallback": 2,
+        "llm": 10
+      }
+    }
+  },
+  "notebooks": {
+    "hypothesis_testing_0208": {
+      "topics": {
+        "1": {
+          "title": "Hypothesis testing fundamentals",
+          "elements": [
+            [
+              "para",
+              410.0,
+              "Hypothesis definition. A hypothesis is a statement about a population parameter that you intend to test. It consists of a null hypothesis (H\u2080) and an alternative hypothesis (H\u2081), and you select a test statistic from the sample to evaluate the claim"
+            ],
+            [
+              "para",
+              460.0,
+              "Null and alternative forms. The null hypothesis is written with an equality sign (e.g., H\u2080: \u03bc = \u03bc\u2080) while the alternative hypothesis uses an inequality without the equals sign (e.g., H\u2081: \u03bc > \u03bc\u2080). No equals sign appears in H\u2081"
+            ],
+            [
+              "para",
+              530.0,
+              "Type I and II errors. A Type I error occurs when H\u2080 is true but we reject it; a Type II error occurs when H\u2080 is false but we fail to reject it"
+            ],
+            [
+              "para",
+              600.0,
+              "Error interpretation. Both represent errors of judgment about the ground truth"
+            ],
+            [
+              "para",
+              760.0,
+              "Alpha and confidence level. Alpha is the chosen significance level, typically 0.05, which corresponds to a 95 % confidence level; a smaller alpha such as 0.01 gives a 99 % confidence level. The confidence level is the complement of the tail probability that we are willing to accept when rejecting the null hypothesis"
+            ],
+            [
+              "para",
+              820.0,
+              "Test types and distributions. A hypothesis test may involve normal, t, F, or chi\u2011square distributions, but for the remainder of this lecture we restrict attention to the simple normal distribution. The choice between a two\u2011tail and a single\u2011tail test depends on the form of the alternative hypothesis"
+            ],
+            [
+              "para",
+              890.0,
+              "Null hypothesis setup. Under a given null hypothesis we specify the parameter value (denoted \u03c6) and then formulate the alternative; for a two\u2011tail test the alternative is \u03c6\u2260\u03c6\u2080, while for a one\u2011tail test it is \u03c6>\u03c6\u2080 or \u03c6<\u03c6\u2080. Rejecting the hypothesis therefore means rejecting the null hypothesis when the test statistic is too large or too small"
+            ],
+            [
+              "para",
+              940.0,
+              "Sampling distribution of the statistic. The sampling distribution of a test statistic is the distribution of that statistic over many repeated samples from the same population. For a normal test statistic the sampling distribution is itself normal, with mean \u03bc equal to the population parameter under the null hypothesis and standard deviation \u03c3 equal to the population standard deviation divided by the square root of the sample size"
+            ],
+            [
+              "para",
+              1070.0,
+              "Decision rule for a two\u2011tail test. In a two\u2011tail test we reject the null hypothesis if the observed statistic falls beyond the critical values in either tail of the standard normal curve; that is, if the statistic is too large (right tail) or too small (left tail)"
+            ],
+            [
+              "para",
+              1080.0,
+              "Z\u2011score construction. The Z\u2011score is the sample statistic minus the population mean divided by the population standard deviation, Z = (\\bar X - \u03bc)/\u03c3. Because the sampling distribution of \\bar X has mean \u03bc, this standardises the statistic to a standard normal variable with mean zero and unit variance"
+            ],
+            [
+              "para",
+              1140.0,
+              "Rejection rule. If the computed Z lies outside this interval, the null hypothesis is rejected"
+            ],
+            [
+              "para",
+              1180.0,
+              "Critical region. The 95% area of the standard normal distribution defines the critical region for a two\u2011sided test"
+            ],
+            [
+              "para",
+              1370.0,
+              "Decision rule. The decision rule at a 0.05 significance level uses the critical values \u20131.96 and +1.96 \u2013 so that if the computed Z lies beyond these bounds, the null hypothesis is rejected"
+            ],
+            [
+              "para",
+              1420.0,
+              "Rejection region. The rejection region consists of the extreme right and left tails of the standard normal distribution; if the test statistic falls in either tail, the null hypothesis is rejected. The area in each tail corresponds to the chosen significance level, 2.5% for 0.05 and 0.5% for 0.01"
+            ],
+            [
+              "para",
+              1480.0,
+              "Mean and standard deviation. For a binomial experiment with N=64 trials and success probability p=0.5, the null hypothesis assumes a fair coin. The mean under H\u2080 is \u03bc=Np=64\u00b70.5=32 and the standard deviation is \u03c3=\u221a(Npq)=\u221a(64\u00b70.5\u00b70.5)=4"
+            ],
+            [
+              "para",
+              1550.0,
+              "Z\u2011score formula. The Z\u2011score for an observed number of heads X is computed as Z=(X\u2212\u03bc)/\u03c3, which here becomes Z=(X\u221232)/4"
+            ],
+            [
+              "example",
+              1570.0,
+              "Example (Finding the critical X values):  Steps: X\u221232 = 1.96\u00b74 \u2192 X = 1.96\u00b74 + 32 = 39.84 (upper critical value); X\u221232 = \u22121.96\u00b74 \u2192 X = \u22121.96\u00b74 + 32 = 24.16 (lower critical value)."
+            ],
+            [
+              "para",
+              1680.0,
+              "Critical value calculation. The rejection region is defined by z values beyond \u00b11.96, so the null hypothesis is rejected if the observed X lies outside 24.16 to 39.84"
+            ],
+            [
+              "para",
+              1730.0,
+              "Acceptance region. If the observed number of heads lies between 25 and 39, inclusive, the null hypothesis is not rejected and is accepted. The boundaries 24.16 and 39.84 are rounded to the nearest integers, giving 25 and 39 as the practical limits"
+            ],
+            [
+              "para",
+              1910.0,
+              "Effect of alpha on CI. When the significance level (\u03b1) is decreased, the corresponding confidence level increases, which widens the confidence interval to accommodate a larger error margin"
+            ],
+            [
+              "para",
+              2130.0,
+              "Company claim on mean weight. The company asserts that the mean net weight of its potato wafer bags is 454 g, although individual bags may vary slightly above or below this value"
+            ],
+            [
+              "para",
+              2170.0,
+              "Quality\u2011assurance testing. The quality\u2011assurance team periodically performs hypothesis tests to decide whether the packaging machine is working properly or not"
+            ],
+            [
+              "para",
+              2390.0,
+              "Null hypothesis definition. The null hypothesis is the statement that the mean weight of the product is 4.54 grams, i.e., the packaging machine is operating correctly. The alternative hypothesis states that the mean weight is not equal to 4.54 grams, indicating a malfunction"
+            ],
+            [
+              "para",
+              2440.0,
+              "Two\u2011tailed test. For a two\u2011tailed test the critical region is split into two parts, one in the lower tail and one in the upper tail"
+            ],
+            [
+              "para",
+              2460.0,
+              "Rejection rule. The rejection rule is: reject H0 when z < zc1 or z > zc2"
+            ],
+            [
+              "para",
+              2540.0,
+              "Test setup. A 95 % confidence hypothesis test is planned to assess whether eating walnuts makes children smarter. A random sample of twelve children is selected and given walnuts for one year before their intelligence scores are measured"
+            ],
+            [
+              "para",
+              3000.0,
+              "t\u2011test selection. When the population standard deviation is unknown and the sample size is small, the appropriate test is the t\u2011test"
+            ],
+            [
+              "para",
+              3080.0,
+              "Sample standard deviation. The sample standard deviation is calculated by taking the square root of the sum of squared deviations from the mean, divided by the sample size minus one"
+            ],
+            [
+              "para",
+              3290.0,
+              "Test statistic formula. The test statistic is calculated as (x\u0304\u2212\u03bc)/(\u03c3/\u221an), where x\u0304 is the sample mean, \u03bc is the hypothesised population mean, \u03c3 is the sample standard deviation, and n is the sample size. In the example the null hypothesis sets \u03bc = 100, the observed sample mean is 106, the standard deviation is taken as 9.1, and the sample size is 12. Substituting these values gives (106\u2212100)/(9.1/\u221a12)"
+            ],
+            [
+              "para",
+              3670.0,
+              "t\u2011critical value lookup. For a two\u2011tailed test at the 0.05 significance level with 11 degrees of freedom the critical t value is 1.796. This value is obtained from the t\u2011distribution table using the specified alpha and degrees of freedom"
+            ],
+            [
+              "para",
+              3830.0,
+              "computed t\u2011statistic. Using the sample data the t\u2011statistic is calculated as (106 \u2212 100) \u00f7 (9.1 / \u221a12) which equals 2.28. This value is larger than the critical value of 1.796"
+            ],
+            [
+              "para",
+              3840.0,
+              "rejection region. The rejection region consists of t values whose absolute magnitude exceeds 1.796. Any computed statistic falling in this region leads to rejection of the null hypothesis"
+            ],
+            [
+              "para",
+              3870.0,
+              "decision. Because 2.28 lies beyond the critical value, the null hypothesis is rejected at the 0.05 level"
+            ],
+            [
+              "para",
+              3910.0,
+              "hypotheses interpretation. The null hypothesis states \u03bc = 100, meaning eating walnuts causes no difference in IQ. The alternative hypothesis states \u03bc \u2260 100, indicating a possible effect of walnuts on IQ"
+            ]
+          ],
+          "question": {
+            "q": "What does a Type\u202fI error represent in hypothesis testing?",
+            "answer": "Rejecting the null hypothesis when it is actually true."
+          },
+          "end": 4040.725
+        }
+      },
+      "live": [
+        {
+          "update": 0,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 1,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 2,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 3,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 4,
+          "generator": "llm",
+          "elements": [
+            [
+              "u4e0",
+              null,
+              "Hypothesis definition. A hypothesis is a statement about a population parameter that you intend to test. The hypothesis includes a null hypothesis and an alternative hypothesis, and you choose a test statistic from the sample to evaluate it"
+            ]
+          ]
+        },
+        {
+          "update": 5,
+          "generator": "llm",
+          "elements": [
+            [
+              "u5e0",
+              null,
+              "Null and Alternative Forms. In the alternate hypothesis you write the inequality without the equals sign, for example \"H1: \u03bc > \u03bc0\" rather than \"H1: \u03bc \u2265 \u03bc0\""
+            ]
+          ]
+        },
+        {
+          "update": 6,
+          "generator": "llm",
+          "elements": [
+            [
+              "u6e0",
+              null,
+              "Type I and II Errors. A type I error occurs when the null hypothesis is true but we reject it. A type II error occurs when the null hypothesis is false but we fail to reject it"
+            ],
+            [
+              "u6e1",
+              null,
+              "Error Interpretation. Rejecting H0 when it is true is a type I error; failing to reject H0 when it is false is a type II error"
+            ]
+          ]
+        },
+        {
+          "update": 7,
+          "generator": "llm",
+          "elements": [
+            [
+              "u7e0",
+              null,
+              "Level of Significance. The level of significance is defined as the maximum probability of making a type I error that the researcher is willing to accept"
+            ]
+          ]
+        },
+        {
+          "update": 8,
+          "generator": "llm",
+          "elements": [
+            [
+              "u8e0",
+              null,
+              "Alpha and Confidence. Alpha is the chosen significance level, typically 0.05, which corresponds to a 95 % confidence level. A smaller alpha, such as 0.01, gives a 99 % confidence level. The confidence level is the complement of the tail probability that we are willing to accept when rejecting the null hypothesis"
+            ]
+          ]
+        },
+        {
+          "update": 9,
+          "generator": "llm",
+          "elements": [
+            [
+              "u9e0",
+              null,
+              "Test types and distributions. The test can involve normal, t, F, or chi\u2011square distributions, but we will focus on the normal distribution for now. We choose a two\u2011tail or single\u2011tail test depending on the alternative hypothesis"
+            ],
+            [
+              "u9e1",
+              null,
+              "Null hypothesis setup. Under a given null hypothesis you specify the parameter value and then formulate the alternative. The null hypothesis is denoted by \u03c6 and the alternative is often written as \u03c6\u2260\u03c6\u2080 for a two\u2011tail test or \u03c6>\u03c6\u2080 / \u03c6<\u03c6\u2080 for a single\u2011tail test"
+            ]
+          ]
+        },
+        {
+          "update": 10,
+          "generator": "llm",
+          "elements": [
+            [
+              "u10e0",
+              null,
+              "Sampling distribution. The sampling distribution of a test statistic is the distribution of that statistic over many repeated samples from the same population. For a normal test statistic, the sampling distribution is itself normal, with mean equal to the population parameter under the null hypothesis and standard deviation equal to the population standard deviation divided by the square root of the sample size"
+            ],
+            [
+              "u10e1",
+              null,
+              "Normal assumption. When the test statistic follows a normal distribution, we denote its mean by \u03bc and its standard deviation by \u03c3, and we use these to compute the z\u2011score for hypothesis testing"
+            ]
+          ]
+        },
+        {
+          "update": 11,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 12,
+          "generator": "llm",
+          "elements": [
+            [
+              "u12e0",
+              null,
+              "Z\u2011score construction. The Z\u2011score is the sample statistic minus the population mean, divided by the population standard deviation: (Z=(\bar X-mu)/sigma). Because the sampling distribution of (\bar X) has mean (mu), this standardises the statistic to a standard normal variable with mean zero and unit variance"
+            ],
+            [
+              "u12e1",
+              null,
+              "Rejection rule. If the computed Z lies outside this interval, the null hypothesis is rejected"
+            ]
+          ]
+        },
+        {
+          "update": 13,
+          "generator": "llm",
+          "elements": [
+            [
+              "u13e0",
+              null,
+              "Critical region. The 95% area of the standard normal distribution defines the critical region for a two\u2011sided test"
+            ]
+          ]
+        },
+        {
+          "update": 14,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 15,
+          "generator": "llm",
+          "elements": [
+            [
+              "u15e0",
+              null,
+              "Decision rule. The decision rule at a 0.05 significance level uses the critical values \u20131.96 and +1.96 \u2013 so that if the computed Z lies beyond these bounds, the null hypothesis is rejected"
+            ],
+            [
+              "u15e1",
+              null,
+              "Rejection region. The rejection region consists of the extreme right and left tails of the standard normal distribution; if the test statistic falls in either tail, the null hypothesis is rejected. The area in each tail corresponds to the chosen significance level, 2.5% for 0.05 and 0.5% for 0.01"
+            ]
+          ]
+        },
+        {
+          "update": 16,
+          "generator": "llm",
+          "elements": [
+            [
+              "u16e0",
+              null,
+              "Mean and Standard Deviation. The mean of the binomial distribution is \u03bc = Np, which for 64 trials and p = 0.5 equals 32"
+            ]
+          ]
+        },
+        {
+          "update": 17,
+          "generator": "llm",
+          "elements": [
+            [
+              "u17e0",
+              null,
+              "Z\u2011score calculation. Setting the critical Z value to 1.96 yields X\u221232=1.96\u00b74, so X\u224839.84"
+            ]
+          ]
+        },
+        {
+          "update": 18,
+          "generator": "llm",
+          "elements": [
+            [
+              "u18e0",
+              null,
+              "Critical value calculation. Subtracting this from the mean 32 yields 24.16, which is the lower critical value; adding gives 39.84, the upper critical value. The rejection region is defined by z values beyond \u00b11.96, so the null hypothesis is rejected if the observed X lies outside 24.16 to 39.84"
+            ]
+          ]
+        },
+        {
+          "update": 19,
+          "generator": "llm",
+          "elements": [
+            [
+              "u19e0",
+              null,
+              "Acceptance region. If the observed number of heads lies between 25 and 39, inclusive, the null hypothesis is not rejected and is accepted. The boundaries 24.16 and 39.84 are rounded to the nearest integers, giving 25 and 39 as the practical limits"
+            ]
+          ]
+        },
+        {
+          "update": 20,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 21,
+          "generator": "llm",
+          "elements": [
+            [
+              "u21e0",
+              null,
+              "Significance level and CI. Increasing the level of significance (decreasing alpha) widens the confidence interval, because the interval must account for a larger error margin"
+            ]
+          ]
+        },
+        {
+          "update": 22,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 23,
+          "generator": "llm",
+          "elements": [
+            [
+              "u23e0",
+              null,
+              "Company claim on mean. The company insists the mean netweight is four hundred and fifty four grams. The actual net weight varies from bag to bag, sometimes slightly above or below that value"
+            ]
+          ]
+        },
+        {
+          "update": 24,
+          "generator": "llm",
+          "elements": [
+            [
+              "u24e0",
+              null,
+              "Quality Assurance Testing. The quality assurance team periodically performs hypothesis tests to decide whether the packaging machine is working properly or not"
+            ]
+          ]
+        },
+        {
+          "update": 25,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 26,
+          "generator": "llm",
+          "elements": [
+            [
+              "u26e0",
+              null,
+              "Null hypothesis definition. The null hypothesis is the statement that the mean weight of the product is 4.54 grams, i.e., the packaging machine is operating correctly. The alternative hypothesis states that the mean weight is not equal to 4.54 grams, indicating a malfunction"
+            ]
+          ]
+        },
+        {
+          "update": 27,
+          "generator": "llm",
+          "elements": [
+            [
+              "u27e0",
+              null,
+              "Two\u2011tailed test. For a two\u2011tailed test the critical region is split into two parts, one in the lower tail and one in the upper tail"
+            ],
+            [
+              "u27e1",
+              null,
+              "Rejection rule. The rejection rule is: reject H0 when z < zc1 or z > zc2"
+            ]
+          ]
+        },
+        {
+          "update": 28,
+          "generator": "llm",
+          "elements": [
+            [
+              "u28e0",
+              null,
+              "Testing a 95% hypothesis. A random sample of 12 kids is taken and given walnuts"
+            ]
+          ]
+        },
+        {
+          "update": 29,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 30,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 31,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 32,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 33,
+          "generator": "llm",
+          "elements": [
+            [
+              "u33e0",
+              null,
+              "t\u2011test selection. When the population standard deviation is unknown and the sample size is small, the appropriate test is the t\u2011test"
+            ]
+          ]
+        },
+        {
+          "update": 34,
+          "generator": "llm",
+          "elements": [
+            [
+              "u34e0",
+              null,
+              "Sample standard deviation. The sample standard deviation is calculated by taking the square root of the sum of squared deviations from the mean, divided by the sample size minus one"
+            ]
+          ]
+        },
+        {
+          "update": 35,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 36,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 37,
+          "generator": "llm",
+          "elements": [
+            [
+              "u37e0",
+              null,
+              "Null hypothesis test. The null hypothesis sets \u03bc = 100. The sample mean is 106. The test statistic is (x\u0304\u2212\u03bc)/(\u03c3/\u221an) = (106\u2212100)/(9.1/\u221a12)"
+            ]
+          ]
+        },
+        {
+          "update": 38,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 39,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 40,
+          "generator": "llm",
+          "elements": [
+            [
+              "u40e0",
+              null,
+              "t\u2011critical value. The critical t value for a two\u2011tailed test at the 0.05 significance level with 11 degrees of freedom is 1.796. This value is found by looking up the t\u2011distribution table for the given degrees of freedom and alpha level"
+            ]
+          ]
+        },
+        {
+          "update": 41,
+          "generator": "llm",
+          "elements": []
+        },
+        {
+          "update": 42,
+          "generator": "llm",
+          "elements": [
+            [
+              "u42e0",
+              null,
+              "t\u2011critical value. The rejection region lies beyond this value. The computed t\u2011statistic from the sample, 2.28, exceeds the critical value, so the null hypothesis is rejected"
+            ]
+          ]
+        },
+        {
+          "update": 43,
+          "generator": "llm",
+          "elements": [
+            [
+              "u43e0",
+              null,
+              "Rejecting the null. The null hypothesis states that the population mean equals 100, meaning eating walnuts causes no difference in IQ. The alternative hypothesis is that the mean differs from 100, implying an effect of walnuts on IQ"
+            ]
+          ]
+        },
+        {
+          "update": 44,
+          "generator": "llm",
+          "elements": []
+        }
+      ]
+    }
+  },
+  "alerts_by_type": {
+    "LOW_ASR_SCORE": 62,
+    "SILENCE": 55
+  },
+  "counts": {
+    "transcriptions": 406,
+    "window_summaries": 135,
+    "final_notes": 57,
+    "alerts": 117,
+    "dlq": 0
+  }
+}

@@ -129,6 +129,21 @@ def test_a_short_topic_joins_its_neighbour_and_a_continuing_one_joins_the_last_f
     assert len(m.topics[0]["elements"]) == len(p["elements"]) + 1
 
 
+def test_continues_never_grows_a_topic_past_fifteen_minutes():
+    # Run 30 Oct: "continues" on every pass turned the whole Hypothesis lecture into one 61-minute topic.
+    last = {"n": 1, "title": "Hypothesis testing fundamentals", "start": 360.0, "end": 1080.0, "elements": [],
+            "question": None}
+    new = [{"title": "Z-score and two-sided rejection rule", "start": 1080.0, "end": 1440.0, "continues": True,
+            "elements": [el("Reject when z is beyond 1.96.", "beyond 1.96", 2)], "question": None}]
+    flags: list = []
+    kept, ext = C._merge(new, last, flags)
+    assert [t["title"] for t in kept] == ["Z-score and two-sided rejection rule"] and ext is None
+    assert flags == ["continues_refused:'Z-score and two-sided rejection rule' (18 min)"]
+    new[0]["end"] = 1200.0                                       # within 15 minutes: still joins topic 1
+    kept, ext = C._merge(new, last, [])
+    assert kept == [] and ext["end"] == 1200.0
+
+
 def test_nothing_surviving_falls_back_to_the_drafts_without_repeats():
     m = lecture(4)
     m.drafts.append(dict(m.drafts[0]))                           # a repeated draft

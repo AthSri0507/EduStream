@@ -1,0 +1,75 @@
+[
+  {
+    "video_id": "hypothesis_testing_0208",
+    "title": "Hypothesis Testing (8 Feb)",
+    "minutes": 67.3,
+    "notes": {
+      "topics": 1,
+      "elements": 34,
+      "words_per_minute": 8.4,
+      "worked_elements": 1,
+      "placeholder_titles": []
+    },
+    "generators": {
+      "live": {
+        "llm": 45
+      },
+      "passes": {
+        "fallback": 2,
+        "llm": 10
+      }
+    },
+    "lost": {
+      "sentences": 1,
+      "worked": 0,
+      "draft_sentences": 50,
+      "examples": [],
+      "other": [
+        {
+          "t": 660.0,
+          "worked": false,
+          "text": "The level of significance is defined as the maximum probability of making a type I error that the researcher is willing to accept."
+        }
+      ]
+    },
+    "glossary": {
+      "kept": 7,
+      "proposed": 39,
+      "terms": [
+        "alternative hypothesis",
+        "critical region",
+        "hypothesis",
+        "null hypothesis",
+        "rejection region",
+        "Type I error",
+        "Z‑score"
+      ],
+      "dropped_by": {
+        "term_dropped_unsaid": 17,
+        "term_dropped_no_definition": 23,
+        "term_dropped_symbol": 3
+      }
+    },
+    "checks": {
+      "term_dropped_no_definition": 44,
+      "term_dropped_unsaid": 24,
+      "sentence_unsupported": 18,
+      "paragraph_dropped": 12,
+      "quote_near_verbatim": 11,
+      "filler": 9,
+      "continues": 9,
+      "all_elements_dropped": 8,
+      "cascade": 6,
+      "number_unsaid": 6,
+      "term_dropped_symbol": 5,
+      "repeat": 4,
+      "not_grounded": 4,
+      "carried_from_live": 4,
+      "item_unsupported": 4,
+      "located_by_support": 2,
+      "nothing_survived": 2,
+      "example_empty": 2,
+      "short_topic_merged": 1
+    }
+  }
+]
