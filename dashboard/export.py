@@ -25,7 +25,7 @@ from pathlib import Path
 from agents.figures import NAME, mermaid
 from agents.text import mmss
 from dashboard import figure_draw
-from dashboard.notebook_html import FALLBACK_NOTE
+from dashboard.notebook_html import CONTROL, FALLBACK_NOTE
 
 Run = tuple[str, str]           # (text, style): "" plain, "b" bold, "i" italic, "t" time (small, muted)
 
@@ -171,7 +171,20 @@ def _md_addition(a: dict) -> list[str]:
     return lines + ["", f"*{_md(addition_foot(a))}*"]
 
 
+def clean(value):
+    """Control characters out of every text (live run 31 Oct: a model's "\bar" became backspace + "ar", and Word
+    refuses control characters, so Export -> Word crashed)."""
+    if isinstance(value, str):
+        return CONTROL.sub("", value)
+    if isinstance(value, list):
+        return [clean(v) for v in value]
+    if isinstance(value, dict):
+        return {k: clean(v) for k, v in value.items()}
+    return value
+
+
 def to_markdown(nb: dict, title: str, include_additions: bool = True) -> str:
+    nb, title = clean(nb), clean(title)
     lines = [f"# {_md(title)}", "", f"*{status_line(nb)}*", "", SOURCE_NOTE, ""]
     if nb["topics"]:
         lines += ["## Contents", ""] + [f"{t['n']}. {_md(t['title'])} ({mmss(t['start'])}–{mmss(t['end'])})"
@@ -214,6 +227,7 @@ def _md_tail(nb: dict) -> list[str]:
 
 # ----------------------------------------------------------------------------------------------- Word
 def to_docx(nb: dict, title: str, include_additions: bool = True) -> bytes:
+    nb, title = clean(nb), clean(title)
     from docx import Document
     from docx.shared import Inches, Pt, RGBColor
 
@@ -373,6 +387,7 @@ def _font_dir() -> Path:
 
 
 def to_pdf(nb: dict, title: str, include_additions: bool = True) -> bytes:
+    nb, title = clean(nb), clean(title)
     from fpdf import FPDF
     from fpdf.enums import XPos, YPos
 

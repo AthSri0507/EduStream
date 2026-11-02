@@ -168,7 +168,7 @@ def test_notebook_tables_hold_what_was_sent(conn):
     assert conn.execute("SELECT COUNT(*) FROM notebook_fts WHERE notebook_fts MATCH 'recipe'").fetchone()[0] >= 1
 
 
-def test_a_continued_topic_grows_and_a_later_definition_replaces_the_glossary_entry(conn):
+def test_a_continued_topic_grows_and_the_first_general_definition_stays(conn):
     base = fixture("consolidation/valid-llm.json")
     first = {**base, "pass_index": 0, "media_start": 0.0, "media_end": 520.0, "final": False,
              "topics": [{**base["topics"][0], "new": True, "media_start": 0.0}],
@@ -182,7 +182,21 @@ def test_a_continued_topic_grows_and_a_later_definition_replaces_the_glossary_en
     assert conn.execute("SELECT topic_n, media_start, media_end, question FROM topics ORDER BY 1").fetchall() == [
         (2, 0.0, 640.0, "What is imperative knowledge?"), (3, 520.0, 750.0, base["topics"][1]["question"]["q"])]
     assert conn.execute("SELECT definition, pass_index FROM glossary").fetchall() == [
-        ("Imperative knowledge is a how-to.", 1)]
+        (base["glossary"][0]["definition"], 0)]                  # the first general definition stays (31 Oct)
+
+
+def test_an_example_bound_definition_never_replaces_a_general_one_but_is_replaced_by_one(conn):
+    # Live run 31 Oct: the packaging example's "equals 4.54 g" had replaced the general null hypothesis definition.
+    base = fixture("consolidation/valid-llm.json")
+    term = base["glossary"][0]["term"]
+
+    def with_definition(i, definition):
+        return {**base, "pass_index": i, "glossary": [{**base["glossary"][0], "definition": definition, "t": 100.0 * i}]}
+    apply_batch(conn, [rec(TOPIC_NOTES, with_definition(0, "The null hypothesis says the mean equals 4.54 g."), 0),
+                       rec(TOPIC_NOTES, with_definition(1, "The null hypothesis is the default claim of no effect."), 1),
+                       rec(TOPIC_NOTES, with_definition(2, "The null hypothesis here says 454 grams."), 2)],
+                now=1, window_ms=WINDOW_MS)
+    assert conn.execute("SELECT definition FROM glossary WHERE term = ?", (term,)).fetchone()[0] ==         "The null hypothesis is the default claim of no effect."
 
 
 def test_a_notebook_record_that_breaks_its_contract_goes_to_the_sink_dlq(conn):

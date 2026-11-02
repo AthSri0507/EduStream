@@ -99,6 +99,11 @@ def live_phase(now_ms: int | None = None) -> str:
     return now
 
 
+def sound_level(dbfs_value: float) -> float:
+    """0..1 for the sound bar: -60 dBFS (silence) to -10 dBFS (loud speech)."""
+    return min(1.0, max(0.0, (dbfs_value + 60) / 50))
+
+
 @st.fragment(run_every="2s")
 def recorder_bar() -> None:
     """Above the live notes: Stop class while this laptop records (sound warnings are in the status row, once).
@@ -119,6 +124,9 @@ def recorder_bar() -> None:
             minutes = (state.get("last_chunk_sent", -1) + 1) * 10 / 60
             st.markdown(f"**Recording** {state.get('title', state['video_id'])}  \n"
                         f":gray[{minutes:.1f} min so far]")
+            level = state.get("level_dbfs")
+            if level is not None:                         # moves every 10 s: the page is alive before the first notes
+                st.progress(sound_level(level), text="Sound level", width=220)
             with st.container(key="act_stop", width="content"):
                 st.button("Stop class", type="primary", icon=":material/stop_circle:", on_click=stop,
                           args=(state["video_id"],), key="live_stop")

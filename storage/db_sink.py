@@ -28,6 +28,7 @@ from kafka.structs import OffsetAndMetadata
 
 from common import schemas
 from agents.study_notes import text_of
+from agents.text import numbers_in
 from common.config import (TOPIC_ALERTS, TOPIC_DLQ, TOPIC_NOTES, TOPIC_TRANSCRIPTS, TOPIC_USER_NOTES, TOPIC_WINDOWS,
                            load)
 from common.kafka_utils import EXIT_PRODUCE_FAILED, make_consumer, raw_preview
@@ -126,10 +127,16 @@ def _apply_pass(conn: sqlite3.Connection, p: dict, now: int) -> str:
         conn.execute("INSERT INTO notebook_fts VALUES (?,?,?,?,?)",
                      (vid, f"p{p['pass_index']}e{seq}", el["t"], el["kind"], text))
     for g in p["glossary"]:
-        conn.execute("INSERT INTO glossary VALUES (?,?,?,?,?,?) ON CONFLICT(video_id, term) DO UPDATE SET"
-                     " definition = excluded.definition, t = excluded.t, topic_n = excluded.topic_n,"
-                     " pass_index = excluded.pass_index",
-                     (vid, g["term"], g["definition"], g["t"], g["topic"], p["pass_index"]))
+        # The first general definition stays: a later one replaces it only when the stored one is bound to an example
+        # and the new one is not. Live run 31 Oct: "The null hypothesis states that the mean net weight equals 4.54 g"
+        # (the packaging example, 39:50) had replaced the definition from 07:30.
+        old = conn.execute("SELECT definition FROM glossary WHERE video_id = ? AND term = ?",
+                           (vid, g["term"])).fetchone()
+        if old is None or (example_bound(old[0]) and not example_bound(g["definition"])):
+            conn.execute("INSERT INTO glossary VALUES (?,?,?,?,?,?) ON CONFLICT(video_id, term) DO UPDATE SET"
+                         " definition = excluded.definition, t = excluded.t, topic_n = excluded.topic_n,"
+                         " pass_index = excluded.pass_index",
+                         (vid, g["term"], g["definition"], g["t"], g["topic"], p["pass_index"]))
     conn.execute("DELETE FROM notebook_fts WHERE video_id = ? AND kind = 'draft' AND ref IN"
                  " (SELECT draft_id FROM drafts WHERE video_id = ? AND root_t < ?)", (vid, vid, p["media_end"]))
     return "stored"
@@ -257,6 +264,12 @@ def apply_record(conn: sqlite3.Connection, topic: str, value: bytes | None, part
         (p["stage"], p["source_topic"], p["src_partition"], p["src_offset"], p.get("key"), p["error"],
          p.get("raw_value", ""), p["failed_ts"], now))
     return "stored" if cur.rowcount == 1 else "duplicate"
+
+
+def example_bound(definition: str) -> bool:
+    """A glossary definition that carries an example's data ("equals 4.54 g", "12 children") rather than the general
+    meaning: it holds a data number (agents.text.numbers_in: decimals and integers above 10)."""
+    return bool(numbers_in(definition or ""))
 
 
 def apply_batch(conn: sqlite3.Connection, records, now: int, window_ms: int) -> dict:

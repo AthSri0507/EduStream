@@ -1,0 +1,76 @@
+[
+  {
+    "video_id": "hypothesis_testing_0208",
+    "title": "Hypothesis Testing (8 Feb)",
+    "minutes": 67.3,
+    "notes": {
+      "topics": 7,
+      "elements": 35,
+      "words_per_minute": 7.9,
+      "worked_elements": 4,
+      "placeholder_titles": []
+    },
+    "generators": {
+      "live": {
+        "llm": 45
+      },
+      "passes": {
+        "fallback": 2,
+        "llm": 9
+      }
+    },
+    "lost": {
+      "sentences": 1,
+      "worked": 0,
+      "draft_sentences": 47,
+      "examples": [],
+      "other": [
+        {
+          "t": 3670.0,
+          "worked": false,
+          "text": "This value is obtained from the t‑distribution table and is used to decide whether to accept or reject the null hypothesis."
+        }
+      ]
+    },
+    "glossary": {
+      "kept": 7,
+      "proposed": 40,
+      "terms": [
+        "alternative hypothesis",
+        "critical region",
+        "hypothesis",
+        "level of significance",
+        "null hypothesis",
+        "sampling distribution",
+        "type I error"
+      ],
+      "dropped_by": {
+        "term_dropped_unsaid": 15,
+        "term_dropped_no_definition": 29,
+        "term_dropped_symbol": 1
+      }
+    },
+    "checks": {
+      "term_dropped_no_definition": 45,
+      "sentence_unsupported": 34,
+      "term_dropped_unsaid": 21,
+      "paragraph_dropped": 15,
+      "number_unsaid": 10,
+      "all_elements_dropped": 8,
+      "filler": 8,
+      "item_unsupported": 8,
+      "quote_near_verbatim": 6,
+      "repeat": 4,
+      "located_by_support": 4,
+      "cascade": 4,
+      "continues": 4,
+      "term_dropped_symbol": 3,
+      "carried_from_live": 3,
+      "question_unsupported": 3,
+      "nothing_survived": 2,
+      "not_grounded": 2,
+      "continues_refused": 1,
+      "example_empty": 1
+    }
+  }
+]

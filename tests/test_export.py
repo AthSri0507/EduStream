@@ -115,3 +115,16 @@ def test_formats_table_drives_the_download_buttons():
         data = build(notebook(), "t")
         assert isinstance(data, bytes) and data and ext in ("md", "docx", "pdf")
     assert export.file_stem("Python · Lecture 1 (Bell)") == "Python_Lecture_1_Bell"
+
+
+def test_control_characters_never_break_an_export():
+    # Live run 31 Oct: "\bar X" in a model's JSON became backspace + "ar X"; Word refused it and Export -> Word crashed.
+    nb = {"topics": [{"n": 1, "title": "Z", "start": 0.0, "end": 60.0, "question": None, "answer": None,
+                      "generator": "llm", "elements": [{"kind": "para", "t": 1.0, "said": "", "lead": "Z score",
+                                                        "sentences": ["Z=(ar X-mu)/sigma."], "terms": []}]}],
+          "drafts": [], "glossary": [], "info": [], "finished": True, "said_until": 60.0, "reach": 60.0,
+          "since": 60.0, "status": "", "beyond": [], "live_additions": [], "latest_k": None, "now_text": ""}
+    for fmt, (_, _, build) in export.FORMATS.items():
+        out = build(nb, "T", True)                         # Word and PDF used to raise here
+        assert out, fmt
+    assert "" not in export.to_markdown(nb, "T") and "Z=(ar X-mu)/sigma." in export.to_markdown(nb, "T")

@@ -75,6 +75,23 @@ function setup(component) {
   }
   theme()
   if (!window.__eduThemeTimer) window.__eduThemeTimer = setInterval(theme, 400)
+  // While you were away: leaving = tab hidden or window unfocused; coming back sends both times in one event, so a
+  // lost "hidden" event does no harm. Listeners once; the latest setTriggerValue is used.
+  window.__eduSend = component.setTriggerValue
+  if (!window.__eduAway) {
+    window.__eduAway = true
+    let left = null
+    const leave = () => { if (left === null) left = Date.now() }
+    const back = () => {
+      if (left === null || !window.__eduSend) return
+      const was = left
+      left = null
+      window.__eduSend("back", {left_ms: was, back_ms: Date.now()})
+    }
+    document.addEventListener("visibilitychange", () => (document.visibilityState === "hidden" ? leave() : back()))
+    window.addEventListener("blur", leave)
+    window.addEventListener("focus", back)
+  }
 }
 """
 
@@ -86,17 +103,24 @@ def _declare():
 _TITLE = _declare()
 
 
+def _record_back() -> None:
+    """The browser reported the student back on this tab: kept for the In class notes (notebook_page.away_strip)."""
+    value = (st.session_state.get("tab_title") or {}).get("back")
+    if value:
+        st.session_state["away"] = value
+
+
 def set_tab_title(title: str) -> None:
     """Mount the title component. Declared once at import; a new Streamlit runtime in the same process (the test
     runner starts one per test) has an empty registry, so it is declared again there."""
     global _TITLE
     try:
-        _TITLE(key="tab_title", data={"title": title})
+        _TITLE(key="tab_title", data={"title": title}, on_back_change=_record_back)
     except Exception as exc:  # noqa: BLE001 - StreamlitAPIException: "Component ... is not registered."
         if "not registered" not in str(exc):
             raise
         _TITLE = _declare()
-        _TITLE(key="tab_title", data={"title": title})
+        _TITLE(key="tab_title", data={"title": title}, on_back_change=_record_back)
 
 
 def device_label(name: str) -> str:

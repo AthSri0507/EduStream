@@ -9,6 +9,7 @@ refresh in their own 2 s fragment and the assistant in its own 1 s fragment (the
 from __future__ import annotations
 
 import sqlite3
+import time
 
 import pandas as pd
 import streamlit as st
@@ -26,7 +27,7 @@ NOTES_ONLY_PX = 880                    # about 72 characters of 18 px Literata p
 
 
 @st.fragment(run_every="2s")
-def notebook_view(video_id: str, toc: bool = False) -> None:
+def notebook_view(video_id: str, toc: bool = False, board: bool = False) -> None:
     """Contents and glossary (when switched on), finished topics (collapsed except the latest while live) and the one
     live notes card. Only lecture content: pipeline numbers are on the System page."""
     try:
@@ -47,21 +48,81 @@ def notebook_view(video_id: str, toc: bool = False) -> None:
         st.caption("Notes from a run before the notebook (M6a):")
         for _, n in legacy.head(MAX_NOTES_SHOWN).iterrows():
             st.markdown(f"**{mmss(n['media_start'])}** {n['summary']}")
-    if not nb["topics"] and not nb["drafts"] and not nb["finished"]:
+    gloss = nbh.glossary_pairs(nb)
+    live = not nb["finished"] and (nb["drafts"] or nb["reach"])
+    if not nb["topics"] and not live and not nb["finished"]:      # the live card says this itself once it exists
         st.html(nbh.wrap('<p class="pending">The first notes appear about 2 minutes after the class starts.</p>',
                          theme))
-    for topic in nb["topics"]:
-        latest = topic is nb["topics"][-1]
-        with st.expander(nbh.topic_label(topic), expanded=nb["finished"] or latest, key=f"topic_{video_id}_{topic['n']}"):
-            st.html(nbh.wrap(nbh.topic_html(topic, theme), theme))
-            addition_buttons(video_id, topic.get("additions") or [])
-    if not nb["finished"] and (nb["drafts"] or nb["reach"]):             # the one live card, never twice
-        st.html(nbh.wrap(nbh.live_html(nb, theme), theme))
-        addition_buttons(video_id, nb["live_additions"])
+    if board:                                             # In class: the newest first (docs/UI_DESIGN.md §4)
+        # Fixed slots, always created in this order (some stay empty), so nothing shifts position between refreshes
+        # (owner saw the latest topic and Earlier notes twice on 31 Oct; not reproduced, this rules the shift out).
+        away_slot, live_slot, latest_slot, earlier_slot = (st.container() for _ in range(4))
+        with away_slot:
+            away_strip(nb, theme)
+        if live:                                          # the one live card, never twice
+            with live_slot:
+                st.html(nbh.wrap(nbh.live_html(nb, theme, board=True), theme))
+                addition_buttons(video_id, nb["live_additions"])
+        if nb["topics"]:
+            latest = nb["topics"][-1]
+            with latest_slot, st.expander(nbh.topic_label(latest), expanded=True,
+                                          key=f"topic_{video_id}_{latest['n']}"):
+                st.html(nbh.wrap(nbh.topic_html(latest, theme, gloss), theme))
+                addition_buttons(video_id, latest.get("additions") or [])
+        if len(nb["topics"]) > 1:
+            older = nb["topics"][:-1]
+            with earlier_slot, st.expander(f"Earlier notes ({len(older)} topics)", key=f"earlier_{video_id}"):
+                st.html(nbh.wrap(nbh.earlier_html(older, gloss), theme))
+    else:                                                 # Revise: in order, like a book
+        for topic in nb["topics"]:
+            latest = topic is nb["topics"][-1]
+            with st.expander(nbh.topic_label(topic), expanded=nb["finished"] or latest,
+                             key=f"topic_{video_id}_{topic['n']}"):
+                st.html(nbh.wrap(nbh.topic_html(topic, theme, gloss), theme))
+                addition_buttons(video_id, topic.get("additions") or [])
+        if live:                                          # the one live card, never twice
+            st.html(nbh.wrap(nbh.live_html(nb, theme), theme))
+            addition_buttons(video_id, nb["live_additions"])
+        if nb["glossary"]:
+            with st.expander(f"Glossary ({len(nb['glossary'])} terms)", key=f"glossary_{video_id}"):
+                st.html(nbh.wrap(nbh.glossary_end_html(nb), theme))
     if nb["beyond"]:
-        with st.expander(f"Beyond the lecture: {len(nb['beyond'])} of your additions", expanded=True, key=f"beyond_{video_id}"):
+        with st.expander(f"Beyond the lecture: {len(nb['beyond'])} of your additions", expanded=True,
+                         key=f"beyond_{video_id}"):
             st.html(nbh.wrap(nbh.beyond_html(nb, theme), theme))
             addition_buttons(video_id, nb["beyond"])
+
+
+AWAY_MIN_S = 20                        # shorter than this is a glance, not "away"
+
+
+def away_span(away: dict | None, said_until: float, now_ms: int) -> tuple[float, float] | None:
+    """Lecture time the student missed: from leaving the tab to coming back (status.py reports both in wall-clock ms;
+    the lecture runs in real time, so the gap maps onto lecture time ending where the class is now)."""
+    if not away or away.get("back_ms") is None or away.get("left_ms") is None:
+        return None
+    gone_s = (away["back_ms"] - away["left_ms"]) / 1000
+    if gone_s < AWAY_MIN_S:
+        return None
+    end = said_until - max(0.0, (now_ms - away["back_ms"]) / 1000)
+    return max(0.0, end - gone_s), max(0.0, end)
+
+
+def dismiss_away() -> None:
+    st.session_state.pop("away", None)
+
+
+def away_strip(nb: dict, theme: str) -> None:
+    """While you were away (stage 4): only after the browser reported this tab hidden or unfocused and back again
+    (status.py); otherwise nothing. The highlighter keeps its one meaning: new since the last update."""
+    span = away_span(st.session_state.get("away"), nb["said_until"], int(time.time() * 1000))
+    if span is None:
+        return
+    start, end = span
+    elements = [el for t in nb["topics"] for el in t["elements"] if start <= el["t"] <= end]
+    elements += [d for d in nb["drafts"] if start <= d["t"] <= end]
+    st.html(nbh.wrap(nbh.away_html(sorted(elements, key=lambda x: x["t"]), start, end), theme))
+    st.button("Got it", key="away_ok", icon=":material/check:", on_click=dismiss_away)
 
 
 def addition_buttons(video_id: str, items: list[dict]) -> None:
@@ -149,21 +210,21 @@ def toolbar(titles: dict | None = None, fixed: tuple[str, str] | None = None) ->
     return video_id, title, layout or LAYOUTS[1], toc
 
 
-def layout_notes(video_id: str, layout: str, toc: bool) -> None:
+def layout_notes(video_id: str, layout: str, toc: bool, board: bool = False) -> None:
     if layout == "Notes only":                            # a reading column, centred: no 1,300 px lines
         with st.container(horizontal=True, horizontal_alignment="center"):
             with st.container(key="notes_card", border=True, width=NOTES_ONLY_PX):
-                notebook_view(video_id, toc)
+                notebook_view(video_id, toc, board)
     elif layout == "Assistant wide":
         notes, side = st.columns([2, 3], gap="medium")
         with notes, st.container(key="notes_card", border=True):
-            notebook_view(video_id, toc)
+            notebook_view(video_id, toc, board)
         with side:
             assistant_panel.panel(video_id)
     else:
         with st.container(horizontal=True, gap="medium"):
             with st.container(key="notes_card", border=True, width="stretch"):
-                notebook_view(video_id, toc)
+                notebook_view(video_id, toc, board)
             with st.container(width=ASSISTANT_PX):
                 assistant_panel.panel(video_id)
 
@@ -171,7 +232,7 @@ def layout_notes(video_id: str, layout: str, toc: bool) -> None:
 def notes_and_assistant(video_id: str, title: str) -> None:
     """In class: the running lecture, no picker."""
     _, _, layout, toc = toolbar(fixed=(video_id, title))
-    layout_notes(video_id, layout, toc)
+    layout_notes(video_id, layout, toc, board=True)
 
 
 def empty_state() -> None:

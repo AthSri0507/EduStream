@@ -32,9 +32,13 @@ def keep_together(text: str) -> str:
     return text
 
 
+CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")   # e.g. "\bar" in a model's JSON became backspace + "ar"
+
+
 def e(text) -> str:
-    """Escape model-written text for HTML, keeping numbers with their units."""
-    return html.escape(keep_together(str(text)))
+    """Escape model-written text for HTML, keeping numbers with their units; control characters (drawn as boxes)
+    are dropped."""
+    return html.escape(keep_together(CONTROL.sub("", str(text))))
 
 # Tokens: docs/UI_DESIGN.md §2 (Warm paper / Midnight ink). The values come from dashboard/theme.py (--es-*) for the
 # active theme; the fallbacks are Warm paper, for HTML shown without the dashboard (bench/replay_notebook.py).
@@ -95,6 +99,20 @@ padding:14px 18px;margin:14px 0}
 .nb .addh{font:600 15px/1.4 var(--ui);color:var(--muted);margin-bottom:6px}
 .nb .addn img{max-width:100%;height:auto;border-radius:6px}
 .nb .addq{color:var(--muted);font-size:15px;margin-top:4px}
+.nb .gt{border-bottom:2px dotted var(--accent);cursor:help;position:relative;outline:none}
+.nb .gt .gd{display:none;position:absolute;left:0;top:1.55em;z-index:20;width:min(380px,70vw);
+background:var(--es-card,#FFFEFB);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:6px;
+padding:8px 12px;font:400 15px/1.5 var(--ui);color:var(--text);white-space:normal}
+.nb .gt .gd b{font:600 15px/1.5 var(--said)}
+.nb .gt:hover .gd,.nb .gt:focus .gd{display:block}
+.nb .gt:focus{background:var(--tint);border-radius:3px}
+.nb .live.board{font-size:21px;line-height:1.6}.nb .live.board .el{margin-bottom:18px}
+.nb .away{background:var(--tint);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;padding:12px 18px;
+margin:0 0 14px}
+.nb .away h4{font:600 16px/1.4 var(--ui);margin:0 0 8px}.nb .away .more{color:var(--muted);font:15px/1.5 var(--ui)}
+.nb .earlier h3{font:600 19px/1.4 var(--said);margin:18px 0 8px}
+.nb .earlier h3 span{font:400 14px var(--ui);color:var(--muted)}
+.nb .gl dt{font:600 17px/1.4 var(--said);margin-top:10px}.nb .gl dd{margin:2px 0 0;font:17px/1.6 var(--said)}
 @media (max-width:900px){.nb .el{grid-template-columns:minmax(0,1fr);gap:2px}.nb .ts{justify-self:start;order:-1}
 .nb .toc{grid-template-columns:minmax(0,1fr)}}
 """
@@ -104,9 +122,63 @@ def wrap(body: str, theme: str) -> str:
     return f'<style>{CSS}</style><div class="nb" data-theme="{"dark" if theme == "dark" else "light"}">{body}</div>'
 
 
-def _sentences(el: dict, fresh: int | None) -> str:
-    """Sentences with the first occurrence of each glossary term bold; this update's new sentences highlighted."""
+def _keep_case(word: str) -> bool:
+    """Acronyms (IQ, ANOVA), Roman numerals (II), single-letter prefixes (Z-score), digits, camelCase and symbols
+    (H₀, σ) keep their case in sentence_case; hyphens, including the non-breaking one, are not symbols."""
+    core = word.strip("()[],:;.!?\"'“”").replace("‑", "-")
+    return (not core or bool(re.fullmatch(r"[IVX]+|[A-Z](-\w+)?|[A-Z]{2,}s?", core))
+            or bool(re.search(r"\d|[a-z][A-Z]|[^\x00-\x7f]", core)))
+
+
+def sentence_case(title: str) -> str:
+    """Model titles often come in Title Case ("Hypothesis Statements and Decision Rule"); the UI uses sentence case.
+    Only a title where most longer words are capitalised is changed; acronyms (IQ), Roman numerals (Type II), single
+    letters (Z-score), words with digits or symbols (H\u2080) keep their case. Proper names are lowercased too: the
+    price of a heuristic."""
+    words = title.split(" ")
+    longer = [w for w in words if len(w) > 3 and w[:1].isalpha()]
+    if not longer or sum(w[:1].isupper() for w in longer) < 0.6 * len(longer):
+        return title
+    return " ".join([words[0]] + [w if _keep_case(w) else w.lower() for w in words[1:]])
+
+
+def _link_terms(h: str, gloss: list | None, seen: set | None) -> str:
+    """The first mention of each glossary term in a topic opens its definition on hover or tap (focus): HTML and CSS
+    only. Only text outside tags is searched; a term already shown in this topic, or defined in this very element, is
+    skipped."""
+    if not gloss or seen is None:
+        return h
+    for term, definition in sorted(gloss, key=lambda g: -len(g[0])):     # "null hypothesis" before "hypothesis"
+        if term.lower() in seen:
+            continue
+        pat = re.compile(r"(?<![\w\u2011-])(" + re.escape(e(term)) + r")(?![\w\u2011-])", re.I)
+        parts, inside = re.split(r"(<[^>]+>)", h), 0
+        for i, part in enumerate(parts):
+            if part.startswith("<"):                      # never match inside a term already linked (or its box)
+                if inside or part.startswith('<span class="gt"'):
+                    inside += -1 if part.startswith("</span") else (1 if part.startswith("<span") else 0)
+                continue
+            m = None if inside else pat.search(part)
+            if m:
+                tip = (f'<span class="gt" tabindex="0">{m.group(1)}<span class="gd" role="tooltip">'
+                       f'<b>{e(term)}</b>: {e(definition)}</span></span>')
+                parts[i] = part[:m.start()] + tip + part[m.end():]
+                seen.add(term.lower())
+                h = "".join(parts)
+                break
+    return h
+
+
+def glossary_pairs(nb: dict) -> list[tuple[str, str]]:
+    return [(g["term"], g["definition"]) for g in nb.get("glossary") or []]
+
+
+def _sentences(el: dict, fresh: int | None, gloss=None, seen=None) -> str:
+    """Sentences with the first occurrence of each glossary term bold; this update's new sentences highlighted;
+    other glossary terms open their definition (first mention per topic)."""
     pending = [t["term"] for t in el.get("terms", [])]
+    if seen is not None:
+        seen.update(t.lower() for t in pending)           # defined right here: no pop-up needed
     ks = el.get("sentence_k") or []
     out = []
     for i, s in enumerate(el.get("sentences", [])):
@@ -116,20 +188,21 @@ def _sentences(el: dict, fresh: int | None) -> str:
             if m:
                 h = h[:m.start()] + f"<strong>{m.group(0)}</strong>" + h[m.end():]
                 pending.remove(term)
+        h = _link_terms(h, gloss, seen)
         out.append(f'<mark class="fresh">{h}</mark>' if fresh is not None and i < len(ks) and ks[i] == fresh else h)
     return " ".join(out)
 
 
-def element_html(el: dict, fresh: int | None = None) -> str:
+def element_html(el: dict, fresh: int | None = None, gloss=None, seen=None) -> str:
     k = el["kind"]
     if k == "para":
         lead = f'<span class="lead">{e(el["lead"])}.</span> ' if el.get("lead") else ""
-        body = f"<p>{lead}{_sentences(el, fresh)}</p>"
+        body = f"<p>{lead}{_sentences(el, fresh, gloss, seen)}</p>"
         if el.get("background"):
             body += f'<div class="bg">Background (not from the lecture): {e(el["background"])}</div>'
     elif k == "example":
         body = (f'<div class="example"><div class="exh">Example{": " + e(el["title"]) if el.get("title") else ""}</div>'
-                + (f"<p>{_sentences(el, fresh)}</p>" if el.get("sentences") else "")
+                + (f"<p>{_sentences(el, fresh, gloss, seen)}</p>" if el.get("sentences") else "")
                 + ("<ol>" + "".join(f"<li>{e(x)}</li>" for x in el["steps"]) + "</ol>" if el.get("steps") else "")
                 + (f"<pre>{e(el['code'])}</pre>" if el.get("code") else "") + "</div>")
     elif k == "steps":
@@ -167,11 +240,12 @@ def addition_html(addition: dict, theme: str = "light") -> str:
             f'{": " + e(figure["title"]) if figure.get("title") else ""}</div>{inner}{asked}</div>')
 
 
-def topic_html(topic: dict, theme: str = "light") -> str:
+def topic_html(topic: dict, theme: str = "light", gloss=None) -> str:
     placed = topic.get("additions") or []
+    seen: set = set()
     body = ""
     for i, x in enumerate(topic["elements"]):
-        body += element_html(x) + "".join(addition_html(a, theme) for a in placed if a["after"] == i)
+        body += element_html(x, None, gloss, seen) + "".join(addition_html(a, theme) for a in placed if a["after"] == i)
     body += "".join(addition_html(a, theme) for a in placed if a["after"] is None
                     or not 0 <= a["after"] < len(topic["elements"]))
     if topic.get("generator") == "fallback":
@@ -184,7 +258,7 @@ def topic_html(topic: dict, theme: str = "light") -> str:
 
 def topic_label(topic: dict) -> str:
     """Expander label (Streamlit markdown): plain title and range."""
-    title = re.sub(r"([\\`*_{}\[\]<>#|~$])", r"\\\1", topic["title"])
+    title = re.sub(r"([\\`*_{}\[\]<>#|~$])", r"\\\1", sentence_case(topic["title"]))
     return f"{topic['n']}. {title}  ({mmss(topic['start'])}–{mmss(topic['end'])})"
 
 
@@ -193,12 +267,14 @@ def beyond_html(nb: dict, theme: str = "light") -> str:
     return '<div class="doc">' + "".join(addition_html(a, theme) for a in nb.get("beyond") or []) + "</div>"
 
 
-def live_html(nb: dict, theme: str = "light") -> str:
-    drafts = "".join(element_html(d, nb["latest_k"]) for d in nb["drafts"]) \
+def live_html(nb: dict, theme: str = "light", board: bool = False) -> str:
+    """The one live notes card. board=True: In class, where it comes first and its lines are larger (up to 22 px)."""
+    gloss, seen = glossary_pairs(nb), set()
+    drafts = "".join(element_html(d, nb["latest_k"], gloss, seen) for d in nb["drafts"]) \
         or '<p class="pending">The next notes will appear here.</p>'
     drafts += "".join(addition_html(a, theme) for a in nb.get("live_additions") or [])
     now = f'<div class="now"><b>Just said:</b> “…{e(nb["now_text"][-260:])}”</div>' if nb.get("now_text") else ""
-    return (f'<div class="live"><div class="lh">Draft notes since {mmss(nb["since"])} <span>About 1–2 minutes '
+    return (f'<div class="live{" board" if board else ""}"><div class="lh">Draft notes since {mmss(nb["since"])} <span>About 1–2 minutes '
             f'behind the class; they become a topic every few minutes.</span></div><div class="doc">{drafts}</div>'
             f'<div class="status">{e(nb["status"])}</div>{now}</div>')
 
@@ -221,7 +297,7 @@ def head_html(nb: dict) -> str:
 
 
 def rail_html(nb: dict) -> str:
-    items = [f'<li>{e(t["title"])}</li>' for t in nb["topics"]]
+    items = [f'<li>{e(sentence_case(t["title"]))}</li>' for t in nb["topics"]]
     if not nb["finished"] and (nb["drafts"] or nb["reach"]):
         items.append(f'<li>Draft since {mmss(nb["since"])} <span class="rl">(being written)</span></li>')
     out = ["<h4>Contents</h4>", "<ol>" + "".join(items) + "</ol>" if items else '<p class="pending">No topics yet.</p>']
@@ -238,7 +314,7 @@ def rail_html(nb: dict) -> str:
 def toc_html(nb: dict) -> str:
     """Contents and glossary as one compact block above the notes (docs/UI_DESIGN.md §5): the topics on the left, the
     terms on the right as tap-to-open entries (the open one on the accent tint). Native <details>: no JavaScript."""
-    items = [f'<li>{e(t["title"])}</li>' for t in nb["topics"]]
+    items = [f'<li>{e(sentence_case(t["title"]))}</li>' for t in nb["topics"]]
     if not nb["finished"] and (nb["drafts"] or nb["reach"]):
         items.append(f'<li>Draft since {mmss(nb["since"])} <span class="rl">(being written)</span></li>')
     contents = "<ol>" + "".join(items) + "</ol>" if items else '<p class="pending">No topics yet.</p>'
@@ -248,3 +324,27 @@ def toc_html(nb: dict) -> str:
             + "</ul></div>") if nb["info"] else ""
     return (f'<div class="toc"><div><h4>Contents</h4>{contents}{info}</div>'
             f'<div class="terms"><h4>Glossary ({len(nb["glossary"])})</h4>{terms}</div></div>')
+
+
+def glossary_end_html(nb: dict) -> str:
+    """The glossary as a section at the end of the notes, for reading straight through (Revise)."""
+    return ('<div class="doc gl"><dl>' + "".join(f'<dt>{e(g["term"])}</dt><dd>{e(g["definition"])}</dd>'
+                                              for g in nb["glossary"]) + "</dl></div>")
+
+
+def earlier_html(topics: list[dict], gloss=None) -> str:
+    """In class: every finished topic except the latest, in order, at reading size (one fold, no page switch)."""
+    return '<div class="earlier">' + "".join(
+        f'<h3>{t["n"]}. {e(sentence_case(t["title"]))} <span>{mmss(t["start"])}\u2013{mmss(t["end"])}</span></h3>'
+        + topic_html(t, gloss=gloss) for t in topics) + "</div>"
+
+
+def away_html(elements: list[dict], start: float, end: float, limit: int = 6) -> str:
+    """While you were away: what the notes gained between leaving the tab and coming back (lecture time)."""
+    shown = elements[:limit]
+    more = len(elements) - len(shown)
+    body = "".join(element_html(x) for x in shown) or ('<p class="pending">The notes for this part are still being written; they appear here within a minute or '
+                   'two.</p>')
+    tail = f'<p class="more">And {more} more in the notes below.</p>' if more > 0 else ""
+    return (f'<div class="away"><h4>While you were away ({mmss(start)}\u2013{mmss(end)})</h4>'
+            f'<div class="doc">{body}</div>{tail}</div>')
